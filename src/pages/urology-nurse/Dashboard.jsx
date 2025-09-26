@@ -15,7 +15,6 @@ import {
   TrendingUp,
   FileText,
   Search,
-  Download,
   Eye,
   X
 } from 'lucide-react';
@@ -446,10 +445,6 @@ const UrologyNurseDashboard = () => {
                 <option value="pending">Pending</option>
                 <option value="cancelled">Cancelled</option>
               </select>
-              <button className="flex items-center px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                <Download className="h-4 w-4 mr-2" />
-                <span className="font-medium">Export</span>
-              </button>
             </div>
           </div>
         </div>
@@ -514,18 +509,11 @@ const UrologyNurseDashboard = () => {
                     <td className="py-5 px-6">
                       <div className="flex items-center space-x-2">
                         <button 
-                          onClick={() => navigate(`/urology-nurse/patient-details/${appointment.upi}`)}
+                          onClick={() => navigate(`/urology-nurse/appointment-details/${appointment.id}`)}
                           className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
                         >
                           <Eye className="h-3 w-3 mr-1" />
                           <span>View</span>
-                        </button>
-                        <button 
-                          onClick={() => navigate(`/urology-nurse/reschedule/${appointment.id}`)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                        >
-                          <Calendar className="h-3 w-3 mr-1" />
-                          <span>Reschedule</span>
                         </button>
                 </div>
                     </td>

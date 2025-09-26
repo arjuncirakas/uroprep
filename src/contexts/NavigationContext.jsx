@@ -25,8 +25,10 @@ export const NavigationProvider = ({ children }) => {
   }, [location.pathname, currentPage]);
 
   const getActiveSidebarItem = () => {
-    // If we're on a patient details or reschedule page, return the previous page
-    if (location.pathname.includes('/patient-details/') || location.pathname.includes('/reschedule/')) {
+    // If we're on a patient details, appointment details, or reschedule page, return the previous page
+    if (location.pathname.includes('/patient-details/') || 
+        location.pathname.includes('/appointment-details/') || 
+        location.pathname.includes('/reschedule/')) {
       return previousPage;
     }
     // Otherwise return current page
@@ -40,6 +42,9 @@ export const NavigationProvider = ({ children }) => {
     }
     // Default fallbacks based on current page
     if (location.pathname.includes('/patient-details/')) {
+      return '/urology-nurse/dashboard';
+    }
+    if (location.pathname.includes('/appointment-details/')) {
       return '/urology-nurse/dashboard';
     }
     if (location.pathname.includes('/reschedule/')) {

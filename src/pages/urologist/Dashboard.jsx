@@ -250,21 +250,8 @@ const UrologistDashboard = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Urologist Dashboard</h1>
-            <p className="text-sm text-gray-600 mt-1">Clinical decisions and case management</p>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="bg-gradient-to-r from-green-50 to-gray-50 border border-green-200 rounded-xl p-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-semibold text-green-900">Dr. Sarah Johnson</span>
-              </div>
-            </div>
-            <div className="bg-gradient-to-r from-green-50 to-gray-50 border border-green-200 rounded-xl p-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-semibold text-green-900">On Duty</span>
-              </div>
-            </div>
             {basicAlerts.length > 0 && (
               <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-xl p-3">
                 <div className="flex items-center space-x-2">
@@ -406,16 +393,12 @@ const UrologistDashboard = () => {
                   </td>
                   <td className="py-5 px-6">
                     <div className="flex items-center space-x-2">
-                      <button className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-800 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        <span>Accept</span>
-                      </button>
                       <button 
                         onClick={() => handlePatientSelect(referral)}
-                        className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                        className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
                       >
                         <Eye className="h-3 w-3 mr-1" />
-                        <span>View</span>
+                        <span>View Details</span>
                       </button>
                     </div>
                   </td>

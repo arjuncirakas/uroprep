@@ -76,8 +76,29 @@ const UrologyNurseSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse })
             {navigation.map((item) => {
               const Icon = item.icon;
               
-              // Check if current path matches the item
-              let isActive = location.pathname === item.href;
+              // Use NavigationContext to determine active state
+              const activeSidebarItem = getActiveSidebarItem();
+              let isActive = activeSidebarItem === item.href;
+              
+              // If we're on a details page, only activate the appointments tab if we came from appointments
+              if (location.pathname.includes('/appointment-details/')) {
+                if (item.href === '/urology-nurse/appointments') {
+                  isActive = activeSidebarItem === '/urology-nurse/appointments';
+                } else if (item.href === '/urology-nurse/dashboard') {
+                  isActive = activeSidebarItem === '/urology-nurse/dashboard';
+                }
+              }
+              // For other appointment-related routes, use the special handling
+              else if (item.href === '/urology-nurse/appointments') {
+                isActive = isActive || location.pathname.includes('/book-appointment') ||
+                          location.pathname.includes('/reschedule/') ||
+                          location.pathname.includes('/edit-appointment/') ||
+                          location.pathname.startsWith('/urology-nurse/appointments/');
+              }
+              // General sub-route handling for other items (except dashboard)
+              else if (item.href !== '/urology-nurse/dashboard') {
+                isActive = isActive || location.pathname.startsWith(item.href + '/');
+              }
               
               return (
                 <li key={item.name}>

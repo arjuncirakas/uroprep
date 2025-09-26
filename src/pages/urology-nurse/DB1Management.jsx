@@ -36,6 +36,17 @@ const DB1Management = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [showPatientModal, setShowPatientModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [selectedPatientForSchedule, setSelectedPatientForSchedule] = useState(null);
+  const [scheduleData, setScheduleData] = useState({
+    date: '',
+    time: '',
+    type: 'OPD Assessment',
+    duration: '30 minutes',
+    doctor: 'Dr. Sarah Johnson',
+    room: 'Room 101',
+    notes: ''
+  });
   const [clinicalDecision, setClinicalDecisionState] = useState({
     outcome: '',
     rationale: '',
@@ -227,6 +238,80 @@ const DB1Management = () => {
     setSelectedPatient(null);
   };
 
+  const handleScheduleAppointment = (patient) => {
+    setSelectedPatientForSchedule(patient);
+    setScheduleData({
+      date: new Date().toISOString().split('T')[0],
+      time: '09:00',
+      type: 'OPD Assessment',
+      duration: '30 minutes',
+      doctor: 'Dr. Sarah Johnson',
+      room: 'Room 101',
+      notes: `Initial assessment for ${patient.firstName} ${patient.lastName}`
+    });
+    setShowScheduleModal(true);
+  };
+
+  const handleScheduleSubmit = () => {
+    if (!scheduleData.date || !scheduleData.time) {
+      alert('Please select date and time');
+      return;
+    }
+
+    const appointment = {
+      id: `APT${Date.now()}`,
+      patientName: `${selectedPatientForSchedule.firstName} ${selectedPatientForSchedule.lastName}`,
+      upi: selectedPatientForSchedule.id,
+      title: scheduleData.type,
+      description: `Initial assessment and triage`,
+      date: scheduleData.date,
+      time: scheduleData.time,
+      type: scheduleData.type,
+      status: 'Scheduled',
+      priority: selectedPatientForSchedule.priority === 'high' ? 'High' : 'Normal',
+      duration: scheduleData.duration,
+      doctor: scheduleData.doctor,
+      room: scheduleData.room,
+      notes: scheduleData.notes,
+      phone: selectedPatientForSchedule.phone,
+      email: selectedPatientForSchedule.email,
+      address: selectedPatientForSchedule.address,
+      age: selectedPatientForSchedule.age
+    };
+
+    // In a real application, this would dispatch an action to add the appointment
+    console.log('New appointment created:', appointment);
+    
+    alert(`Appointment scheduled successfully!\n\nPatient: ${appointment.patientName}\nDate: ${appointment.date}\nTime: ${appointment.time}\nType: ${appointment.type}\n\nAppointment has been added to the system.`);
+
+    // Close modal and reset
+    setShowScheduleModal(false);
+    setSelectedPatientForSchedule(null);
+    setScheduleData({
+      date: '',
+      time: '',
+      type: 'OPD Assessment',
+      duration: '30 minutes',
+      doctor: 'Dr. Sarah Johnson',
+      room: 'Room 101',
+      notes: ''
+    });
+  };
+
+  const handleScheduleCancel = () => {
+    setShowScheduleModal(false);
+    setSelectedPatientForSchedule(null);
+    setScheduleData({
+      date: '',
+      time: '',
+      type: 'OPD Assessment',
+      duration: '30 minutes',
+      doctor: 'Dr. Sarah Johnson',
+      room: 'Room 101',
+      notes: ''
+    });
+  };
+
   // Clinical validation functions
   const validatePSAThresholds = (psaValue, age) => {
     const alerts = [];
@@ -290,16 +375,30 @@ const DB1Management = () => {
     console.log('Clinical Decision Submitted:', decision);
     console.log('Next Database:', getNextDatabase(clinicalDecision.outcome));
     
-    // Show success message
-    alert(`Clinical decision submitted successfully!\n\nPatient: ${selectedPatient.firstName} ${selectedPatient.lastName}\nOutcome: ${clinicalOutcomes.find(o => o.id === clinicalDecision.outcome)?.label}\nNext Action: ${getNextDatabase(clinicalDecision.outcome)}`);
+    // Show success message with next steps
+    const nextDatabase = getNextDatabase(clinicalDecision.outcome);
+    const outcomeLabel = clinicalOutcomes.find(o => o.id === clinicalDecision.outcome)?.label;
+    
+    alert(`Clinical decision submitted successfully!\n\nPatient: ${selectedPatient.firstName} ${selectedPatient.lastName}\nOutcome: ${outcomeLabel}\nNext Action: ${nextDatabase}\n\nPatient has been moved to the appropriate database and will appear in the respective management system.`);
 
-    // Reset form
+    // Update patient status in the local state (in a real app, this would update the backend)
+    const updatedPatients = db1Patients.map(patient => 
+      patient.id === selectedPatient.id 
+        ? { ...patient, status: 'completed', clinicalDecision: decision }
+        : patient
+    );
+    
+    // In a real application, this would dispatch an action to update the Redux store
+    console.log('Updated patients list:', updatedPatients);
+
+    // Reset form and close modal
     setClinicalDecisionState({
       outcome: '',
       rationale: '',
       patientCounseling: '',
       supportingEvidence: '',
     });
+    setShowPatientModal(false);
     setSelectedPatient(null);
   };
 
@@ -331,77 +430,80 @@ const DB1Management = () => {
   };
 
   const renderPatientSummary = (patient) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <User className="h-5 w-5 text-blue-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
+              <span className="text-white font-semibold text-lg">
+                {patient.firstName[0]}{patient.lastName[0]}
+              </span>
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
                 {patient.firstName} {patient.lastName}
               </h3>
-              <p className="text-sm text-gray-600">UPI: {patient.id}</p>
+              <p className="text-sm text-gray-600">UPI: {patient.id} • Age: {patient.age}</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-sm text-gray-600">Age: {patient.age}</p>
-            <p className="text-sm text-gray-600">Status: <span className={`capitalize font-medium ${
-              patient.status === 'pending' ? 'text-yellow-600' :
-              patient.status === 'in_progress' ? 'text-blue-600' :
-              'text-green-600'
-            }`}>{patient.status.replace('_', ' ')}</span></p>
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+              patient.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+              patient.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+              'bg-green-100 text-green-800'
+            }`}>
+              {patient.status.replace('_', ' ')}
+            </span>
           </div>
         </div>
       </div>
       <div className="p-6">
         {/* Clinical Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <div className="bg-gradient-to-r from-blue-50 to-gray-50 border border-blue-200 rounded-xl p-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
             <div className="flex items-center">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg mr-3">
-                <Activity className="h-5 w-5 text-white" />
+              <div className="p-2 bg-blue-100 rounded-lg mr-3">
+                <Activity className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-blue-900">Current PSA</p>
-                <p className="text-lg font-bold text-blue-600">{patient.currentPSA} ng/mL</p>
+                <p className="text-sm font-medium text-gray-600">Current PSA</p>
+                <p className="text-lg font-bold text-gray-900">{patient.currentPSA} ng/mL</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-gradient-to-r from-green-50 to-gray-50 border border-green-200 rounded-xl p-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
             <div className="flex items-center">
-              <div className="p-2 bg-gradient-to-br from-green-500 to-green-700 rounded-lg mr-3">
-                <Calendar className="h-5 w-5 text-white" />
+              <div className="p-2 bg-green-100 rounded-lg mr-3">
+                <Calendar className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-green-900">PSA Date</p>
-                <p className="text-lg font-bold text-green-600">{patient.psaDate}</p>
+                <p className="text-sm font-medium text-gray-600">PSA Date</p>
+                <p className="text-lg font-bold text-gray-900">{patient.psaDate}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-gradient-to-r from-purple-50 to-gray-50 border border-purple-200 rounded-xl p-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
             <div className="flex items-center">
-              <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg mr-3">
-                <Stethoscope className="h-5 w-5 text-white" />
+              <div className="p-2 bg-purple-100 rounded-lg mr-3">
+                <Stethoscope className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-purple-900">DRE</p>
-                <p className="text-lg font-bold text-purple-600 capitalize">{patient.dreFindings}</p>
+                <p className="text-sm font-medium text-gray-600">DRE</p>
+                <p className="text-lg font-bold text-gray-900 capitalize">{patient.dreFindings}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-orange-50 to-gray-50 border border-orange-200 rounded-xl p-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
             <div className="flex items-center">
-              <div className="p-2 bg-gradient-to-br from-orange-500 to-orange-700 rounded-lg mr-3">
-                <Heart className="h-5 w-5 text-white" />
+              <div className="p-2 bg-orange-100 rounded-lg mr-3">
+                <Heart className="h-5 w-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-orange-900">Priority</p>
-                <p className="text-lg font-bold text-orange-600 capitalize">{patient.priority}</p>
+                <p className="text-sm font-medium text-gray-600">Priority</p>
+                <p className="text-lg font-bold text-gray-900 capitalize">{patient.priority}</p>
               </div>
             </div>
           </div>
@@ -409,52 +511,64 @@ const DB1Management = () => {
 
         {/* Contact Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-4">
-            <div className="flex items-center mb-3">
-              <Phone className="h-4 w-4 text-gray-500 mr-2" />
-              <span className="text-sm font-semibold text-gray-700">Contact Information</span>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm text-gray-600"><span className="font-medium">Phone:</span> {patient.phone}</p>
-              <p className="text-sm text-gray-600"><span className="font-medium">Email:</span> {patient.email}</p>
-              <p className="text-sm text-gray-600"><span className="font-medium">Address:</span> {patient.address}</p>
-            </div>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <h4 className="font-semibold text-gray-900 mb-3">Contact Information</h4>
+            <dl className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <dt className="font-medium text-gray-600">Phone:</dt>
+                <dd className="text-gray-900">{patient.phone}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="font-medium text-gray-600">Email:</dt>
+                <dd className="text-gray-900">{patient.email}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="font-medium text-gray-600">Address:</dt>
+                <dd className="text-gray-900">{patient.address}</dd>
+              </div>
+            </dl>
           </div>
 
-          <div className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-4">
-            <div className="flex items-center mb-3">
-              <Calendar className="h-4 w-4 text-gray-500 mr-2" />
-              <span className="text-sm font-semibold text-gray-700">Appointment Schedule</span>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm text-gray-600"><span className="font-medium">Next Appointment:</span> {patient.nextAppointment}</p>
-              <p className="text-sm text-gray-600"><span className="font-medium">Last Visit:</span> {patient.lastVisit}</p>
-              <p className="text-sm text-gray-600"><span className="font-medium">Triage Date:</span> {patient.triageDate}</p>
-            </div>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <h4 className="font-semibold text-gray-900 mb-3">Appointment Schedule</h4>
+            <dl className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <dt className="font-medium text-gray-600">Next Appointment:</dt>
+                <dd className="text-gray-900">{patient.nextAppointment}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="font-medium text-gray-600">Last Visit:</dt>
+                <dd className="text-gray-900">{patient.lastVisit}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="font-medium text-gray-600">Triage Date:</dt>
+                <dd className="text-gray-900">{patient.triageDate}</dd>
+              </div>
+            </dl>
           </div>
         </div>
 
         {/* Clinical Details */}
         <div className="space-y-4">
-          <div className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-4">
-            <span className="text-sm font-semibold text-gray-700">Clinical Indication:</span>
-            <p className="text-sm text-gray-600 mt-1">{patient.clinicalIndication}</p>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <h4 className="font-semibold text-gray-900 mb-2">Clinical Indication</h4>
+            <p className="text-sm text-gray-600">{patient.clinicalIndication}</p>
           </div>
-          <div className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-4">
-            <span className="text-sm font-semibold text-gray-700">Referring GP:</span>
-            <p className="text-sm text-gray-600 mt-1">{patient.referringGP}</p>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <h4 className="font-semibold text-gray-900 mb-2">Referring GP</h4>
+            <p className="text-sm text-gray-600">{patient.referringGP}</p>
           </div>
-          <div className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-4">
-            <span className="text-sm font-semibold text-gray-700">Current Medications:</span>
-            <p className="text-sm text-gray-600 mt-1">{patient.currentMedications || 'None documented'}</p>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <h4 className="font-semibold text-gray-900 mb-2">Current Medications</h4>
+            <p className="text-sm text-gray-600">{patient.currentMedications || 'None documented'}</p>
           </div>
-          <div className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-4">
-            <span className="text-sm font-semibold text-gray-700">Comorbidities:</span>
-            <p className="text-sm text-gray-600 mt-1">{patient.comorbidities || 'None documented'}</p>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <h4 className="font-semibold text-gray-900 mb-2">Comorbidities</h4>
+            <p className="text-sm text-gray-600">{patient.comorbidities || 'None documented'}</p>
           </div>
-          <div className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-4">
-            <span className="text-sm font-semibold text-gray-700">Clinical Notes:</span>
-            <p className="text-sm text-gray-600 mt-1">{patient.notes || 'No additional notes'}</p>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <h4 className="font-semibold text-gray-900 mb-2">Clinical Notes</h4>
+            <p className="text-sm text-gray-600">{patient.notes || 'No additional notes'}</p>
           </div>
         </div>
       </div>
@@ -462,8 +576,8 @@ const DB1Management = () => {
   );
 
   const renderClinicalDecisionInterface = () => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Clinical Decision Engine</h3>
@@ -507,9 +621,9 @@ const DB1Management = () => {
 
         {clinicalDecision.outcome && (
           <div className="space-y-6">
-            <div className="bg-gradient-to-r from-blue-50 to-gray-50 border border-blue-200 rounded-xl p-4">
-              <h5 className="font-semibold text-blue-900 mb-2">Next Action:</h5>
-              <p className="text-sm text-blue-700">
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+              <h5 className="font-semibold text-gray-900 mb-2">Next Action:</h5>
+              <p className="text-sm text-gray-600">
                 {clinicalOutcomes.find(o => o.id === clinicalDecision.outcome)?.nextAction}
               </p>
             </div>
@@ -577,19 +691,35 @@ const DB1Management = () => {
   );
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">OPD Management</h1>
-            <p className="text-sm text-gray-600 mt-1">Initial Assessment & Clinical Decision Point</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">OPD Management</h1>
+              <p className="text-sm text-gray-500 mt-1 font-medium">Initial Assessment & Clinical Decision Point</p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => {
+                  // Handle schedule appointment functionality
+                  console.log('Schedule new appointment');
+                }}
+                className="flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                Schedule Appointment
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -655,11 +785,9 @@ const DB1Management = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        {/* Patient List */}
-        <div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
+          {/* Patient List */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="border-b border-gray-200 px-6 py-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Patient Queue</h3>
@@ -673,28 +801,40 @@ const DB1Management = () => {
             </div>
 
             {/* Search and Filter */}
-            <div className="p-4 border-b border-gray-200">
-              <div className="space-y-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search patients..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="relative flex-1 max-w-md">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search patients..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <select
-                  value={selectedFilter}
-                  onChange={(e) => setSelectedFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="all">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                </select>
+                <div className="flex items-center space-x-3">
+                  <select
+                    value={selectedFilter}
+                    onChange={(e) => setSelectedFilter(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -761,13 +901,20 @@ const DB1Management = () => {
                           </div>
                         </td>
                         <td className="py-5 px-6">
-                          <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${
-                            patient.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            patient.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                            'bg-green-100 text-green-800'
-                          }`}>
-                            {patient.status.replace('_', ' ')}
-                          </span>
+                          <div className="flex flex-col space-y-1">
+                            <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${
+                              patient.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              patient.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                              'bg-green-100 text-green-800'
+                            }`}>
+                              {patient.status.replace('_', ' ')}
+                            </span>
+                            {patient.status === 'completed' && patient.clinicalDecision && (
+                              <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
+                                → {getNextDatabase(patient.clinicalDecision.outcome)}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-5 px-6">
                           <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${
@@ -787,16 +934,21 @@ const DB1Management = () => {
                               <Eye className="h-3 w-3 mr-1" />
                               <span>View Details</span>
                             </button>
-                            <button 
-                              onClick={() => {
-                                // Handle edit functionality
-                                console.log('Edit patient:', patient.id);
-                              }}
-                              className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                            >
-                              <Edit className="h-3 w-3 mr-1" />
-                              <span>Edit</span>
-                            </button>
+                            {patient.status !== 'completed' && (
+                              <button 
+                                onClick={() => handleScheduleAppointment(patient)}
+                                className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                              >
+                                <Calendar className="h-3 w-3 mr-1" />
+                                <span>Schedule</span>
+                              </button>
+                            )}
+                            {patient.status === 'completed' && (
+                              <span className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-500 bg-gray-100 rounded-lg">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                <span>Processed</span>
+                              </span>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -807,7 +959,6 @@ const DB1Management = () => {
             </div>
           </div>
         </div>
-
       </div>
 
       {/* Patient Details Modal */}
@@ -815,11 +966,13 @@ const DB1Management = () => {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
+            <div className="border-b border-gray-200 px-6 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <User className="h-5 w-5 text-blue-600" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold text-lg">
+                      {selectedPatient.firstName[0]}{selectedPatient.lastName[0]}
+                    </span>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">
@@ -847,47 +1000,200 @@ const DB1Management = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+            <div className="px-6 py-4 border-t border-gray-200">
+              <div className="flex items-center justify-end space-x-3">
+                <button
+                  onClick={closePatientModal}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    // Handle schedule appointment
+                    console.log('Schedule appointment for:', selectedPatient.id);
+                  }}
+                  className="flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Schedule Appointment
+                </button>
+                <button
+                  onClick={() => {
+                    // Handle start assessment
+                    console.log('Starting assessment for:', selectedPatient.id);
+                  }}
+                  className="px-6 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
+                >
+                  Start Assessment
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Appointment Modal */}
+      {showScheduleModal && selectedPatientForSchedule && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="border-b border-gray-200 px-6 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => {
-                      // Handle schedule appointment
-                      console.log('Schedule appointment for:', selectedPatient.id);
-                    }}
-                    className="flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
-                  >
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Schedule Appointment
-                  </button>
-                  <button
-                    onClick={() => {
-                      // Handle send reminder
-                      console.log('Send reminder to:', selectedPatient.id);
-                    }}
-                    className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
-                  >
-                    <Bell className="h-4 w-4 mr-2" />
-                    Send Reminder
-                  </button>
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold text-lg">
+                      {selectedPatientForSchedule.firstName[0]}{selectedPatientForSchedule.lastName[0]}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Schedule Appointment</h3>
+                    <p className="text-sm text-gray-600">{selectedPatientForSchedule.firstName} {selectedPatientForSchedule.lastName}</p>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={closePatientModal}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    Close
-                  </button>
-                  <button
-                    onClick={() => {
-                      // Handle start assessment
-                      console.log('Starting assessment for:', selectedPatient.id);
-                    }}
-                    className="px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
-                  >
-                    Start Assessment
-                  </button>
+                <button
+                  onClick={handleScheduleCancel}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="px-6 py-6">
+              <div className="space-y-6">
+                {/* Patient Info */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Patient
+                  </label>
+                  <p className="text-sm text-gray-900">{selectedPatientForSchedule.firstName} {selectedPatientForSchedule.lastName} (UPI: {selectedPatientForSchedule.id})</p>
                 </div>
+
+                {/* Appointment Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="scheduleDate" className="block text-sm font-medium text-gray-700 mb-2">
+                      Date *
+                    </label>
+                    <input
+                      type="date"
+                      id="scheduleDate"
+                      value={scheduleData.date}
+                      onChange={(e) => setScheduleData({...scheduleData, date: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="scheduleTime" className="block text-sm font-medium text-gray-700 mb-2">
+                      Time *
+                    </label>
+                    <input
+                      type="time"
+                      id="scheduleTime"
+                      value={scheduleData.time}
+                      onChange={(e) => setScheduleData({...scheduleData, time: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="scheduleType" className="block text-sm font-medium text-gray-700 mb-2">
+                      Type
+                    </label>
+                    <select
+                      id="scheduleType"
+                      value={scheduleData.type}
+                      onChange={(e) => setScheduleData({...scheduleData, type: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="OPD Assessment">OPD Assessment</option>
+                      <option value="Follow-up">Follow-up</option>
+                      <option value="Consultation">Consultation</option>
+                      <option value="Pre-op Assessment">Pre-op Assessment</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="scheduleDuration" className="block text-sm font-medium text-gray-700 mb-2">
+                      Duration
+                    </label>
+                    <select
+                      id="scheduleDuration"
+                      value={scheduleData.duration}
+                      onChange={(e) => setScheduleData({...scheduleData, duration: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="30 minutes">30 minutes</option>
+                      <option value="45 minutes">45 minutes</option>
+                      <option value="60 minutes">60 minutes</option>
+                      <option value="90 minutes">90 minutes</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="scheduleDoctor" className="block text-sm font-medium text-gray-700 mb-2">
+                      Doctor
+                    </label>
+                    <select
+                      id="scheduleDoctor"
+                      value={scheduleData.doctor}
+                      onChange={(e) => setScheduleData({...scheduleData, doctor: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="Dr. Sarah Johnson">Dr. Sarah Johnson</option>
+                      <option value="Dr. Michael Chen">Dr. Michael Chen</option>
+                      <option value="Dr. Emily Rodriguez">Dr. Emily Rodriguez</option>
+                      <option value="Dr. David Thompson">Dr. David Thompson</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="scheduleRoom" className="block text-sm font-medium text-gray-700 mb-2">
+                      Room
+                    </label>
+                    <input
+                      type="text"
+                      id="scheduleRoom"
+                      value={scheduleData.room}
+                      onChange={(e) => setScheduleData({...scheduleData, room: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="scheduleNotes" className="block text-sm font-medium text-gray-700 mb-2">
+                    Notes
+                  </label>
+                  <textarea
+                    id="scheduleNotes"
+                    value={scheduleData.notes}
+                    onChange={(e) => setScheduleData({...scheduleData, notes: e.target.value})}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-200">
+              <div className="flex items-center justify-end space-x-3">
+                <button
+                  onClick={handleScheduleCancel}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleScheduleSubmit}
+                  className="px-6 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
+                >
+                  Schedule Appointment
+                </button>
               </div>
             </div>
           </div>
