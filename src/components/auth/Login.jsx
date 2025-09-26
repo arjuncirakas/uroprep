@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { loginStart, loginSuccess, loginFailure } from '../../store/slices/authSlice';
-import { Eye, EyeOff, Mail, Lock, UserCircle, Sparkles, Users } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, UserCircle, Sparkles, Users, Shield, Activity, Stethoscope } from 'lucide-react';
 
 const Login = () => {
   const [formData, setFormData] = useState({
