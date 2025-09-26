@@ -222,16 +222,18 @@ const AnalyticsDashboard = () => {
             {metric.target && (
               <p className="text-sm text-gray-500">Target: {metric.target}</p>
             )}
-            <div className="flex items-center mt-1">
-              <TrendingUp className={`h-4 w-4 mr-1 ${
-                metric.trend.startsWith('+') ? 'text-red-500' : 'text-green-500'
-              }`} />
-              <span className={`text-sm font-medium ${
-                metric.trend.startsWith('+') ? 'text-red-600' : 'text-green-600'
-              }`}>
-                {metric.trend}
-              </span>
-            </div>
+            {metric.trend && (
+              <div className="flex items-center mt-1">
+                <TrendingUp className={`h-4 w-4 mr-1 ${
+                  metric.trend.startsWith('+') ? 'text-red-500' : 'text-green-500'
+                }`} />
+                <span className={`text-sm font-medium ${
+                  metric.trend.startsWith('+') ? 'text-red-600' : 'text-green-600'
+                }`}>
+                  {metric.trend}
+                </span>
+              </div>
+            )}
           </div>
         </div>
         {metric.status && (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 
 const AdminSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
+  const location = useLocation();
+  
   const navigationItems = [
     { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/admin/users', label: 'User Management', icon: Users },
@@ -24,17 +26,21 @@ const AdminSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
   ];
 
   return (
-    <aside className={`${isCollapsed ? 'w-16' : 'w-[280px]'} bg-gray-50 text-gray-700 h-screen fixed left-0 top-0 z-10 border-r border-gray-200 transition-all duration-300 ease-in-out ${
+    <aside className={`${isCollapsed ? 'w-16' : 'w-[280px]'} bg-white text-gray-700 h-screen fixed left-0 top-0 z-10 border-r border-gray-200 transition-all duration-300 ease-in-out ${
       isOpen ? 'translate-x-0' : '-translate-x-full'
     } sm:translate-x-0`}>
       {/* Header */}
-      <div className={`${isCollapsed ? 'p-3' : 'p-6'} border-b border-gray-200`}>
+      <div className={`${isCollapsed ? 'px-3 py-6' : 'p-6'} `}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-green-800 to-black rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">A</span>
+            <div className={`${isCollapsed ? 'w-8 h-8' : 'w-[10rem]'} flex items-center justify-center overflow-hidden`}>
+              <img 
+                src={isCollapsed ? "/urologo2.png" : "/urologo.png"} 
+                alt="UroPrep Logo" 
+                className="max-w-full max-h-full object-contain"
+                style={{ width: 'auto', height: 'auto' }}
+              />
             </div>
-            {!isCollapsed && <span className="text-xl font-semibold text-gray-800">UroPrep</span>}
           </div>
           <div className="flex items-center space-x-2">
             {/* Collapse/Expand button */}
@@ -62,25 +68,21 @@ const AdminSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
           <ul className="space-y-1">
             {navigationItems.map((item) => {
               const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              
               return (
                 <li key={item.path}>
                   <NavLink
                     to={item.path}
-                    className={({ isActive }) =>
-                      `flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out ${
-                        isActive
-                          ? 'bg-gradient-to-r from-green-800 to-black text-white shadow-md transform scale-[1.02]'
-                          : 'text-gray-700 hover:bg-gray-100 hover:transform hover:scale-[1.01]'
-                      }`
-                    }
+                    className={`flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out ${
+                      isActive
+                        ? 'bg-gradient-to-r from-green-800 to-black text-white shadow-md transform scale-[1.02]'
+                        : 'text-gray-700 hover:bg-gray-100 hover:transform hover:scale-[1.01]'
+                    }`}
                     title={isCollapsed ? item.label : ''}
                   >
-                    {({ isActive }) => (
-                      <>
-                        <Icon className={`h-5 w-5 ${isCollapsed ? '' : 'mr-3'} transition-colors duration-300 ease-in-out ${isActive ? 'text-white' : 'text-gray-600'}`} />
-                        {!isCollapsed && <span className="transition-colors duration-300 ease-in-out">{item.label}</span>}
-                      </>
-                    )}
+                    <Icon className={`h-5 w-5 ${isCollapsed ? '' : 'mr-3'} transition-colors duration-300 ease-in-out ${isActive ? 'text-white' : 'text-gray-600'}`} />
+                    {!isCollapsed && <span className="transition-colors duration-300 ease-in-out">{item.label}</span>}
                   </NavLink>
                 </li>
               );
