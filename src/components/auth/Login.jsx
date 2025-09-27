@@ -47,7 +47,6 @@ const Login = () => {
         gp: '/gp/dashboard',
         urology_nurse: '/urology-nurse/dashboard',
         urologist: '/urologist/dashboard',
-        urology_registrar: '/urologist/dashboard',
         mdt_coordinator: '/mdt-coordinator/dashboard'
       };
       
@@ -62,7 +61,6 @@ const Login = () => {
     gp: <Activity className="h-4 w-4" />,
     urology_nurse: <Stethoscope className="h-4 w-4" />,
     urologist: <UserCircle className="h-4 w-4" />,
-    urology_registrar: <Users className="h-4 w-4" />,
     mdt_coordinator: <Sparkles className="h-4 w-4" />
   };
 
@@ -167,7 +165,6 @@ const Login = () => {
                   <option value="gp">General Practitioner (Read-Only)</option>
                   <option value="urology_nurse">Urology Clinical Nurse</option>
                   <option value="urologist">Urologist</option>
-                  <option value="urology_registrar">Urology Registrar</option>
                   <option value="mdt_coordinator">MDT Coordinator</option>
                 </select>
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
