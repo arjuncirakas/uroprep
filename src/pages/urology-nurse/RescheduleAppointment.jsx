@@ -141,8 +141,8 @@ const RescheduleAppointment = () => {
       </div>
 
       {/* Appointment Details Card */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="border-b border-gray-200 px-6 py-4">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
           <h1 className="text-xl font-semibold text-gray-900">Reschedule Appointment</h1>
           <p className="text-sm text-gray-600 mt-1">Update the appointment details for this patient</p>
         </div>

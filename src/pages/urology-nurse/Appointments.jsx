@@ -3,38 +3,27 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, 
-  Clock, 
-  User, 
-  Phone, 
-  Mail,
-  Plus,
   Search,
-  Filter,
-  Bell,
-  CheckCircle,
-  AlertTriangle,
-  Stethoscope,
-  Heart,
-  Activity,
-  TrendingUp,
-  Shield,
-  Zap,
   Eye,
-  Edit,
-  MapPin,
   X,
-  Download
+  Download,
+  Grid3X3,
+  List,
+  ChevronLeft,
+  ChevronRight,
+  UserPlus
 } from 'lucide-react';
 
 const Appointments = () => {
   const navigate = useNavigate();
   const { appointments } = useSelector(state => state.appointments);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [viewMode, setViewMode] = useState('week'); // week, month, day
+  const [viewMode, setViewMode] = useState('calendar'); // calendar, list, week, month
   const [showNewAppointment, setShowNewAppointment] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [activeFilter, setActiveFilter] = useState('Today');
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const today = new Date();
   const currentWeek = getWeekDates(today);
@@ -164,12 +153,6 @@ const Appointments = () => {
   ];
 
 
-  const appointmentStats = {
-    total: enhancedUpcomingAppointments.length,
-    confirmed: enhancedUpcomingAppointments.filter(a => a.status === 'Confirmed').length,
-    pending: enhancedUpcomingAppointments.filter(a => a.status === 'Pending').length,
-    highPriority: enhancedUpcomingAppointments.filter(a => a.priority === 'High').length
-  };
 
   function getWeekDates(date) {
     const week = [];
@@ -252,84 +235,38 @@ const Appointments = () => {
   };
 
 
-  const renderStatsCards = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-600">Total</p>
-            <p className="text-3xl font-bold text-gray-900">{appointmentStats.total}</p>
-            <div className="mt-2">
-              <span className="text-sm font-medium text-green-600">+2</span>
-              <span className="text-sm text-gray-500 ml-1">from yesterday</span>
-            </div>
-          </div>
-          <div className="p-3 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700">
-            <Calendar className="h-6 w-6 text-white" />
-          </div>
-        </div>
-      </div>
-      
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-600">Confirmed</p>
-            <p className="text-3xl font-bold text-gray-900">{appointmentStats.confirmed}</p>
-            <div className="mt-2">
-              <span className="text-sm font-medium text-green-600">+1</span>
-              <span className="text-sm text-gray-500 ml-1">from yesterday</span>
-            </div>
-          </div>
-          <div className="p-3 rounded-lg bg-gradient-to-br from-green-500 to-green-700">
-            <CheckCircle className="h-6 w-6 text-white" />
-          </div>
-        </div>
-      </div>
-      
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-600">Pending</p>
-            <p className="text-3xl font-bold text-gray-900">{appointmentStats.pending}</p>
-            <div className="mt-2">
-              <span className="text-sm font-medium text-yellow-600">+1</span>
-              <span className="text-sm text-gray-500 ml-1">from yesterday</span>
-            </div>
-          </div>
-          <div className="p-3 rounded-lg bg-gradient-to-br from-yellow-500 to-yellow-700">
-            <Clock className="h-6 w-6 text-white" />
-          </div>
-        </div>
-      </div>
-      
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-600">High Priority</p>
-            <p className="text-3xl font-bold text-gray-900">{appointmentStats.highPriority}</p>
-            <div className="mt-2">
-              <span className="text-sm font-medium text-red-600">+1</span>
-              <span className="text-sm text-gray-500 ml-1">from yesterday</span>
-            </div>
-          </div>
-          <div className="p-3 rounded-lg bg-gradient-to-br from-red-500 to-red-700">
-            <Zap className="h-6 w-6 text-white" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   const renderFiltersAndControls = () => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="border-b border-gray-200 px-6 py-4">
+      <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">Appointments Management</h2>
-            <p className="text-sm text-gray-600 mt-1">Schedule and manage patient appointments</p>
+            <p className="text-sm text-gray-600 mt-1">Central calendar to manage schedules - OPD consultations, investigations, surgeries, follow-ups</p>
           </div>
           <div className="flex items-center space-x-3">
+            {/* View Mode Toggle */}
+            <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('calendar')}
+                className={`p-2 rounded-md transition-colors ${
+                  viewMode === 'calendar' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'
+                }`}
+                title="Calendar View"
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-md transition-colors ${
+                  viewMode === 'list' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'
+                }`}
+                title="List View"
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
             <div className="flex items-center space-x-2">
               <Calendar className="h-4 w-4 text-gray-500" />
               <input
@@ -346,7 +283,7 @@ const Appointments = () => {
       {/* Filter Tabs */}
       <div className="px-6 py-4">
         <nav className="flex space-x-2" aria-label="Tabs">
-          {['Today', 'Follow-ups', 'OPD', 'Surgery'].map((filter) => (
+          {['Today', 'OPD Consultations', 'Investigations', 'Surgeries', 'Follow-ups'].map((filter) => (
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
@@ -366,9 +303,10 @@ const Appointments = () => {
                   {enhancedUpcomingAppointments.filter(appointment => {
                      switch (filter) {
                        case 'Today': return appointment.date === selectedDate;
+                       case 'OPD Consultations': return appointment.type === 'OPD' && appointment.date === selectedDate;
+                       case 'Investigations': return appointment.type === 'Investigation' && appointment.date === selectedDate;
+                       case 'Surgeries': return appointment.type === 'Surgery' && appointment.date === selectedDate;
                        case 'Follow-ups': return (appointment.type === 'Follow-up' || appointment.type === 'Surveillance') && appointment.date === selectedDate;
-                       case 'OPD': return appointment.type === 'OPD' && appointment.date === selectedDate;
-                       case 'Surgery': return appointment.type === 'Surgery' && appointment.date === selectedDate;
                        default: return true;
                      }
                    }).length}
@@ -382,43 +320,43 @@ const Appointments = () => {
       {/* Search and Filters */}
       <div className="px-6 py-4 border-t border-gray-200">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="relative flex-1 max-w-md">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+            <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search by patient name, UPI, or appointment type..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   <X className="h-4 w-4" />
                 </button>
               )}
             </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+            <select className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400">
               <option value="all">All Status</option>
               <option value="confirmed">Confirmed</option>
               <option value="pending">Pending</option>
               <option value="cancelled">Cancelled</option>
             </select>
+          </div>
+          <div className="flex items-center space-x-3">
             <button className="flex items-center px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
               <Download className="h-4 w-4 mr-2" />
               <span className="font-medium">Export</span>
             </button>
             <button
-              onClick={() => setShowNewAppointment(true)}
+              onClick={() => navigate('/urology-nurse/book-appointment')}
               className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              New Appointment
+              <UserPlus className="h-4 w-4 mr-2" />
+              Book Appointment
             </button>
           </div>
         </div>
@@ -426,10 +364,122 @@ const Appointments = () => {
     </div>
   );
 
+  const renderCalendarView = () => {
+    const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+    const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+    const startDate = new Date(monthStart);
+    startDate.setDate(startDate.getDate() - startDate.getDay());
+    
+    const calendarDays = [];
+    const currentDate = new Date(startDate);
+    
+    for (let i = 0; i < 42; i++) {
+      calendarDays.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    const getAppointmentsForDate = (date) => {
+      const dateStr = date.toISOString().split('T')[0];
+      return enhancedUpcomingAppointments.filter(apt => apt.date === dateStr);
+    };
+    
+    const navigateMonth = (direction) => {
+      const newMonth = new Date(currentMonth);
+      newMonth.setMonth(newMonth.getMonth() + direction);
+      setCurrentMonth(newMonth);
+    };
+    
+    return (
+      <div className="p-6">
+        {/* Calendar Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => navigateMonth(-1)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <h3 className="text-xl font-semibold text-gray-900">
+              {currentMonth.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
+            </h3>
+            <button
+              onClick={() => navigateMonth(1)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+          <button
+            onClick={() => setCurrentMonth(new Date())}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            Today
+          </button>
+        </div>
+        
+        {/* Calendar Grid */}
+        <div className="grid grid-cols-7 gap-1">
+          {/* Day Headers */}
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+            <div key={day} className="p-3 text-center text-sm font-medium text-gray-500 bg-gray-50 rounded-lg">
+              {day}
+            </div>
+          ))}
+          
+          {/* Calendar Days */}
+          {calendarDays.map((day, index) => {
+            const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
+            const isToday = day.toDateString() === new Date().toDateString();
+            const dayAppointments = getAppointmentsForDate(day);
+            
+            return (
+              <div
+                key={index}
+                className={`min-h-[120px] p-2 border border-gray-200 rounded-lg ${
+                  isCurrentMonth ? 'bg-white' : 'bg-gray-50'
+                } ${isToday ? 'ring-2 ring-green-500' : ''}`}
+              >
+                <div className={`text-sm font-medium mb-2 ${
+                  isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
+                } ${isToday ? 'text-green-600' : ''}`}>
+                  {day.getDate()}
+                </div>
+                <div className="space-y-1">
+                  {dayAppointments.slice(0, 3).map(appointment => (
+                    <div
+                      key={appointment.id}
+                      onClick={() => handleAppointmentSelect(appointment)}
+                      className={`text-xs p-1 rounded cursor-pointer transition-colors ${
+                        appointment.type === 'OPD' ? 'bg-blue-100 text-blue-800' :
+                        appointment.type === 'Surgery' ? 'bg-red-100 text-red-800' :
+                        appointment.type === 'Follow-up' ? 'bg-green-100 text-green-800' :
+                        appointment.type === 'Surveillance' ? 'bg-purple-100 text-purple-800' :
+                        'bg-gray-100 text-gray-800'
+                      } hover:opacity-80`}
+                    >
+                      <div className="font-medium">{appointment.time}</div>
+                      <div className="truncate">{appointment.patientName}</div>
+                    </div>
+                  ))}
+                  {dayAppointments.length > 3 && (
+                    <div className="text-xs text-gray-500 text-center">
+                      +{dayAppointments.length - 3} more
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const renderAppointmentsList = () => (
     <div className="overflow-x-auto">
       {filteredAppointments.length > 0 ? (
-        <table className="w-full min-w-[800px]">
+        <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
               <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
@@ -538,41 +588,56 @@ const Appointments = () => {
       {/* Page Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Appointments</h1>
-        <p className="text-gray-600 mt-1">Manage patient appointments and scheduling</p>
+        <p className="text-gray-600 mt-1">Central calendar to manage schedules - OPD consultations, investigations, surgeries, follow-ups</p>
       </div>
 
-      {renderStatsCards()}
       {renderFiltersAndControls()}
       
-      {/* Appointments Table Container */}
+      {/* Appointments Container */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        {renderAppointmentsList()}
-        
-        {/* Pagination */}
-        <div className="px-6 py-4 border-t border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              <span>Showing {filteredAppointments.length} of {enhancedUpcomingAppointments.length} appointments</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                Previous
-              </button>
-              <button className="px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-transparent rounded-lg">
-                1
-              </button>
-              <button className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                2
-              </button>
-              <button className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                3
-              </button>
-              <button className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                Next
-              </button>
+        {viewMode === 'list' && (
+          <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Appointments List</h2>
+                <p className="text-sm text-gray-600 mt-1">All scheduled appointments and consultations</p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm text-gray-600">Live Data</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+        {viewMode === 'calendar' ? renderCalendarView() : renderAppointmentsList()}
+        
+        {/* Pagination - Only show for list view */}
+        {viewMode === 'list' && (
+          <div className="px-6 py-4 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                <span>Showing {filteredAppointments.length} of {enhancedUpcomingAppointments.length} appointments</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                  Previous
+                </button>
+                <button className="px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-transparent rounded-lg">
+                  1
+                </button>
+                <button className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                  2
+                </button>
+                <button className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                  3
+                </button>
+                <button className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
     </div>

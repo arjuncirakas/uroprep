@@ -24,14 +24,19 @@ import NewReferral from './pages/gp/NewReferral';
 import GPReferralStatus from './pages/gp/ReferralStatus';
 import ReferralDetails from './pages/gp/ReferralDetails';
 import DischargeSummaries from './pages/gp/DischargeSummaries';
-import PatientSearch from './pages/gp/PatientSearch';
 import PatientDetails from './pages/gp/PatientDetails';
 import GPProfile from './pages/gp/Profile';
 
 // Urology Nurse Pages
 import UrologyNurseDashboard from './pages/urology-nurse/Dashboard';
+import Patients from './pages/urology-nurse/Patients';
+import AddPatient from './pages/urology-nurse/AddPatient';
 import ReferralTriage from './pages/urology-nurse/ReferralTriage';
 import Appointments from './pages/urology-nurse/Appointments';
+import OPDManagement from './pages/urology-nurse/OPDManagement';
+import ActiveSurveillance from './pages/urology-nurse/ActiveSurveillance';
+import SurgicalPathway from './pages/urology-nurse/SurgicalPathway';
+import PostOpFollowUp from './pages/urology-nurse/PostOpFollowUp';
 import DB1Management from './pages/urology-nurse/DB1Management';
 import DB2Management from './pages/urology-nurse/DB2Management';
 import DB3Management from './pages/urology-nurse/DB3Management';
@@ -46,14 +51,17 @@ import CalendarView from './pages/urology-nurse/CalendarView';
 
 // Urologist Pages
 import UrologistDashboard from './pages/urologist/Dashboard';
-import PriorityDashboard from './pages/urologist/PriorityDashboard';
-import ReferralsQueue from './pages/urologist/ReferralsQueue';
-import PatientChart from './pages/urologist/PatientChart';
-import SurgeryManagement from './pages/urologist/SurgeryManagement';
-import MDTCaseManager from './pages/urologist/MDTCaseManager';
-import ClinicalTools from './pages/urologist/ClinicalTools';
-import OutcomeTracker from './pages/urologist/OutcomeTracker';
-import ResearchAnalytics from './pages/urologist/ResearchAnalytics';
+import PatientManagement from './pages/urologist/PatientManagement';
+import UrologistAddPatient from './pages/urologist/AddPatient';
+import UrologistPatientDetails from './pages/urologist/PatientDetails';
+import PSAChart from './pages/urologist/PSAChart';
+import OPDConsultations from './pages/urologist/OPDConsultations';
+import MDTCases from './pages/urologist/MDTCases';
+import UrologistSurgicalPathway from './pages/urologist/SurgicalPathway';
+import UrologistPostOpFollowUp from './pages/urologist/PostOpFollowUp';
+import UrologistActiveSurveillance from './pages/urologist/ActiveSurveillance';
+import ReferralsCommunication from './pages/urologist/ReferralsCommunication';
+import ReportsAnalytics from './pages/urologist/ReportsAnalytics';
 
 // MDT Coordinator Pages
 import MDTDashboard from './pages/mdt-coordinator/Dashboard';
@@ -100,19 +108,24 @@ const AppRoutes = () => {
         <Route path="referral-status" element={<GPReferralStatus />} />
         <Route path="referral-details/:id" element={<ReferralDetails />} />
         <Route path="discharge-summaries" element={<DischargeSummaries />} />
-        <Route path="patient-search" element={<PatientSearch />} />
         <Route path="patient-details/:id" element={<PatientDetails />} />
       </Route>
       
       {/* Urology Nurse Routes */}
-      <Route path="/urology-nurse" element={
-        <ProtectedRoute allowedRoles={['urology_nurse']}>
-          <UrologyNurseLayout />
-        </ProtectedRoute>
-      }>
-        <Route path="dashboard" element={<UrologyNurseDashboard />} />
-        <Route path="triage" element={<ReferralTriage />} />
-        <Route path="appointments" element={<Appointments />} />
+            <Route path="/urology-nurse" element={
+              <ProtectedRoute allowedRoles={['urology_nurse']}>
+                <UrologyNurseLayout />
+              </ProtectedRoute>
+            }>
+              <Route path="dashboard" element={<UrologyNurseDashboard />} />
+              <Route path="patients" element={<Patients />} />
+              <Route path="add-patient" element={<AddPatient />} />
+              <Route path="triage" element={<ReferralTriage />} />
+              <Route path="appointments" element={<Appointments />} />
+              <Route path="opd-management" element={<OPDManagement />} />
+              <Route path="active-surveillance" element={<ActiveSurveillance />} />
+              <Route path="surgical-pathway" element={<SurgicalPathway />} />
+              <Route path="postop-followup" element={<PostOpFollowUp />} />
         <Route path="db1" element={<DB1Management />} />
         <Route path="db2" element={<DB2Management />} />
         <Route path="db3" element={<DB3Management />} />
@@ -134,14 +147,17 @@ const AppRoutes = () => {
         </ProtectedRoute>
       }>
         <Route path="dashboard" element={<UrologistDashboard />} />
-        <Route path="priorities" element={<PriorityDashboard />} />
-        <Route path="referrals" element={<ReferralsQueue />} />
-        <Route path="patient-chart" element={<PatientChart />} />
-        <Route path="surgery" element={<SurgeryManagement />} />
-        <Route path="mdt" element={<MDTCaseManager />} />
-        <Route path="clinical-tools" element={<ClinicalTools />} />
-        <Route path="outcomes" element={<OutcomeTracker />} />
-        <Route path="research" element={<ResearchAnalytics />} />
+        <Route path="patient-management" element={<PatientManagement />} />
+        <Route path="add-patient" element={<UrologistAddPatient />} />
+        <Route path="patient-details/:id" element={<UrologistPatientDetails />} />
+        <Route path="psa-chart/:id" element={<PSAChart />} />
+        <Route path="opd-consultations" element={<OPDConsultations />} />
+        <Route path="mdt-cases" element={<MDTCases />} />
+        <Route path="surgical-pathway" element={<UrologistSurgicalPathway />} />
+        <Route path="post-op-follow-up" element={<UrologistPostOpFollowUp />} />
+        <Route path="active-surveillance" element={<UrologistActiveSurveillance />} />
+        <Route path="referrals-communication" element={<ReferralsCommunication />} />
+        <Route path="reports-analytics" element={<ReportsAnalytics />} />
       </Route>
       
       {/* MDT Coordinator Routes */}

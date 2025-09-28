@@ -17,9 +17,8 @@ const GPSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
   const navigationItems = [
     { path: '/gp/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/gp/new-referral', label: 'New Referral', icon: UserPlus },
-    { path: '/gp/referral-status', label: 'Referral Status', icon: ClipboardList, relatedPaths: ['/gp/referral-details'] },
+    { path: '/gp/referral-status', label: 'Referral Status', icon: ClipboardList, relatedPaths: ['/gp/referral-details', '/gp/patient-details'] },
     { path: '/gp/discharge-summaries', label: 'Discharge Summaries', icon: FileText, relatedPaths: ['/gp/referral-details'] },
-    { path: '/gp/patient-search', label: 'Patient Search', icon: FileSearch, relatedPaths: ['/gp/patient-details'] },
   ];
 
   return (
@@ -85,8 +84,8 @@ const GPSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
                   isActive = false; // Ensure other items are not active
                 }
               } else if (location.pathname.startsWith('/gp/patient-details')) {
-                // Patient details should always keep Patient Search active
-                if (item.path === '/gp/patient-search') {
+                // Patient details should always keep Patient & Referral Management active
+                if (item.path === '/gp/referral-status') {
                   isActive = true;
                 } else {
                   isActive = false; // Ensure other items are not active

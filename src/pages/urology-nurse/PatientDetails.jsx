@@ -201,8 +201,8 @@ const PatientDetails = () => {
       </div>
 
       {/* Patient Header Card */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="border-b border-gray-200 px-6 py-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-6">
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-4">
               <div className="relative">

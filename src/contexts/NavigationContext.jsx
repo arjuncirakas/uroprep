@@ -40,17 +40,34 @@ export const NavigationProvider = ({ children }) => {
     if (previousPage) {
       return previousPage;
     }
-    // Default fallbacks based on current page
+    // Default fallbacks based on current page and user role
     if (location.pathname.includes('/patient-details/')) {
-      return '/urology-nurse/dashboard';
+      // Check sessionStorage for lastVisitedPage to determine correct back path
+      const lastVisitedPage = sessionStorage.getItem('lastVisitedPage');
+      if (lastVisitedPage === 'referral-status') {
+        return '/gp/referral-status';
+      } else if (lastVisitedPage === 'patient-search') {
+        return '/gp/patient-search';
+      } else if (location.pathname.startsWith('/gp/')) {
+        return '/gp/patient-search'; // Default for GP
+      } else if (location.pathname.startsWith('/urology-nurse/')) {
+        return '/urology-nurse/dashboard'; // Default for Urology Nurse
+      }
+      return '/gp/patient-search'; // Ultimate fallback
     }
     if (location.pathname.includes('/appointment-details/')) {
-      return '/urology-nurse/dashboard';
+      return location.pathname.startsWith('/gp/') ? '/gp/dashboard' : '/urology-nurse/dashboard';
     }
     if (location.pathname.includes('/reschedule/')) {
+      return location.pathname.startsWith('/gp/') ? '/gp/dashboard' : '/urology-nurse/dashboard';
+    }
+    // Default fallback based on current path
+    if (location.pathname.startsWith('/gp/')) {
+      return '/gp/dashboard';
+    } else if (location.pathname.startsWith('/urology-nurse/')) {
       return '/urology-nurse/dashboard';
     }
-    return '/urology-nurse/dashboard';
+    return '/gp/dashboard'; // Ultimate fallback
   };
 
   return (

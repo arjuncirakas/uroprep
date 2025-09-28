@@ -242,8 +242,11 @@ const TriageReferral = () => {
 
       <div className="space-y-6">
         {/* Patient Information Card */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Patient Information</h3>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 -m-6 mb-6 px-6 py-4">
+            <h3 className="text-xl font-semibold text-gray-900">Patient Information</h3>
+            <p className="text-sm text-gray-600 mt-1">Review patient details and clinical information</p>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="flex items-center space-x-3">
@@ -443,9 +446,12 @@ const TriageReferral = () => {
         <div className="space-y-6">
 
             {/* Triage Outcome */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 -m-6 mb-6 px-6 py-4">
+                <h3 className="text-xl font-semibold text-gray-900">Triage Outcome</h3>
+                <p className="text-sm text-gray-600 mt-1">Select the appropriate clinical pathway</p>
+              </div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Triage Outcome</h3>
                 {triageData.psaLevel && (
                   <span className="text-sm text-gray-500">
                     Auto-selected based on PSA: {triageData.psaLevel} ng/mL
@@ -495,8 +501,11 @@ const TriageReferral = () => {
             </div>
 
             {/* Additional Triage Information */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Information</h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 -m-6 mb-6 px-6 py-4">
+                <h3 className="text-xl font-semibold text-gray-900">Additional Information</h3>
+                <p className="text-sm text-gray-600 mt-1">Clinical notes and supporting information</p>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>

@@ -786,16 +786,16 @@ const DB1Management = () => {
       </div>
 
           {/* Patient List */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="border-b border-gray-200 px-6 py-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Patient Queue</h3>
+                  <h3 className="text-xl font-semibold text-gray-900">Patient Queue</h3>
                   <p className="text-sm text-gray-600 mt-1">Patients awaiting initial assessment</p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-gray-600">Live</span>
+                  <span className="text-sm text-gray-600">Live Queue</span>
                 </div>
               </div>
             </div>

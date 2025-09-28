@@ -40,7 +40,7 @@ const GPLayout = () => {
   }, [location.pathname]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
       <GPSidebar 
         isOpen={sidebarOpen} 

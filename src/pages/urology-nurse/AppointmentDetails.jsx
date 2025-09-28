@@ -478,9 +478,17 @@ const AppointmentDetails = () => {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200">
+            <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-5">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Reschedule Appointment</h3>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-r from-green-800 to-black rounded-lg">
+                    <Calendar className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">Reschedule Appointment</h3>
+                    <p className="text-sm text-gray-600">Select a new date and time for the appointment</p>
+                  </div>
+                </div>
                 <button
                   onClick={handleRescheduleCancel}
                   className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -592,9 +600,17 @@ const AppointmentDetails = () => {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200">
+            <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-5">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Edit Appointment</h3>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-r from-green-800 to-black rounded-lg">
+                    <Edit className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">Edit Appointment</h3>
+                    <p className="text-sm text-gray-600">Update appointment details and information</p>
+                  </div>
+                </div>
                 <button
                   onClick={handleEditCancel}
                   className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -768,11 +784,29 @@ const AppointmentDetails = () => {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200">
+            <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-5">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {rescheduleResult.type === 'success' ? 'Success' : 'Error'}
-                </h3>
+                <div className="flex items-center space-x-3">
+                  <div className={`p-2 rounded-lg ${
+                    rescheduleResult.type === 'success' 
+                      ? 'bg-gradient-to-r from-green-800 to-black' 
+                      : 'bg-gradient-to-r from-red-800 to-black'
+                  }`}>
+                    {rescheduleResult.type === 'success' ? (
+                      <CheckCircle className="h-5 w-5 text-white" />
+                    ) : (
+                      <X className="h-5 w-5 text-white" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      {rescheduleResult.type === 'success' ? 'Success' : 'Error'}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {rescheduleResult.type === 'success' ? 'Appointment rescheduled successfully' : 'Failed to reschedule appointment'}
+                    </p>
+                  </div>
+                </div>
                 <button
                   onClick={handleResultModalClose}
                   className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"

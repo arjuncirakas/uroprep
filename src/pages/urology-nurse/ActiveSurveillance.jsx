@@ -1,0 +1,461 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Activity, 
+  Search, 
+  Eye,
+  Calendar,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle,
+  X,
+  User,
+  Phone,
+  Mail,
+  FileText,
+  Upload,
+  BarChart3,
+  Clock,
+  ArrowRight,
+  Plus,
+  Download
+} from 'lucide-react';
+
+const ActiveSurveillance = () => {
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [showPSATrend, setShowPSATrend] = useState(null);
+
+  // Mock active surveillance data
+  const mockSurveillancePatients = [
+    {
+      id: 'SURV001',
+      patientName: 'Michael Brown',
+      upi: 'URP2024002',
+      age: 58,
+      gender: 'Male',
+      phone: '+61 423 456 789',
+      email: 'michael.brown@email.com',
+      status: 'Active',
+      lastPSA: 5.2,
+      lastPSADate: '2024-01-05',
+      psaVelocity: 0.3,
+      nextReview: '2024-04-05',
+      lastMRI: '2023-10-15',
+      lastBiopsy: '2023-08-20',
+      gleasonScore: '3+3',
+      riskCategory: 'Low Risk',
+      notes: 'Stable PSA, continue surveillance',
+      psaHistory: [
+        { date: '2023-01-15', value: 4.8 },
+        { date: '2023-04-15', value: 4.9 },
+        { date: '2023-07-15', value: 5.0 },
+        { date: '2023-10-15', value: 5.1 },
+        { date: '2024-01-05', value: 5.2 }
+      ]
+    },
+    {
+      id: 'SURV002',
+      patientName: 'William Thompson',
+      upi: 'URP2024006',
+      age: 68,
+      gender: 'Male',
+      phone: '+61 467 890 123',
+      email: 'william.thompson@email.com',
+      status: 'Active',
+      lastPSA: 4.5,
+      lastPSADate: '2024-01-09',
+      psaVelocity: 0.8,
+      nextReview: '2024-04-09',
+      lastMRI: '2023-11-20',
+      lastBiopsy: '2023-09-10',
+      gleasonScore: '3+4',
+      riskCategory: 'Intermediate Risk',
+      notes: 'PSA velocity concern, review protocol',
+      psaHistory: [
+        { date: '2023-01-09', value: 3.8 },
+        { date: '2023-04-09', value: 4.0 },
+        { date: '2023-07-09', value: 4.2 },
+        { date: '2023-10-09', value: 4.3 },
+        { date: '2024-01-09', value: 4.5 }
+      ]
+    },
+    {
+      id: 'SURV003',
+      patientName: 'David Wilson',
+      upi: 'URP2024003',
+      age: 71,
+      gender: 'Male',
+      phone: '+61 434 567 890',
+      email: 'david.wilson@email.com',
+      status: 'Escalated',
+      lastPSA: 4.8,
+      lastPSADate: '2024-01-03',
+      psaVelocity: 1.2,
+      nextReview: '2024-02-03',
+      lastMRI: '2023-12-15',
+      lastBiopsy: '2023-10-05',
+      gleasonScore: '3+4',
+      riskCategory: 'Intermediate Risk',
+      notes: 'PSA velocity >0.75 ng/mL/year - MDT review required',
+      psaHistory: [
+        { date: '2023-01-03', value: 3.2 },
+        { date: '2023-04-03', value: 3.6 },
+        { date: '2023-07-03', value: 4.0 },
+        { date: '2023-10-03', value: 4.4 },
+        { date: '2024-01-03', value: 4.8 }
+      ]
+    },
+    {
+      id: 'SURV004',
+      patientName: 'Robert Davis',
+      upi: 'URP2024010',
+      age: 62,
+      gender: 'Male',
+      phone: '+61 445 678 901',
+      email: 'robert.davis@email.com',
+      status: 'Active',
+      lastPSA: 3.8,
+      lastPSADate: '2023-12-20',
+      psaVelocity: 0.2,
+      nextReview: '2024-03-20',
+      lastMRI: '2023-09-10',
+      lastBiopsy: '2023-07-15',
+      gleasonScore: '3+3',
+      riskCategory: 'Low Risk',
+      notes: 'Excellent compliance, stable parameters',
+      psaHistory: [
+        { date: '2023-03-20', value: 3.6 },
+        { date: '2023-06-20', value: 3.7 },
+        { date: '2023-09-20', value: 3.8 },
+        { date: '2023-12-20', value: 3.8 }
+      ]
+    }
+  ];
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Active': return 'bg-green-100 text-green-800';
+      case 'Escalated': return 'bg-red-100 text-red-800';
+      case 'Discontinued': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getRiskColor = (risk) => {
+    switch (risk) {
+      case 'Low Risk': return 'bg-green-100 text-green-800';
+      case 'Intermediate Risk': return 'bg-yellow-100 text-yellow-800';
+      case 'High Risk': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getVelocityColor = (velocity) => {
+    if (velocity > 0.75) return 'text-red-600';
+    if (velocity > 0.5) return 'text-yellow-600';
+    return 'text-green-600';
+  };
+
+  const filteredPatients = mockSurveillancePatients.filter(patient => {
+    const searchMatch = searchTerm === '' || 
+      patient.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.upi.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const filterMatch = selectedFilter === 'all' || patient.status === selectedFilter;
+    
+    return searchMatch && filterMatch;
+  });
+
+
+  const handlePSAEntry = (patientId) => {
+    navigate(`/urology-nurse/active-surveillance/${patientId}/psa-entry`);
+  };
+
+  const handleUploadReport = (patientId) => {
+    navigate(`/urology-nurse/active-surveillance/${patientId}/upload-report`);
+  };
+
+  const handleEscalate = (patientId) => {
+    navigate(`/urology-nurse/active-surveillance/${patientId}/escalate`);
+  };
+
+  const handleScheduleReview = (patientId) => {
+    navigate(`/urology-nurse/appointments?patient=${patientId}&type=surveillance`);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Active Surveillance</h1>
+        <p className="text-gray-600 mt-1">Monitor patients under watchful waiting with PSA trend analysis</p>
+      </div>
+
+
+      {/* Search and Filters */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="relative flex-1 max-w-md">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by patient name or UPI..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <select
+              value={selectedFilter}
+              onChange={(e) => setSelectedFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
+              <option value="all">All Status</option>
+              <option value="Active">Active</option>
+              <option value="Escalated">Escalated</option>
+              <option value="Discontinued">Discontinued</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Surveillance Patients Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Active Surveillance Patients</h2>
+              <p className="text-sm text-gray-600 mt-1">Monitor PSA trends and compliance</p>
+            </div>
+            <button className="flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity">
+              <Plus className="h-4 w-4 mr-2" />
+              <span className="font-medium">Add Patient</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          {filteredPatients.length > 0 ? (
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Latest PSA</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">PSA Velocity</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Risk Category</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Next Review</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Status</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredPatients.map((patient, index) => (
+                  <tr key={patient.id} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
+                    <td className="py-5 px-6">
+                      <div className="flex items-center space-x-4">
+                        <div className="relative">
+                          <div className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center shadow-sm">
+                            <span className="text-white font-semibold text-sm">
+                              {patient.patientName.split(' ').map(n => n[0]).join('')}
+                            </span>
+                          </div>
+                          {patient.psaVelocity > 0.75 && (
+                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">{patient.patientName}</p>
+                          <p className="text-sm text-gray-500">UPI: {patient.upi}</p>
+                          <p className="text-xs text-gray-400">Age: {patient.age} • {patient.gender}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-5 px-6">
+                      <div>
+                        <p className="font-medium text-gray-900">{patient.lastPSA} ng/mL</p>
+                        <p className="text-sm text-gray-500">{patient.lastPSADate}</p>
+                        <button 
+                          onClick={() => setShowPSATrend(showPSATrend === patient.id ? null : patient.id)}
+                          className="text-xs text-blue-600 hover:text-blue-700 mt-1"
+                        >
+                          {showPSATrend === patient.id ? 'Hide Trend' : 'Show Trend'}
+                        </button>
+                      </div>
+                    </td>
+                    <td className="py-5 px-6">
+                      <div className="flex items-center space-x-2">
+                        <TrendingUp className={`h-4 w-4 ${getVelocityColor(patient.psaVelocity)}`} />
+                        <span className={`font-medium ${getVelocityColor(patient.psaVelocity)}`}>
+                          {patient.psaVelocity} ng/mL/year
+                        </span>
+                      </div>
+                      {patient.psaVelocity > 0.75 && (
+                        <p className="text-xs text-red-600 mt-1">⚠️ Exceeds threshold</p>
+                      )}
+                    </td>
+                    <td className="py-5 px-6">
+                      <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getRiskColor(patient.riskCategory)}`}>
+                        {patient.riskCategory}
+                      </span>
+                      <p className="text-xs text-gray-500 mt-1">Gleason: {patient.gleasonScore}</p>
+                    </td>
+                    <td className="py-5 px-6">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="h-4 w-4 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{patient.nextReview}</p>
+                          <p className="text-xs text-gray-500">Last MRI: {patient.lastMRI}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-5 px-6">
+                      <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(patient.status)}`}>
+                        {patient.status}
+                      </span>
+                    </td>
+                    <td className="py-5 px-6">
+                      <div className="flex flex-col space-y-1">
+                        <button 
+                          onClick={() => handlePSAEntry(patient.id)}
+                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          <span>PSA Entry</span>
+                        </button>
+                        <button 
+                          onClick={() => handleUploadReport(patient.id)}
+                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                        >
+                          <Upload className="h-3 w-3 mr-1" />
+                          <span>Upload Report</span>
+                        </button>
+                        {patient.psaVelocity > 0.75 && (
+                          <button 
+                            onClick={() => handleEscalate(patient.id)}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-red-600 to-red-700 border border-red-600 rounded-lg shadow-sm hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
+                          >
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            <span>Escalate</span>
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => handleScheduleReview(patient.id)}
+                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                        >
+                          <Calendar className="h-3 w-3 mr-1" />
+                          <span>Schedule Review</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="text-center py-16">
+              <div className="mx-auto w-32 h-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                <Activity className="h-12 w-12 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                No active surveillance patients
+              </h3>
+              <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                No patients match your search criteria. Try adjusting your filters or search terms.
+              </p>
+              <div className="flex items-center justify-center space-x-4">
+                <button
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedFilter('all');
+                  }}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Clear Filters
+                </button>
+                <button
+                  onClick={() => navigate('/urology-nurse/triage')}
+                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Patient to Surveillance
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* PSA Trend Modal */}
+      {showPSATrend && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">PSA Trend Analysis</h3>
+              <button
+                onClick={() => setShowPSATrend(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <BarChart3 className="h-8 w-8 text-blue-600" />
+                <div>
+                  <p className="font-medium text-gray-900">
+                    {mockSurveillancePatients.find(p => p.id === showPSATrend)?.patientName}
+                  </p>
+                  <p className="text-sm text-gray-500">PSA Velocity: {mockSurveillancePatients.find(p => p.id === showPSATrend)?.psaVelocity} ng/mL/year</p>
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm text-gray-600 mb-2">PSA History:</p>
+                <div className="space-y-2">
+                  {mockSurveillancePatients.find(p => p.id === showPSATrend)?.psaHistory.map((entry, index) => (
+                    <div key={index} className="flex justify-between items-center">
+                      <span className="text-sm text-gray-700">{entry.date}</span>
+                      <span className="font-medium text-gray-900">{entry.value} ng/mL</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowPSATrend(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPSATrend(null);
+                    handlePSAEntry(showPSATrend);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-700 rounded-lg hover:opacity-90"
+                >
+                  Add New PSA
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ActiveSurveillance;

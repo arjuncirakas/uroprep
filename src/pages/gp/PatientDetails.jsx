@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigation } from '../../contexts/NavigationContext';
 import { 
   ArrowLeft, 
   Download, 
@@ -23,55 +24,74 @@ import {
   Stethoscope,
   Pill,
   Calendar as CalendarIcon,
-  MapPin
+  MapPin,
+  TestTube,
+  FileX
 } from 'lucide-react';
 
 const PatientDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { getBackPath } = useNavigation();
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Mock patient data - in real app, fetch by ID
+  // Mock patient data - in real app, fetch by ID from NewReferral form data
   const mockPatient = {
     id: 'URP2024001',
     name: 'John Smith',
     dob: '1965-03-15',
     medicare: '1234567890',
     phone: '0412 345 678',
+    email: 'john.smith@email.com',
     address: '123 Main Street, Melbourne VIC 3000',
-    emergencyContact: 'Jane Smith (Wife)',
-    emergencyPhone: '0412 345 679',
     currentStatus: 'Active Surveillance',
     lastPSA: { value: 6.2, date: '2024-01-10' },
-    referrals: [
-      { id: 1, date: '2023-06-15', reason: 'PSA 8.5', status: 'Completed', outcome: 'Active Surveillance' },
-      { id: 2, date: '2024-01-10', reason: 'Routine follow-up', status: 'Active', outcome: null }
-    ],
-    psaHistory: [
-      { value: 8.5, date: '2023-06-15', velocity: null },
-      { value: 7.8, date: '2023-09-20', velocity: -0.23 },
-      { value: 6.2, date: '2024-01-10', velocity: -0.53 }
-    ],
-    appointments: [
-      { date: '2024-04-15', type: 'Follow-up', status: 'Scheduled', location: 'Urology Clinic' },
-      { date: '2024-07-15', type: 'PSA Review', status: 'Scheduled', location: 'Urology Clinic' }
-    ],
+    
+    // Referral Information (from NewReferral form)
+    referralType: 'cpc',
+    cpcCriteria: 'PSA > 4.0 ng/mL',
+    clinicalOverrideReason: '',
+    psaValue: 6.2,
+    psaDate: '2024-01-10',
+    dreFinding: 'normal',
+    familyHistory: true,
+    comorbidities: ['Hypertension', 'Type 2 Diabetes'],
+    
+    // GP Information
+    gpName: 'Dr. Sarah Wilson',
+    providerNumber: '1234567A',
+    clinicName: 'Melbourne Medical Centre',
+    clinicContact: '03 9876 5432',
+    
+    // Clinical History
     clinicalHistory: {
       presentingSymptoms: 'Elevated PSA, urinary frequency',
-      comorbidities: 'Hypertension, Type 2 Diabetes',
       allergies: 'Penicillin',
       currentMedications: ['Metformin 500mg BD', 'Lisinopril 10mg daily', 'Tamsulosin 0.4mg daily'],
       familyHistory: 'Father - Prostate Cancer (age 72), Mother - Breast Cancer (age 68)',
       socialHistory: 'Non-smoker, occasional alcohol, retired engineer'
     },
-    imaging: [
-      { type: 'MRI Prostate', date: '2023-06-20', result: 'PIRADS 3 lesion in left peripheral zone' },
-      { type: 'CT Abdomen/Pelvis', date: '2023-06-25', result: 'No evidence of metastatic disease' }
+    
+    // Referral History
+    referrals: [
+      { id: 1, date: '2023-06-15', reason: 'PSA 8.5', status: 'Completed', outcome: 'Active Surveillance' },
+      { id: 2, date: '2024-01-10', reason: 'Routine follow-up', status: 'Active', outcome: null }
     ],
-    procedures: [
-      { type: 'Prostate Biopsy', date: '2023-07-10', result: 'Gleason 6 (3+3), 2/12 cores positive' },
-      { type: 'Repeat Biopsy', date: '2024-01-15', result: 'Gleason 6 (3+3), 1/12 cores positive' }
+    
+    // PSA History
+    psaHistory: [
+      { value: 8.5, date: '2023-06-15', velocity: null },
+      { value: 7.8, date: '2023-09-20', velocity: -0.23 },
+      { value: 6.2, date: '2024-01-10', velocity: -0.53 }
     ],
+    
+    // Appointments
+    appointments: [
+      { date: '2024-04-15', type: 'Follow-up', status: 'Scheduled', location: 'Urology Clinic' },
+      { date: '2024-07-15', type: 'PSA Review', status: 'Scheduled', location: 'Urology Clinic' }
+    ],
+    
+    // Discharge Summaries
     dischargeSummaries: [
       {
         id: 'DS001',
@@ -93,28 +113,6 @@ const PatientDetails = () => {
         ward: 'Urology Ward 3B',
         dischargeDestination: 'Home',
         readmissionRisk: 'Low',
-        acknowledged: true
-      },
-      {
-        id: 'DS002',
-        dischargeDate: '2023-06-20',
-        admissionDate: '2023-06-20',
-        procedure: 'Active Surveillance - OPD Review',
-        diagnosis: 'Prostate Cancer - Gleason 6 (3+3)',
-        status: 'Discharged to GP',
-        followUpRequired: true,
-        nextAppointment: '2023-12-20',
-        followUpInstructions: '6-month PSA, annual review',
-        medications: ['Continue current medications'],
-        complications: 'None',
-        summary: 'Patient reviewed in OPD. PSA stable at 4.2 ng/mL. No progression on imaging. Continue active surveillance.',
-        psaPreOp: 4.2,
-        psaPostOp: 4.2,
-        surgeon: 'Dr. Michael Chen',
-        anesthetist: 'N/A',
-        ward: 'OPD',
-        dischargeDestination: 'GP Care',
-        readmissionRisk: 'Very Low',
         acknowledged: true
       }
     ]
@@ -166,6 +164,7 @@ const PatientDetails = () => {
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: User },
+    { id: 'referral', name: 'Referral Details', icon: FileText },
     { id: 'clinical', name: 'Clinical History', icon: Stethoscope },
     { id: 'psa', name: 'PSA History', icon: TrendingUp },
     { id: 'appointments', name: 'Appointments', icon: CalendarIcon },
@@ -178,11 +177,11 @@ const PatientDetails = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button
-            onClick={() => navigate('/gp/patient-search')}
+            onClick={() => navigate(getBackPath())}
             className="flex items-center px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Patient Search
+            Back
           </button>
         </div>
         <div className="flex items-center space-x-3">
@@ -259,7 +258,10 @@ const PatientDetails = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="border border-gray-200 rounded-lg p-5">
-                  <h3 className="font-semibold text-gray-900 mb-4 text-base">Patient Information</h3>
+                  <h3 className="font-semibold text-gray-900 mb-4 text-base flex items-center gap-2">
+                    <User className="w-4 h-4 text-gray-600" />
+                    Patient Information
+                  </h3>
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <span className="font-medium text-gray-600">Name:</span>
@@ -284,28 +286,188 @@ const PatientDetails = () => {
                   </div>
                 </div>
                 <div className="border border-gray-200 rounded-lg p-5">
-                  <h3 className="font-semibold text-gray-900 mb-4 text-base">Contact Information</h3>
+                  <h3 className="font-semibold text-gray-900 mb-4 text-base flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-gray-600" />
+                    Contact Information
+                  </h3>
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <span className="font-medium text-gray-600">Phone:</span>
                       <span className="text-gray-900">{mockPatient.phone}</span>
                     </div>
                     <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Email:</span>
+                      <span className="text-gray-900">{mockPatient.email}</span>
+                    </div>
+                    <div className="flex justify-between">
                       <span className="font-medium text-gray-600">Address:</span>
                       <span className="text-gray-900 text-right">{mockPatient.address}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium text-gray-600">Emergency Contact:</span>
-                      <span className="text-gray-900">{mockPatient.emergencyContact}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium text-gray-600">Emergency Phone:</span>
-                      <span className="text-gray-900">{mockPatient.emergencyPhone}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="border border-gray-200 rounded-lg p-5">
+                  <h3 className="font-semibold text-gray-900 mb-4 text-base flex items-center gap-2">
+                    <TestTube className="w-4 h-4 text-gray-600" />
+                    Latest PSA
+                  </h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">PSA Value:</span>
+                      <span className={`text-lg font-semibold ${
+                        mockPatient.lastPSA.value > 10 ? 'text-red-600' : 
+                        mockPatient.lastPSA.value > 4 ? 'text-amber-600' : 
+                        'text-green-600'
+                      }`}>
+                        {mockPatient.lastPSA.value} ng/mL
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Test Date:</span>
+                      <span className="text-gray-900">{formatDate(mockPatient.lastPSA.date)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Status:</span>
+                      <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(mockPatient.currentStatus)}`}>
+                        {mockPatient.currentStatus}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="border border-gray-200 rounded-lg p-5">
+                  <h3 className="font-semibold text-gray-900 mb-4 text-base flex items-center gap-2">
+                    <User className="w-4 h-4 text-gray-600" />
+                    Referring GP
+                  </h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">GP Name:</span>
+                      <span className="text-gray-900">{mockPatient.gpName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Provider Number:</span>
+                      <span className="text-gray-900">{mockPatient.providerNumber}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Clinic:</span>
+                      <span className="text-gray-900">{mockPatient.clinicName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Clinic Contact:</span>
+                      <span className="text-gray-900">{mockPatient.clinicContact}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Referral Details Tab */}
+          {activeTab === 'referral' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="border border-gray-200 rounded-lg p-5">
+                  <h3 className="font-semibold text-gray-900 mb-4 text-base flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-gray-600" />
+                    Referral Type
+                  </h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Type:</span>
+                      <span className="text-gray-900 capitalize">
+                        {mockPatient.referralType === 'cpc' ? 'CPC Criteria' : 'Clinical Override'}
+                      </span>
+                    </div>
+                    {mockPatient.referralType === 'cpc' && (
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-600">CPC Criteria:</span>
+                        <span className="text-gray-900">{mockPatient.cpcCriteria}</span>
+                      </div>
+                    )}
+                    {mockPatient.referralType === 'clinical-override' && mockPatient.clinicalOverrideReason && (
+                      <div>
+                        <span className="font-medium text-gray-600">Override Reason:</span>
+                        <p className="text-gray-900 mt-1">{mockPatient.clinicalOverrideReason}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="border border-gray-200 rounded-lg p-5">
+                  <h3 className="font-semibold text-gray-900 mb-4 text-base flex items-center gap-2">
+                    <TestTube className="w-4 h-4 text-gray-600" />
+                    PSA Details
+                  </h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">PSA Value:</span>
+                      <span className={`text-lg font-semibold ${
+                        mockPatient.psaValue > 10 ? 'text-red-600' : 
+                        mockPatient.psaValue > 4 ? 'text-amber-600' : 
+                        'text-green-600'
+                      }`}>
+                        {mockPatient.psaValue} ng/mL
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Test Date:</span>
+                      <span className="text-gray-900">{formatDate(mockPatient.psaDate)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="border border-gray-200 rounded-lg p-5">
+                  <h3 className="font-semibold text-gray-900 mb-4 text-base flex items-center gap-2">
+                    <Stethoscope className="w-4 h-4 text-gray-600" />
+                    Clinical Context
+                  </h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">DRE Finding:</span>
+                      <span className="text-gray-900 capitalize">{mockPatient.dreFinding}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Family History:</span>
+                      <span className="text-gray-900">{mockPatient.familyHistory ? 'Yes' : 'No'}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-600">Comorbidities:</span>
+                      <div className="mt-1">
+                        {mockPatient.comorbidities.map((comorbidity, index) => (
+                          <span key={index} className="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full mr-2 mb-1">
+                            {comorbidity}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="border border-gray-200 rounded-lg p-5">
+                  <h3 className="font-semibold text-gray-900 mb-4 text-base flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-gray-600" />
+                    Referral Timeline
+                  </h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Total Referrals:</span>
+                      <span className="text-gray-900">{mockPatient.referrals.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Latest Referral:</span>
+                      <span className="text-gray-900">{formatDate(mockPatient.referrals[mockPatient.referrals.length - 1]?.date)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Current Status:</span>
+                      <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(mockPatient.currentStatus)}`}>
+                        {mockPatient.currentStatus}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

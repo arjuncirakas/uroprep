@@ -1,894 +1,747 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Upload, Save, ArrowLeft, AlertTriangle, CheckCircle, Info, Send, FileText } from 'lucide-react';
+import React, { useState, useEffect } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
+import { Save, Send, Printer, User, TestTube, Stethoscope, FileText } from 'lucide-react'
 
 const NewReferral = () => {
-  const navigate = useNavigate();
+  const dispatch = useDispatch()
+  const { user } = useSelector((state) => state.auth)
+  
+  // Form state
   const [formData, setFormData] = useState({
     // Patient Information
     patientName: '',
     dateOfBirth: '',
-    phoneNumber: '',
     medicareNumber: '',
+    contactNumber: '',
+    email: '',
     address: '',
-    emergencyContact: '',
-    emergencyPhone: '',
-    mrn: '',
+    idProof: null,
+    insuranceInfo: null,
     
-    // Referring Clinician Information
-    referringClinician: '',
-    providerNumber: '',
-    practiceName: '',
-    practicePhone: '',
+    // Referral Type
+    referralType: 'cpc', // 'cpc' or 'clinical-override'
+    cpcCriteria: '',
+    clinicalOverrideReason: '',
     
-    // Clinical Information
+    // PSA Details
     psaValue: '',
     psaDate: '',
-    previousPsa: '',
-    dreFindings: '',
-    comorbidities: '',
-    currentMedications: '',
-    symptoms: '',
+    labReport: null,
     
-    // Risk Factors
-    isAboriginalTorresStraitIslander: false,
-    familyHistoryProstateCancer: false,
-    familyHistoryBreastCancer: false,
+    // Clinical Context
+    dreFinding: '',
+    familyHistory: false,
+    comorbidities: [],
+    imaging: null,
     
-    // CPC Criteria
-    cpcCompliant: false,
-    clinicalOverride: false,
-    overrideJustification: '',
-    
-    // Prior Imaging
-    priorImaging: {
-      mri: false,
-      ct: false,
-      ultrasound: false,
-      boneScan: false
-    },
-    
-    triagePriority: 'Routine'
-  });
+    // GP Details (auto-filled)
+    gpName: user?.name || '',
+    providerNumber: user?.providerNumber || '',
+    clinicName: user?.clinicName || '',
+    clinicContact: user?.clinicContact || ''
+  })
 
-  const [files, setFiles] = useState([]);
-  const [validationErrors, setValidationErrors] = useState({});
-  const [cpcStatus, setCpcStatus] = useState({});
-  const [upi, setUpi] = useState('');
+  const [errors, setErrors] = useState({})
+  const [isDraft, setIsDraft] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Generate UPI on component mount
+  // CPC Criteria options
+  const cpcCriteriaOptions = [
+    'PSA > 3.0 ng/mL',
+    'PSA > 4.0 ng/mL',
+    'Abnormal DRE',
+    'Family history of prostate cancer',
+    'Rising PSA trend',
+    'PSA velocity > 0.35 ng/mL/year',
+    'Age-specific PSA elevation',
+    'Previous negative biopsy with persistent elevation'
+  ]
+
+  // Comorbidity options
+  const comorbidityOptions = [
+    'Diabetes',
+    'Hypertension',
+    'Cardiovascular disease',
+    'Obesity',
+    'Previous cancer',
+    'Chronic kidney disease',
+    'Liver disease',
+    'Immunocompromised',
+    'Other'
+  ]
+
+  // Auto-save functionality
   useEffect(() => {
-    const currentYear = new Date().getFullYear();
-    const randomNum = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
-    setUpi(`URP${currentYear}${randomNum}`);
-  }, []);
+    const timer = setTimeout(() => {
+      if (isDraft) {
+        saveDraft()
+      }
+    }, 2000) // Auto-save after 2 seconds of inactivity
 
-  // CPC Criteria Validation
-  const validateCPCCriteria = () => {
-    const age = calculateAge(formData.dateOfBirth);
-    const psaValue = parseFloat(formData.psaValue);
+    return () => clearTimeout(timer)
+  }, [formData, isDraft])
+
+  // Load draft on component mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem('referralDraft')
+    if (savedDraft) {
+      setFormData(JSON.parse(savedDraft))
+      setIsDraft(true)
+    }
+  }, [])
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+    setIsDraft(true)
     
-    let criteria = {
-      psaCriteria: false,
-      ageCriteria: false,
-      riskFactorCriteria: false,
-      clinicalCriteria: false,
-      isCompliant: false
-    };
-
-    // PSA Criteria
-    if (psaValue >= 4.0 && age >= 50 && age <= 69) {
-      criteria.psaCriteria = true;
-    } else if (psaValue >= 2.0 && (formData.isAboriginalTorresStraitIslander || formData.familyHistoryProstateCancer)) {
-      criteria.psaCriteria = true;
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }))
     }
+  }
 
-    // Age Criteria
-    criteria.ageCriteria = age >= 40 && age <= 80;
+  const handleFileUpload = (field, file) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: file
+    }))
+    setIsDraft(true)
+  }
 
-    // Risk Factor Criteria
-    criteria.riskFactorCriteria = formData.familyHistoryProstateCancer || 
-                                 formData.familyHistoryBreastCancer || 
-                                 formData.isAboriginalTorresStraitIslander;
+  const handleComorbidityChange = (comorbidity) => {
+    setFormData(prev => ({
+      ...prev,
+      comorbidities: prev.comorbidities.includes(comorbidity)
+        ? prev.comorbidities.filter(c => c !== comorbidity)
+        : [...prev.comorbidities, comorbidity]
+    }))
+    setIsDraft(true)
+  }
 
-    // Clinical Criteria (DRE findings, symptoms)
-    criteria.clinicalCriteria = formData.dreFindings !== '' || formData.symptoms !== '';
-
-    // Overall compliance
-    criteria.isCompliant = criteria.psaCriteria || criteria.clinicalCriteria;
-
-    setCpcStatus(criteria);
-    return criteria;
-  };
-
-  // Calculate age from date of birth
-  const calculateAge = (dateOfBirth) => {
-    if (!dateOfBirth) return 0;
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
-  // Auto-triage based on clinical parameters
-  const determineTriagePriority = () => {
-    const psaValue = parseFloat(formData.psaValue);
-    const age = calculateAge(formData.dateOfBirth);
-    
-    if (psaValue > 100) {
-      return 'URGENT';
-    } else if (psaValue > 20 || (age > 75 && formData.comorbidities)) {
-      return 'High';
-    } else if (psaValue > 4 || formData.dreFindings.toLowerCase().includes('abnormal')) {
-      return 'Medium';
-    } else {
-      return 'Routine';
-    }
-  };
-
-  // Validate form data
   const validateForm = () => {
-    const errors = {};
-    const age = calculateAge(formData.dateOfBirth);
-    const psaValue = parseFloat(formData.psaValue);
-
-    // Required fields validation
-    if (!formData.patientName) errors.patientName = 'Patient name is required';
-    if (!formData.dateOfBirth) errors.dateOfBirth = 'Date of birth is required';
-    if (!formData.medicareNumber) errors.medicareNumber = 'Medicare number is required';
-    if (!formData.psaValue) errors.psaValue = 'PSA value is required';
-    if (!formData.psaDate) errors.psaDate = 'PSA test date is required';
-    if (!formData.dreFindings) errors.dreFindings = 'DRE findings are mandatory';
-    if (!formData.referringClinician) errors.referringClinician = 'Referring clinician is required';
-    if (!formData.providerNumber) errors.providerNumber = 'Provider number is required';
-    if (!formData.symptoms) errors.symptoms = 'Clinical symptoms/indication is required';
-
-    // Clinical validation
-    if (psaValue > 100) {
-      // Auto-flag as urgent - no error, just notification
-    }
-    if (age < 40 || age > 80) {
-      errors.ageOverride = 'Age outside standard range - clinical override required';
-    }
-    if (!formData.medicareNumber || formData.medicareNumber.length < 10) {
-      errors.medicareNumber = 'Valid Medicare number required for patient eligibility';
-    }
-
-    // CPC Compliance check
-    const cpcValidation = validateCPCCriteria();
-    if (!cpcValidation.isCompliant && !formData.clinicalOverride) {
-      errors.cpcCompliance = 'Referral does not meet CPC criteria. Clinical override justification required.';
-    }
-    if (formData.clinicalOverride && !formData.overrideJustification) {
-      errors.overrideJustification = 'Clinical override justification is required';
-    }
-
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const newErrors = {}
     
-    if (name.startsWith('priorImaging.')) {
-      const imagingType = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        priorImaging: {
-          ...prev.priorImaging,
-          [imagingType]: checked
-        }
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: type === 'checkbox' ? checked : value
-      }));
+    // Patient Information validation
+    if (!formData.patientName.trim()) newErrors.patientName = 'Patient name is required'
+    if (!formData.dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required'
+    if (!formData.medicareNumber.trim()) newErrors.medicareNumber = 'Medicare number is required'
+    if (!formData.contactNumber.trim()) newErrors.contactNumber = 'Contact number is required'
+    
+    // Referral Type validation
+    if (formData.referralType === 'cpc' && !formData.cpcCriteria) {
+      newErrors.cpcCriteria = 'CPC criteria is required'
     }
-  };
+    if (formData.referralType === 'clinical-override' && !formData.clinicalOverrideReason.trim()) {
+      newErrors.clinicalOverrideReason = 'Clinical override reason is required'
+    }
+    
+    // PSA Details validation
+    if (!formData.psaValue) newErrors.psaValue = 'PSA value is required'
+    if (!formData.psaDate) newErrors.psaDate = 'PSA test date is required'
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
-  const handleFileUpload = (e) => {
-    const newFiles = Array.from(e.target.files);
-    setFiles(prev => [...prev, ...newFiles]);
-  };
+  const saveDraft = () => {
+    localStorage.setItem('referralDraft', JSON.stringify(formData))
+    setIsDraft(true)
+  }
 
-  const removeFile = (index) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
-  };
+  const clearDraft = () => {
+    localStorage.removeItem('referralDraft')
+    setIsDraft(false)
+    setFormData({
+      patientName: '',
+      dateOfBirth: '',
+      medicareNumber: '',
+      contactNumber: '',
+      email: '',
+      address: '',
+      idProof: null,
+      insuranceInfo: null,
+      referralType: 'cpc',
+      cpcCriteria: '',
+      clinicalOverrideReason: '',
+      psaValue: '',
+      psaDate: '',
+      labReport: null,
+      dreFinding: '',
+      familyHistory: false,
+      comorbidities: [],
+      imaging: null,
+      gpName: user?.name || '',
+      providerNumber: user?.providerNumber || '',
+      clinicName: user?.clinicName || '',
+      clinicContact: user?.clinicContact || ''
+    })
+  }
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault()
     
     if (!validateForm()) {
-      alert('Please correct the validation errors before submitting.');
-      return;
+      return
     }
 
-    // Auto-determine triage priority
-    const triagePriority = determineTriagePriority();
+    setIsSubmitting(true)
     
-    const submissionData = {
-      ...formData,
-      upi: upi,
-      triagePriority: triagePriority,
-      submissionTimestamp: new Date().toISOString(),
-      cpcValidation: cpcStatus,
-      files: files
-    };
+    try {
+      // Generate patient ID
+      const patientId = `PAT-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`
+      
+      const referralData = {
+        ...formData,
+        patientId,
+        status: 'In Urology Queue',
+        submittedAt: new Date().toISOString(),
+        submittedBy: user.id
+      }
 
-    console.log('Submitting referral:', submissionData);
-    
-    // TODO: Submit to backend API
-    alert(`Referral submitted successfully!\nUPI: ${upi}\nTriage Priority: ${triagePriority}`);
-  };
-
-  // Real-time validation on field changes
-  useEffect(() => {
-    if (formData.psaValue || formData.dateOfBirth) {
-      validateCPCCriteria();
+      // Submit referral (API call would go here)
+      console.log('Submitting referral:', referralData)
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Clear draft and reset form
+      clearDraft()
+      
+      // Show success message
+      alert('Referral submitted successfully! Patient ID: ' + patientId)
+      
+    } catch (error) {
+      console.error('Error submitting referral:', error)
+      alert('Error submitting referral. Please try again.')
+    } finally {
+      setIsSubmitting(false)
     }
-  }, [formData.psaValue, formData.dateOfBirth, formData.isAboriginalTorresStraitIslander, formData.familyHistoryProstateCancer]);
+  }
+
+  const handlePrintConfirmation = () => {
+    // Generate confirmation PDF (would integrate with PDF generation library)
+    window.print()
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button 
-              onClick={() => navigate('/gp/dashboard')}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">New Referral</h1>
-              <p className="text-sm text-gray-600 mt-1">Create a new urology referral with clinical assessment</p>
+    <div className="min-h-screen bg-white py-8">
+      <div className=" mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">New Referral</h1>
+          <p className="text-gray-600">CPC or Clinical Override Entry</p>
+          {isDraft && (
+            <div className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 mt-3">
+              <Save className="w-4 h-4 mr-1.5" />
+              Draft saved automatically
             </div>
-          </div>
-          <div className="bg-gradient-to-r from-green-50 to-gray-50 border border-green-200 rounded-xl p-3">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <Info className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-semibold text-green-900">UPI: {upi}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* CPC Criteria Status */}
-      {(formData.psaValue || formData.dateOfBirth) && (
-        <div className={`border rounded-xl p-4 ${
-          cpcStatus.isCompliant ? 'bg-gradient-to-r from-green-50 to-gray-50 border-green-200' : 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200'
-        }`}>
-          <div className="flex items-center space-x-3">
-            {cpcStatus.isCompliant ? (
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              </div>
-            ) : (
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <AlertTriangle className="h-5 w-5 text-yellow-600" />
-              </div>
-            )}
-            <div>
-              <span className={`text-base font-semibold ${
-                cpcStatus.isCompliant ? 'text-green-900' : 'text-yellow-900'
-              }`}>
-                CPC Criteria Status: {cpcStatus.isCompliant ? 'COMPLIANT' : 'REQUIRES CLINICAL OVERRIDE'}
-              </span>
-              {!cpcStatus.isCompliant && (
-                <p className="text-sm text-yellow-800 mt-1">
-                  Referral does not meet standard CPC criteria. Clinical override justification required.
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Urgent PSA Alert */}
-      {parseFloat(formData.psaValue) > 100 && (
-        <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-xl p-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
-            </div>
-            <div>
-              <span className="text-base font-semibold text-red-900">URGENT: PSA &gt; 100 ng/mL</span>
-              <p className="text-sm text-red-800 mt-1">
-                Immediate urologist notification triggered. Patient requires urgent assessment.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Referring Clinician Information */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4 rounded-t-xl">
-            <h2 className="text-lg font-semibold text-gray-900">Referring Clinician Information</h2>
-            <p className="text-sm text-gray-600 mt-1">Primary care provider details and practice information</p>
-          </div>
-          
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Referring Clinician Name *</label>
-                <input
-                  type="text"
-                  name="referringClinician"
-                  value={formData.referringClinician}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${
-                    validationErrors.referringClinician ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                  placeholder="Dr. John Smith"
-                  required
-                />
-                {validationErrors.referringClinician && (
-                  <p className="text-red-600 text-sm mt-2 flex items-center">
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    {validationErrors.referringClinician}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Provider Number *</label>
-                <input
-                  type="text"
-                  name="providerNumber"
-                  value={formData.providerNumber}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${
-                    validationErrors.providerNumber ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                  placeholder="1234567A"
-                  required
-                />
-                {validationErrors.providerNumber && (
-                  <p className="text-red-600 text-sm mt-2 flex items-center">
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    {validationErrors.providerNumber}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Practice Name</label>
-                <input
-                  type="text"
-                  name="practiceName"
-                  value={formData.practiceName}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-                  placeholder="City Medical Centre"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Practice Phone</label>
-                <input
-                  type="tel"
-                  name="practicePhone"
-                  value={formData.practicePhone}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-                  placeholder="(02) 1234 5678"
-                />
-              </div>
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* Patient Information */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4 rounded-t-xl">
-            <h2 className="text-lg font-semibold text-gray-900">Patient Demographics</h2>
-            <p className="text-sm text-gray-600 mt-1">Patient identification and contact information</p>
-          </div>
-          
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Patient Name *</label>
-                <input
-                  type="text"
-                  name="patientName"
-                  value={formData.patientName}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${
-                    validationErrors.patientName ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                  placeholder="John Smith"
-                  required
-                />
-                {validationErrors.patientName && (
-                  <p className="text-red-600 text-sm mt-2 flex items-center">
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    {validationErrors.patientName}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth *</label>
-                <input
-                  type="date"
-                  name="dateOfBirth"
-                  value={formData.dateOfBirth}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${
-                    validationErrors.dateOfBirth ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                  required
-                />
-                {validationErrors.dateOfBirth && (
-                  <p className="text-red-600 text-sm mt-2 flex items-center">
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    {validationErrors.dateOfBirth}
-                  </p>
-                )}
-                {validationErrors.ageOverride && (
-                  <p className="text-yellow-600 text-sm mt-2 flex items-center">
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    {validationErrors.ageOverride}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Medicare Number *</label>
-                <input
-                  type="text"
-                  name="medicareNumber"
-                  value={formData.medicareNumber}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${
-                    validationErrors.medicareNumber ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                  placeholder="1234567890"
-                  required
-                />
-                {validationErrors.medicareNumber && (
-                  <p className="text-red-600 text-sm mt-2 flex items-center">
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    {validationErrors.medicareNumber}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
-                <input
-                  type="tel"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-                  placeholder="(02) 1234 5678"
-                  required
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-                  placeholder="123 Main Street, Suburb, State 2000"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">MRN (if existing patient)</label>
-                <input
-                  type="text"
-                  name="mrn"
-                  value={formData.mrn}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-                  placeholder="Leave blank for new patient"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact</label>
-                <input
-                  type="text"
-                  name="emergencyContact"
-                  value={formData.emergencyContact}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-                  placeholder="Jane Smith (Spouse)"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Phone</label>
-                <input
-                  type="tel"
-                  name="emergencyPhone"
-                  value={formData.emergencyPhone}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-                  placeholder="(02) 9876 5432"
-                />
-              </div>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Patient Information Section */}
+          <div className="bg-white border border-gray-200 rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2.5">
+                <User className="w-5 h-5 text-gray-600" />
+                Patient Information
+                <span className="text-red-500 text-sm">*</span>
+              </h2>
             </div>
-          </div>
-        </div>
-
-        {/* Clinical Information */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4 rounded-t-xl">
-            <h2 className="text-lg font-semibold text-gray-900">Clinical Assessment</h2>
-            <p className="text-sm text-gray-600 mt-1">PSA values, examination findings, and clinical indicators</p>
-          </div>
-          
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Current PSA Value (ng/mL) *</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  name="psaValue"
-                  value={formData.psaValue}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${
-                    validationErrors.psaValue ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                  placeholder="4.5"
-                  required
-                />
-                {validationErrors.psaValue && (
-                  <p className="text-red-600 text-sm mt-2 flex items-center">
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    {validationErrors.psaValue}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">PSA Test Date *</label>
-                <input
-                  type="date"
-                  name="psaDate"
-                  value={formData.psaDate}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${
-                    validationErrors.psaDate ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                  required
-                />
-                {validationErrors.psaDate && (
-                  <p className="text-red-600 text-sm mt-2 flex items-center">
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    {validationErrors.psaDate}
-                  </p>
-                )}
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Previous PSA Values (if available)</label>
-                <textarea
-                  name="previousPsa"
-                  value={formData.previousPsa}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-                  placeholder="e.g., 2.5 (2023-06-15), 3.1 (2023-12-10)"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">DRE Findings *</label>
-                <select
-                  name="dreFindings"
-                  value={formData.dreFindings}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${
-                    validationErrors.dreFindings ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                  required
-                >
-                  <option value="">Select DRE findings</option>
-                  <option value="normal">Normal</option>
-                  <option value="abnormal_smooth_enlargement">Abnormal - Smooth enlargement</option>
-                  <option value="abnormal_irregular">Abnormal - Irregular/nodular</option>
-                  <option value="abnormal_hard">Abnormal - Hard/indurated</option>
-                  <option value="unable_to_assess">Unable to assess</option>
-                </select>
-                {validationErrors.dreFindings && (
-                  <p className="text-red-600 text-sm mt-2 flex items-center">
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    {validationErrors.dreFindings}
-                  </p>
-                )}
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Clinical Symptoms/Indication *</label>
-                <textarea
-                  name="symptoms"
-                  value={formData.symptoms}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${
-                    validationErrors.symptoms ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                  placeholder="Describe patient's symptoms, LUTS, bone pain, weight loss, or other clinical findings..."
-                  required
-                />
-                {validationErrors.symptoms && (
-                  <p className="text-red-600 text-sm mt-2 flex items-center">
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    {validationErrors.symptoms}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Risk Factors */}
-            <div className="mt-6">
-              <h3 className="text-base font-semibold text-gray-900 mb-3">Risk Factors</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <label className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="isAboriginalTorresStraitIslander"
-                    checked={formData.isAboriginalTorresStraitIslander}
-                    onChange={handleInputChange}
-                    className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-3 text-sm font-medium text-gray-700">Aboriginal/Torres Strait Islander</span>
-                </label>
-                <label className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="familyHistoryProstateCancer"
-                    checked={formData.familyHistoryProstateCancer}
-                    onChange={handleInputChange}
-                    className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-3 text-sm font-medium text-gray-700">Family History - Prostate Cancer</span>
-                </label>
-                <label className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="familyHistoryBreastCancer"
-                    checked={formData.familyHistoryBreastCancer}
-                    onChange={handleInputChange}
-                    className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-3 text-sm font-medium text-gray-700">Family History - Breast Cancer</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Medical History */}
-            <div className="mt-6">
-              <h3 className="text-base font-semibold text-gray-900 mb-3">Medical History</h3>
+            <div className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Comorbidities</label>
-                  <textarea
-                    name="comorbidities"
-                    value={formData.comorbidities}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-                    placeholder="Diabetes, cardiovascular disease, previous cancers, etc."
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Current Medications</label>
-                  <textarea
-                    name="currentMedications"
-                    value={formData.currentMedications}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-                    placeholder="Anticoagulants, 5-ARI inhibitors, other medications..."
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Prior Imaging */}
-            <div className="mt-6">
-              <h3 className="text-base font-semibold text-gray-900 mb-3">Prior Imaging</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Object.entries(formData.priorImaging).map(([type, checked]) => (
-                  <label key={type} className="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name={`priorImaging.${type}`}
-                      checked={checked}
-                      onChange={handleInputChange}
-                      className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-3 text-sm font-medium text-gray-700 capitalize">{type.toUpperCase()}</span>
+                <div className="space-y-2">
+                  <label htmlFor="patientName" className="block text-sm font-medium text-gray-700">
+                    Patient Name <span className="text-red-500">*</span>
                   </label>
-                ))}
+                  <input
+                    id="patientName"
+                    type="text"
+                    value={formData.patientName}
+                    onChange={(e) => handleInputChange('patientName', e.target.value)}
+                    className={`w-full px-3 py-2.5 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                      errors.patientName ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter full name"
+                  />
+                  {errors.patientName && (
+                    <p className="text-red-500 text-xs mt-1">{errors.patientName}</p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700">
+                    Date of Birth <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="dateOfBirth"
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                    className={`w-full px-3 py-2.5 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                      errors.dateOfBirth ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
+                  />
+                  {errors.dateOfBirth && (
+                    <p className="text-red-500 text-xs mt-1">{errors.dateOfBirth}</p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="medicareNumber" className="block text-sm font-medium text-gray-700">
+                    Medicare Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="medicareNumber"
+                    type="text"
+                    value={formData.medicareNumber}
+                    onChange={(e) => handleInputChange('medicareNumber', e.target.value)}
+                    className={`w-full px-3 py-2.5 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                      errors.medicareNumber ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter Medicare number"
+                  />
+                  {errors.medicareNumber && (
+                    <p className="text-red-500 text-xs mt-1">{errors.medicareNumber}</p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="contactNumber" className="block text-sm font-medium text-gray-700">
+                    Contact Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="contactNumber"
+                    type="tel"
+                    value={formData.contactNumber}
+                    onChange={(e) => handleInputChange('contactNumber', e.target.value)}
+                    className={`w-full px-3 py-2.5 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                      errors.contactNumber ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter phone number"
+                  />
+                  {errors.contactNumber && (
+                    <p className="text-red-500 text-xs mt-1">{errors.contactNumber}</p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                    Email Address
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    placeholder="Enter email address"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+                    Address
+                  </label>
+                  <textarea
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                    placeholder="Enter full address"
+                    rows={3}
+                  />
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* CPC Criteria Compliance */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4 rounded-t-xl">
-            <h2 className="text-lg font-semibold text-gray-900">CPC Criteria Compliance</h2>
-            <p className="text-sm text-gray-600 mt-1">Clinical Practice Committee referral criteria validation</p>
-          </div>
-          
-          <div className="p-6">
-            {/* Clinical Override Section */}
-            <div className="mb-6">
-              <label className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="clinicalOverride"
-                  checked={formData.clinicalOverride}
-                  onChange={handleInputChange}
-                  className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                />
-                <span className="ml-3 text-sm font-semibold text-gray-700">Clinical Override (referral outside CPC criteria)</span>
-              </label>
-              {validationErrors.cpcCompliance && (
-                <p className="text-red-600 text-sm mt-3 flex items-center">
-                  <AlertTriangle className="h-4 w-4 mr-1" />
-                  {validationErrors.cpcCompliance}
-                </p>
-              )}
-            </div>
-
-            {formData.clinicalOverride && (
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Clinical Override Justification *</label>
-                <textarea
-                  name="overrideJustification"
-                  value={formData.overrideJustification}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${
-                    validationErrors.overrideJustification ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                  placeholder="Provide detailed clinical justification for referral outside standard CPC criteria..."
-                  required
-                />
-                {validationErrors.overrideJustification && (
-                  <p className="text-red-600 text-sm mt-2 flex items-center">
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    {validationErrors.overrideJustification}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* CPC Criteria Summary */}
-            <div className="bg-gradient-to-r from-green-50 to-gray-50 border border-green-200 rounded-xl p-4">
-              <h3 className="text-base font-semibold text-gray-900 mb-3">CPC Criteria Summary:</h3>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700">PSA ≥4.0 ng/mL for men aged 50-69</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700">PSA ≥2.0 ng/mL for high-risk men</span>
-                  </div>
+                  <label htmlFor="idProof" className="block text-sm font-medium text-gray-700">
+                    ID Proof (Optional)
+                  </label>
+                  <input
+                    id="idProof"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => handleFileUpload('idProof', e.target.files[0])}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors file:mr-3 file:py-1 file:px-3 file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
+                  />
                 </div>
+                
                 <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700">Abnormal DRE findings</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700">Clinical symptoms (LUTS, bone pain, weight loss)</span>
-                  </div>
+                  <label htmlFor="insuranceInfo" className="block text-sm font-medium text-gray-700">
+                    Insurance Information (Optional)
+                  </label>
+                  <input
+                    id="insuranceInfo"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => handleFileUpload('insuranceInfo', e.target.files[0])}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors file:mr-3 file:py-1 file:px-3 file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
+                  />
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* File Upload */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4 rounded-t-xl">
-            <h2 className="text-lg font-semibold text-gray-900">Attach Documents</h2>
-            <p className="text-sm text-gray-600 mt-1">Upload supporting clinical documents and reports</p>
-          </div>
-          
-          <div className="p-6">
-            <div className="space-y-6">
-              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-green-400 hover:bg-green-50 transition-all duration-200">
-                <div className="flex flex-col items-center">
-                  <div className="p-3 bg-gray-100 rounded-full mb-3">
-                    <Upload className="h-6 w-6 text-gray-400" />
-                  </div>
-                  <div>
-                    <label htmlFor="file-upload" className="cursor-pointer">
-                      <span className="block text-base font-semibold text-gray-900 mb-2">
-                        Upload PSA results, imaging reports, or other documents
-                      </span>
-                      <input
-                        id="file-upload"
-                        type="file"
-                        multiple
-                        onChange={handleFileUpload}
-                        className="sr-only"
-                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                      />
-                    </label>
-                    <p className="text-sm text-gray-500">PDF, JPG, PNG, DOC up to 10MB each</p>
-                  </div>
+          {/* Referral Type Section */}
+          <div className="bg-white border border-gray-200 rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2.5">
+                <FileText className="w-5 h-5 text-gray-600" />
+                Referral Type
+                <span className="text-red-500 text-sm">*</span>
+              </h2>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">Select Referral Type</label>
+                <div className="flex gap-6">
+                  <label className="flex items-center space-x-2.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="cpc"
+                      checked={formData.referralType === 'cpc'}
+                      onChange={(e) => handleInputChange('referralType', e.target.value)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                    />
+                    <span className="text-sm text-gray-700">CPC Criteria</span>
+                  </label>
+                  <label className="flex items-center space-x-2.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="clinical-override"
+                      checked={formData.referralType === 'clinical-override'}
+                      onChange={(e) => handleInputChange('referralType', e.target.value)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                    />
+                    <span className="text-sm text-gray-700">Clinical Override</span>
+                  </label>
                 </div>
               </div>
-
-              {/* Uploaded Files */}
-              {files.length > 0 && (
+              
+              {formData.referralType === 'cpc' && (
                 <div className="space-y-2">
-                  <h3 className="text-base font-semibold text-gray-900">Uploaded Files:</h3>
-                  <div className="space-y-2">
-                    {files.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-gray-50 border border-green-200 rounded-xl">
-                        <div className="flex items-center space-x-3">
-                          <div className="p-2 bg-green-100 rounded-lg">
-                            <FileText className="h-5 w-5 text-green-600" />
-                          </div>
-                          <span className="text-sm font-medium text-gray-700">{file.name}</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeFile(index)}
-                          className="px-3 py-1 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          Remove
-                        </button>
-                      </div>
+                  <label htmlFor="cpcCriteria" className="block text-sm font-medium text-gray-700">
+                    CPC Criteria <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="cpcCriteria"
+                    value={formData.cpcCriteria}
+                    onChange={(e) => handleInputChange('cpcCriteria', e.target.value)}
+                    className={`w-full px-3 py-2.5 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                      errors.cpcCriteria ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">Select CPC criteria</option>
+                    {cpcCriteriaOptions.map((criteria) => (
+                      <option key={criteria} value={criteria}>
+                        {criteria}
+                      </option>
                     ))}
-                  </div>
+                  </select>
+                  {errors.cpcCriteria && (
+                    <p className="text-red-500 text-xs mt-1">{errors.cpcCriteria}</p>
+                  )}
+                </div>
+              )}
+              
+              {formData.referralType === 'clinical-override' && (
+                <div className="space-y-2">
+                  <label htmlFor="clinicalOverrideReason" className="block text-sm font-medium text-gray-700">
+                    Clinical Override Reason <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    id="clinicalOverrideReason"
+                    value={formData.clinicalOverrideReason}
+                    onChange={(e) => handleInputChange('clinicalOverrideReason', e.target.value)}
+                    className={`w-full px-3 py-2.5 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none ${
+                      errors.clinicalOverrideReason ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
+                    placeholder="Provide detailed clinical reasoning for override"
+                    rows={4}
+                  />
+                  {errors.clinicalOverrideReason && (
+                    <p className="text-red-500 text-xs mt-1">{errors.clinicalOverrideReason}</p>
+                  )}
                 </div>
               )}
             </div>
           </div>
-        </div>
 
-        {/* Submit Button */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <p className="text-sm font-medium text-gray-700">
-                  Referral will be automatically assigned UPI: <span className="font-mono font-semibold text-green-600">{upi}</span>
-                </p>
-              </div>
-              <p className="text-sm text-gray-600">
-                System will auto-determine triage priority based on clinical parameters
-              </p>
+          {/* PSA Details Section */}
+          <div className="bg-white border border-gray-200 rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2.5">
+                <TestTube className="w-5 h-5 text-gray-600" />
+                PSA Details (Initial Test)
+                <span className="text-red-500 text-sm">*</span>
+              </h2>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <button
-                type="button"
-                className="flex items-center justify-center px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save Draft
-              </button>
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label htmlFor="psaValue" className="block text-sm font-medium text-gray-700">
+                    PSA Value (ng/mL) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="psaValue"
+                    type="number"
+                    step="0.01"
+                    value={formData.psaValue}
+                    onChange={(e) => handleInputChange('psaValue', e.target.value)}
+                    className={`w-full px-3 py-2.5 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                      errors.psaValue ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
+                    placeholder="e.g., 4.5"
+                  />
+                  {errors.psaValue && (
+                    <p className="text-red-500 text-xs mt-1">{errors.psaValue}</p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="psaDate" className="block text-sm font-medium text-gray-700">
+                    Date of Test <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="psaDate"
+                    type="date"
+                    value={formData.psaDate}
+                    onChange={(e) => handleInputChange('psaDate', e.target.value)}
+                    className={`w-full px-3 py-2.5 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                      errors.psaDate ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
+                  />
+                  {errors.psaDate && (
+                    <p className="text-red-500 text-xs mt-1">{errors.psaDate}</p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="labReport" className="block text-sm font-medium text-gray-700">
+                  Upload Lab Report (PDF or Image)
+                </label>
+                <input
+                  id="labReport"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => handleFileUpload('labReport', e.target.files[0])}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors file:mr-3 file:py-1 file:px-3 file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Clinical Context Section */}
+          <div className="bg-white border border-gray-200 rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2.5">
+                <Stethoscope className="w-5 h-5 text-gray-600" />
+                Clinical Context (Optional)
+              </h2>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label htmlFor="dreFinding" className="block text-sm font-medium text-gray-700">
+                    DRE Finding
+                  </label>
+                  <select
+                    id="dreFinding"
+                    value={formData.dreFinding}
+                    onChange={(e) => handleInputChange('dreFinding', e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  >
+                    <option value="">Select DRE finding</option>
+                    <option value="normal">Normal</option>
+                    <option value="abnormal">Abnormal</option>
+                    <option value="not-done">Not Done</option>
+                  </select>
+                </div>
+                
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Family History of Prostate Cancer
+                  </label>
+                  <div className="flex gap-6">
+                    <label className="flex items-center space-x-2.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="yes"
+                        checked={formData.familyHistory === true}
+                        onChange={(e) => handleInputChange('familyHistory', e.target.value === 'yes')}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      />
+                      <span className="text-sm text-gray-700">Yes</span>
+                    </label>
+                    <label className="flex items-center space-x-2.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="no"
+                        checked={formData.familyHistory === false}
+                        onChange={(e) => handleInputChange('familyHistory', e.target.value !== 'yes')}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      />
+                      <span className="text-sm text-gray-700">No</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">Co-morbidities</label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3">
+                  {comorbidityOptions.map((comorbidity) => (
+                    <label key={comorbidity} className="flex items-center space-x-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.comorbidities.includes(comorbidity)}
+                        onChange={() => handleComorbidityChange(comorbidity)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="text-sm text-gray-700">{comorbidity}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="imaging" className="block text-sm font-medium text-gray-700">
+                  Upload Imaging (MRI/US if available)
+                </label>
+                <input
+                  id="imaging"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.dcm"
+                  onChange={(e) => handleFileUpload('imaging', e.target.files[0])}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors file:mr-3 file:py-1 file:px-3 file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* GP Details Section */}
+          <div className="bg-white border border-gray-200 rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2.5">
+                <User className="w-5 h-5 text-gray-600" />
+                Referring GP Details
+                <span className="text-xs text-gray-500 font-normal">(Auto-filled from GP Profile)</span>
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label htmlFor="gpName" className="block text-sm font-medium text-gray-700">
+                    GP Name
+                  </label>
+                  <input
+                    id="gpName"
+                    type="text"
+                    value={formData.gpName}
+                    readOnly
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-md text-sm bg-gray-50 text-gray-600 cursor-not-allowed"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="providerNumber" className="block text-sm font-medium text-gray-700">
+                    Provider Number
+                  </label>
+                  <input
+                    id="providerNumber"
+                    type="text"
+                    value={formData.providerNumber}
+                    readOnly
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-md text-sm bg-gray-50 text-gray-600 cursor-not-allowed"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="clinicName" className="block text-sm font-medium text-gray-700">
+                    Clinic Name
+                  </label>
+                  <input
+                    id="clinicName"
+                    type="text"
+                    value={formData.clinicName}
+                    readOnly
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-md text-sm bg-gray-50 text-gray-600 cursor-not-allowed"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="clinicContact" className="block text-sm font-medium text-gray-700">
+                    Clinic Contact Number
+                  </label>
+                  <input
+                    id="clinicContact"
+                    type="text"
+                    value={formData.clinicContact}
+                    readOnly
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-md text-sm bg-gray-50 text-gray-600 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
+              <div className="flex gap-3 order-2 sm:order-1">
+                <button
+                  type="button"
+                  onClick={saveDraft}
+                  disabled={isSubmitting}
+                  className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Draft
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={handlePrintConfirmation}
+                  disabled={isSubmitting}
+                  className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print Confirmation
+                </button>
+              </div>
+              
               <button
                 type="submit"
-                className="flex items-center justify-center px-8 py-3 bg-gradient-to-r from-green-800 to-black text-white rounded-xl hover:opacity-90 transition-all duration-200 shadow-sm font-semibold"
+                disabled={isSubmitting}
+                className="inline-flex items-center px-6 py-2.5 bg-gradient-to-r from-green-800 to-black text-white font-semibold rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 order-1 sm:order-2"
               >
-                <Send className="h-4 w-4 mr-2" />
-                Submit Referral
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Submit Referral
+                  </>
+                )}
               </button>
             </div>
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
-  );
-};
+  )
+}
 
-export default NewReferral;
+export default NewReferral

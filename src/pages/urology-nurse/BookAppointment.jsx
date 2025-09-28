@@ -155,10 +155,15 @@ const BookAppointment = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Patient Information */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg border border-gray-200 p-6 sticky top-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {id ? 'Current Appointment' : 'Patient Information'}
-            </h3>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
+            <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 -m-6 mb-6 px-6 py-4">
+              <h3 className="text-xl font-semibold text-gray-900">
+                {id ? 'Current Appointment' : 'Patient Information'}
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                {id ? 'Review current appointment details' : 'Enter patient details for new appointment'}
+              </p>
+            </div>
             
             {id && mockAppointment ? (
               <div className="space-y-4">
@@ -286,10 +291,13 @@ const BookAppointment = () => {
         <div className="lg:col-span-2">
           <div className="space-y-6">
             {/* Appointment Type */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                {id ? 'New Appointment Details' : 'Appointment Type'}
-              </h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 -m-6 mb-6 px-6 py-4">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  {id ? 'New Appointment Details' : 'Appointment Type'}
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">Select the type of appointment to schedule</p>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {appointmentTypes.map((type) => {
@@ -320,8 +328,11 @@ const BookAppointment = () => {
             </div>
 
             {/* Scheduling */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Scheduling</h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 -m-6 mb-6 px-6 py-4">
+                <h3 className="text-xl font-semibold text-gray-900">Scheduling</h3>
+                <p className="text-sm text-gray-600 mt-1">Select date, time, and location for the appointment</p>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -386,8 +397,11 @@ const BookAppointment = () => {
             </div>
 
             {/* Additional Information */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Information</h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 -m-6 mb-6 px-6 py-4">
+                <h3 className="text-xl font-semibold text-gray-900">Additional Information</h3>
+                <p className="text-sm text-gray-600 mt-1">Additional notes and appointment details</p>
+              </div>
               
               <div className="space-y-4">
                 <div>

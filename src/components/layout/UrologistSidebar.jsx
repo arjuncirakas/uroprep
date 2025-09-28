@@ -2,12 +2,14 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
-  AlertTriangle, 
+  Users,
   ClipboardList, 
   FileText,
   Stethoscope,
-  Users,
-  Shield,
+  Heart,
+  Activity,
+  Mail,
+  BarChart,
   ChevronLeft,
   ChevronRight,
   X
@@ -18,12 +20,14 @@ const UrologistSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) =>
   
   const navigationItems = [
     { path: '/urologist/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/urologist/priorities', label: 'Priority Dashboard', icon: AlertTriangle },
-    { path: '/urologist/referrals', label: 'Referrals Queue', icon: ClipboardList },
-    { path: '/urologist/patient-chart', label: 'Patient Chart', icon: FileText },
-    { path: '/urologist/surgery', label: 'Surgery Management', icon: Stethoscope },
-    { path: '/urologist/mdt', label: 'MDT Cases', icon: Users },
-    { path: '/urologist/clinical-tools', label: 'Clinical Tools', icon: Shield },
+    { path: '/urologist/patient-management', label: 'Patient Management', icon: Users },
+    { path: '/urologist/opd-consultations', label: 'OPD Consultations', icon: ClipboardList },
+    { path: '/urologist/mdt-cases', label: 'MDT Cases', icon: FileText },
+    { path: '/urologist/surgical-pathway', label: 'Surgical Pathway', icon: Stethoscope },
+    { path: '/urologist/post-op-follow-up', label: 'Post-Op Follow-Up', icon: Heart },
+    { path: '/urologist/active-surveillance', label: 'Active Surveillance', icon: Activity },
+    { path: '/urologist/referrals-communication', label: 'Referrals & Communication', icon: Mail },
+    { path: '/urologist/reports-analytics', label: 'Reports & Analytics', icon: BarChart },
   ];
 
   return (
@@ -71,7 +75,20 @@ const UrologistSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) =>
               const Icon = item.icon;
               
               // Check if current path matches the item
-              const isActive = location.pathname === item.path;
+              let isActive = location.pathname === item.path;
+              
+              // Special case: Patient Management should be active for patient-related routes
+              if (item.path === '/urologist/patient-management' && 
+                  (location.pathname === '/urologist/add-patient' || 
+                   location.pathname.startsWith('/urologist/patient-'))) {
+                isActive = true;
+              }
+              
+              // Special case: OPD Consultations should be active for PSA chart routes
+              if (item.path === '/urologist/opd-consultations' && 
+                  location.pathname.startsWith('/urologist/psa-chart/')) {
+                isActive = true;
+              }
               
               return (
                 <li key={item.path}>

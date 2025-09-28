@@ -23,13 +23,13 @@ const UrologyNurseSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse })
   
   const navigation = [
     { name: 'Dashboard', href: '/urology-nurse/dashboard', icon: LayoutDashboard },
+    { name: 'Patients', href: '/urology-nurse/patients', icon: Users },
     { name: 'Referral Triage', href: '/urology-nurse/triage', icon: AlertTriangle },
     { name: 'Appointments', href: '/urology-nurse/appointments', icon: Calendar },
-    { name: 'OPD Management', href: '/urology-nurse/db1', icon: Database },
-    { name: 'Active Surveillance', href: '/urology-nurse/db2', icon: Activity },
-    { name: 'Surgical Pathway', href: '/urology-nurse/db3', icon: Stethoscope },
-    { name: 'Post-Op Follow-up', href: '/urology-nurse/db4', icon: ClipboardList },
-    { name: 'Patients', href: '/urology-nurse/data-entry', icon: Users },
+    { name: 'OPD Management', href: '/urology-nurse/opd-management', icon: Database },
+    { name: 'Active Surveillance', href: '/urology-nurse/active-surveillance', icon: Activity },
+    { name: 'Surgical Pathway', href: '/urology-nurse/surgical-pathway', icon: Stethoscope },
+    { name: 'Post-Op Follow-up', href: '/urology-nurse/postop-followup', icon: ClipboardList },
   ];
 
   return (
