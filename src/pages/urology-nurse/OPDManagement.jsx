@@ -5,16 +5,12 @@ import {
   Search, 
   Eye,
   Calendar,
-  Clock,
-  CheckCircle,
-  AlertTriangle,
   X,
   User,
   Phone,
   Mail,
   Activity,
   Stethoscope,
-  FileText,
   ArrowRight,
   RefreshCw
 } from 'lucide-react';
@@ -116,6 +112,314 @@ const OPDManagement = () => {
       reason: 'Rising PSA levels',
       assignedUrologist: 'Dr. Michael Chen',
       notes: 'PSA increased from 5.8 to 7.2'
+    },
+    {
+      id: 'OPD006',
+      patientName: 'William Davis',
+      upi: 'URP2024010',
+      age: 68,
+      gender: 'Male',
+      phone: '+61 456 789 123',
+      referralSource: 'GP',
+      latestPSA: 9.1,
+      appointmentDate: '2024-01-15',
+      appointmentTime: '3:00 PM',
+      status: 'Waiting',
+      waitTime: '25 minutes',
+      priority: 'Urgent',
+      reason: 'High PSA with urinary symptoms',
+      assignedUrologist: 'Dr. Emma Wilson',
+      notes: 'Patient reports urgency and frequency'
+    },
+    {
+      id: 'OPD007',
+      patientName: 'Christopher Lee',
+      upi: 'URP2024011',
+      age: 59,
+      gender: 'Male',
+      phone: '+61 467 890 234',
+      referralSource: 'IPD',
+      latestPSA: 4.2,
+      appointmentDate: '2024-01-15',
+      appointmentTime: '3:30 PM',
+      status: 'In Consultation',
+      waitTime: '0 minutes',
+      priority: 'Medium',
+      reason: 'Post-surgery follow-up',
+      assignedUrologist: 'Dr. James Brown',
+      notes: 'RALP performed 6 weeks ago'
+    },
+    {
+      id: 'OPD008',
+      patientName: 'Richard Taylor',
+      upi: 'URP2024012',
+      age: 73,
+      gender: 'Male',
+      phone: '+61 478 901 345',
+      referralSource: 'GP',
+      latestPSA: 6.5,
+      appointmentDate: '2024-01-15',
+      appointmentTime: '4:00 PM',
+      status: 'Waiting',
+      waitTime: '35 minutes',
+      priority: 'High',
+      reason: 'Abnormal DRE findings',
+      assignedUrologist: 'Dr. Lisa Davis',
+      notes: 'GP noted firm nodule on DRE'
+    },
+    {
+      id: 'OPD009',
+      patientName: 'Thomas White',
+      upi: 'URP2024013',
+      age: 61,
+      gender: 'Male',
+      phone: '+61 489 012 456',
+      referralSource: 'GP',
+      latestPSA: 5.8,
+      appointmentDate: '2024-01-15',
+      appointmentTime: '4:30 PM',
+      status: 'Awaiting Results',
+      waitTime: '0 minutes',
+      priority: 'Medium',
+      reason: 'Active surveillance monitoring',
+      assignedUrologist: 'Dr. Michael Chen',
+      notes: 'Biopsy scheduled for next week'
+    },
+    {
+      id: 'OPD010',
+      patientName: 'Mark Johnson',
+      upi: 'URP2024014',
+      age: 56,
+      gender: 'Male',
+      phone: '+61 490 123 567',
+      referralSource: 'GP',
+      latestPSA: 3.9,
+      appointmentDate: '2024-01-15',
+      appointmentTime: '5:00 PM',
+      status: 'Waiting',
+      waitTime: '45 minutes',
+      priority: 'Normal',
+      reason: 'Annual PSA check',
+      assignedUrologist: 'Dr. Sarah Wilson',
+      notes: 'Routine annual follow-up'
+    },
+    {
+      id: 'OPD011',
+      patientName: 'Steven Miller',
+      upi: 'URP2024015',
+      age: 64,
+      gender: 'Male',
+      phone: '+61 401 234 678',
+      referralSource: 'IPD',
+      latestPSA: 7.8,
+      appointmentDate: '2024-01-15',
+      appointmentTime: '5:30 PM',
+      status: 'Completed',
+      waitTime: '0 minutes',
+      priority: 'High',
+      reason: 'Post-biopsy consultation',
+      assignedUrologist: 'Dr. Emma Wilson',
+      notes: 'Biopsy results: Gleason 7 (3+4)'
+    },
+    {
+      id: 'OPD012',
+      patientName: 'Kevin Garcia',
+      upi: 'URP2024016',
+      age: 52,
+      gender: 'Male',
+      phone: '+61 412 345 789',
+      referralSource: 'GP',
+      latestPSA: 4.6,
+      appointmentDate: '2024-01-15',
+      appointmentTime: '6:00 PM',
+      status: 'Waiting',
+      waitTime: '55 minutes',
+      priority: 'Medium',
+      reason: 'Family history screening',
+      assignedUrologist: 'Dr. James Brown',
+      notes: 'Father had prostate cancer at 65'
+    },
+    {
+      id: 'OPD013',
+      patientName: 'Daniel Martinez',
+      upi: 'URP2024017',
+      age: 69,
+      gender: 'Male',
+      phone: '+61 423 456 890',
+      referralSource: 'GP',
+      latestPSA: 8.9,
+      appointmentDate: '2024-01-15',
+      appointmentTime: '6:30 PM',
+      status: 'In Consultation',
+      waitTime: '0 minutes',
+      priority: 'Urgent',
+      reason: 'Rapidly rising PSA',
+      assignedUrologist: 'Dr. Lisa Davis',
+      notes: 'PSA increased from 6.2 to 8.9 in 3 months'
+    },
+    {
+      id: 'OPD014',
+      patientName: 'Paul Rodriguez',
+      upi: 'URP2024018',
+      age: 57,
+      gender: 'Male',
+      phone: '+61 434 567 901',
+      referralSource: 'IPD',
+      latestPSA: 5.1,
+      appointmentDate: '2024-01-15',
+      appointmentTime: '7:00 PM',
+      status: 'Awaiting Results',
+      waitTime: '0 minutes',
+      priority: 'Medium',
+      reason: 'Pre-operative assessment',
+      assignedUrologist: 'Dr. Michael Chen',
+      notes: 'Scheduled for RALP next month'
+    },
+    {
+      id: 'OPD015',
+      patientName: 'Andrew Lewis',
+      upi: 'URP2024019',
+      age: 63,
+      gender: 'Male',
+      phone: '+61 445 678 012',
+      referralSource: 'GP',
+      latestPSA: 6.3,
+      appointmentDate: '2024-01-15',
+      appointmentTime: '7:30 PM',
+      status: 'Waiting',
+      waitTime: '65 minutes',
+      priority: 'High',
+      reason: 'Urinary retention episodes',
+      assignedUrologist: 'Dr. Sarah Wilson',
+      notes: 'Patient reports 2 episodes of retention'
+    },
+    // Today's patients
+    {
+      id: 'OPD016',
+      patientName: 'Robert Johnson',
+      upi: 'URP2024020',
+      age: 67,
+      gender: 'Male',
+      phone: '+61 456 789 123',
+      referralSource: 'GP',
+      latestPSA: 7.4,
+      appointmentDate: new Date().toISOString().split('T')[0],
+      appointmentTime: '9:30 AM',
+      status: 'Waiting',
+      waitTime: '20 minutes',
+      priority: 'High',
+      reason: 'Elevated PSA with family history',
+      assignedUrologist: 'Dr. Michael Chen',
+      notes: 'Father and brother had prostate cancer'
+    },
+    {
+      id: 'OPD017',
+      patientName: 'David Anderson',
+      upi: 'URP2024021',
+      age: 54,
+      gender: 'Male',
+      phone: '+61 467 890 234',
+      referralSource: 'GP',
+      latestPSA: 5.9,
+      appointmentDate: new Date().toISOString().split('T')[0],
+      appointmentTime: '10:00 AM',
+      status: 'In Consultation',
+      waitTime: '0 minutes',
+      priority: 'Medium',
+      reason: 'Routine PSA monitoring',
+      assignedUrologist: 'Dr. Sarah Wilson',
+      notes: 'Annual follow-up appointment'
+    },
+    {
+      id: 'OPD018',
+      patientName: 'Michael Brown',
+      upi: 'URP2024022',
+      age: 71,
+      gender: 'Male',
+      phone: '+61 478 901 345',
+      referralSource: 'IPD',
+      latestPSA: 8.2,
+      appointmentDate: new Date().toISOString().split('T')[0],
+      appointmentTime: '11:15 AM',
+      status: 'Waiting',
+      waitTime: '35 minutes',
+      priority: 'Urgent',
+      reason: 'High PSA with urinary symptoms',
+      assignedUrologist: 'Dr. Emma Wilson',
+      notes: 'Patient reports nocturia and urgency'
+    },
+    {
+      id: 'OPD019',
+      patientName: 'James Wilson',
+      upi: 'URP2024023',
+      age: 59,
+      gender: 'Male',
+      phone: '+61 489 012 456',
+      referralSource: 'GP',
+      latestPSA: 4.3,
+      appointmentDate: new Date().toISOString().split('T')[0],
+      appointmentTime: '2:00 PM',
+      status: 'Awaiting Results',
+      waitTime: '0 minutes',
+      priority: 'Medium',
+      reason: 'Post-biopsy follow-up',
+      assignedUrologist: 'Dr. James Brown',
+      notes: 'Biopsy performed 2 weeks ago'
+    },
+    {
+      id: 'OPD020',
+      patientName: 'William Taylor',
+      upi: 'URP2024024',
+      age: 66,
+      gender: 'Male',
+      phone: '+61 490 123 567',
+      referralSource: 'GP',
+      latestPSA: 6.7,
+      appointmentDate: new Date().toISOString().split('T')[0],
+      appointmentTime: '3:30 PM',
+      status: 'Waiting',
+      waitTime: '50 minutes',
+      priority: 'High',
+      reason: 'Rising PSA trend',
+      assignedUrologist: 'Dr. Lisa Davis',
+      notes: 'PSA increased from 4.8 to 6.7 over 6 months'
+    },
+    // Tomorrow's patients
+    {
+      id: 'OPD021',
+      patientName: 'Christopher Davis',
+      upi: 'URP2024025',
+      age: 62,
+      gender: 'Male',
+      phone: '+61 401 234 678',
+      referralSource: 'GP',
+      latestPSA: 5.5,
+      appointmentDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      appointmentTime: '9:00 AM',
+      status: 'Waiting',
+      waitTime: '0 minutes',
+      priority: 'Normal',
+      reason: 'Annual PSA screening',
+      assignedUrologist: 'Dr. Michael Chen',
+      notes: 'Routine annual check-up'
+    },
+    {
+      id: 'OPD022',
+      patientName: 'Richard Miller',
+      upi: 'URP2024026',
+      age: 68,
+      gender: 'Male',
+      phone: '+61 412 345 789',
+      referralSource: 'IPD',
+      latestPSA: 7.9,
+      appointmentDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      appointmentTime: '10:30 AM',
+      status: 'Waiting',
+      waitTime: '0 minutes',
+      priority: 'High',
+      reason: 'Pre-operative assessment',
+      assignedUrologist: 'Dr. Sarah Wilson',
+      notes: 'Scheduled for RALP next week'
     }
   ];
 
@@ -152,14 +456,6 @@ const OPDManagement = () => {
   });
 
 
-  const handleStatusUpdate = (patientId, newStatus) => {
-    // This would update the patient status in the backend
-    console.log(`Updating patient ${patientId} status to ${newStatus}`);
-  };
-
-  const handleReschedule = (patientId) => {
-    navigate(`/urology-nurse/reschedule-appointment/${patientId}`);
-  };
 
   return (
     <div className="space-y-6">
@@ -256,7 +552,6 @@ const OPDManagement = () => {
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Appointment</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Status</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Priority</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Wait Time</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Urologist</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
                 </tr>
@@ -301,52 +596,19 @@ const OPDManagement = () => {
                       </span>
                     </td>
                     <td className="py-5 px-6">
-                      <div className="flex items-center space-x-2">
-                        <Clock className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm font-medium text-gray-900">{patient.waitTime}</span>
-                      </div>
-                    </td>
-                    <td className="py-5 px-6">
                       <div>
                         <p className="font-medium text-gray-900">{patient.assignedUrologist}</p>
                         <p className="text-sm text-gray-500">PSA: {patient.latestPSA} ng/mL</p>
                       </div>
                     </td>
                     <td className="py-5 px-6">
-                      <div className="flex items-center space-x-2">
-                        <button 
-                          onClick={() => navigate(`/urology-nurse/patient-details/${patient.id}`)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-                        >
-                          <Eye className="h-3 w-3 mr-1" />
-                          <span>View</span>
-                        </button>
-                        {patient.status === 'Waiting' && (
-                          <button 
-                            onClick={() => handleStatusUpdate(patient.id, 'In Consultation')}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                          >
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            <span>Start</span>
-                          </button>
-                        )}
-                        {patient.status === 'In Consultation' && (
-                          <button 
-                            onClick={() => handleStatusUpdate(patient.id, 'Awaiting Results')}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                          >
-                            <FileText className="h-3 w-3 mr-1" />
-                            <span>Results</span>
-                          </button>
-                        )}
-                        <button 
-                          onClick={() => handleReschedule(patient.id)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                        >
-                          <Calendar className="h-3 w-3 mr-1" />
-                          <span>Reschedule</span>
-                        </button>
-                      </div>
+                      <button 
+                        onClick={() => navigate(`/urology-nurse/patient-details/${patient.id}`)}
+                        className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        <span>View</span>
+                      </button>
                     </td>
                   </tr>
                 ))}

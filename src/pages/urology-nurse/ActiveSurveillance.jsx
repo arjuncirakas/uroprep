@@ -6,14 +6,11 @@ import {
   Eye,
   Calendar,
   TrendingUp,
-  AlertTriangle,
-  CheckCircle,
   X,
   User,
   Phone,
   Mail,
   FileText,
-  Upload,
   BarChart3,
   Clock,
   ArrowRight,
@@ -26,6 +23,13 @@ const ActiveSurveillance = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [showPSATrend, setShowPSATrend] = useState(null);
+  const [isPSAModalOpen, setIsPSAModalOpen] = useState(false);
+  const [selectedPatientForPSA, setSelectedPatientForPSA] = useState(null);
+  const [psaForm, setPsaForm] = useState({
+    date: '',
+    value: '',
+    type: 'routine'
+  });
 
   // Mock active surveillance data
   const mockSurveillancePatients = [
@@ -134,14 +138,6 @@ const ActiveSurveillance = () => {
     }
   ];
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Active': return 'bg-green-100 text-green-800';
-      case 'Escalated': return 'bg-red-100 text-red-800';
-      case 'Discontinued': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const getRiskColor = (risk) => {
     switch (risk) {
@@ -170,16 +166,44 @@ const ActiveSurveillance = () => {
 
 
   const handlePSAEntry = (patientId) => {
-    navigate(`/urology-nurse/active-surveillance/${patientId}/psa-entry`);
+    const patient = mockSurveillancePatients.find(p => p.id === patientId);
+    setSelectedPatientForPSA(patient);
+    setIsPSAModalOpen(true);
   };
 
-  const handleUploadReport = (patientId) => {
-    navigate(`/urology-nurse/active-surveillance/${patientId}/upload-report`);
+  const handlePSAFormChange = (e) => {
+    const { name, value } = e.target;
+    setPsaForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleEscalate = (patientId) => {
-    navigate(`/urology-nurse/active-surveillance/${patientId}/escalate`);
+  const handleAddPSA = (e) => {
+    e.preventDefault();
+    // In a real app, this would save to the backend
+    console.log('Adding PSA value for patient:', selectedPatientForPSA?.id, psaForm);
+    
+    // Reset form and close modal
+    setPsaForm({
+      date: '',
+      value: '',
+      type: 'routine'
+    });
+    setSelectedPatientForPSA(null);
+    setIsPSAModalOpen(false);
   };
+
+  const closePSAModal = () => {
+    setIsPSAModalOpen(false);
+    setSelectedPatientForPSA(null);
+    setPsaForm({
+      date: '',
+      value: '',
+      type: 'routine'
+    });
+  };
+
 
   const handleScheduleReview = (patientId) => {
     navigate(`/urology-nurse/appointments?patient=${patientId}&type=surveillance`);
@@ -235,15 +259,9 @@ const ActiveSurveillance = () => {
       {/* Surveillance Patients Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">Active Surveillance Patients</h2>
-              <p className="text-sm text-gray-600 mt-1">Monitor PSA trends and compliance</p>
-            </div>
-            <button className="flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity">
-              <Plus className="h-4 w-4 mr-2" />
-              <span className="font-medium">Add Patient</span>
-            </button>
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Active Surveillance Patients</h2>
+            <p className="text-sm text-gray-600 mt-1">Monitor PSA trends and compliance</p>
           </div>
         </div>
 
@@ -256,8 +274,6 @@ const ActiveSurveillance = () => {
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Latest PSA</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">PSA Velocity</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Risk Category</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Next Review</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Status</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -313,20 +329,6 @@ const ActiveSurveillance = () => {
                       <p className="text-xs text-gray-500 mt-1">Gleason: {patient.gleasonScore}</p>
                     </td>
                     <td className="py-5 px-6">
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="h-4 w-4 text-gray-400" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{patient.nextReview}</p>
-                          <p className="text-xs text-gray-500">Last MRI: {patient.lastMRI}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-5 px-6">
-                      <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(patient.status)}`}>
-                        {patient.status}
-                      </span>
-                    </td>
-                    <td className="py-5 px-6">
                       <div className="flex flex-col space-y-1">
                         <button 
                           onClick={() => handlePSAEntry(patient.id)}
@@ -335,22 +337,6 @@ const ActiveSurveillance = () => {
                           <Plus className="h-3 w-3 mr-1" />
                           <span>PSA Entry</span>
                         </button>
-                        <button 
-                          onClick={() => handleUploadReport(patient.id)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                        >
-                          <Upload className="h-3 w-3 mr-1" />
-                          <span>Upload Report</span>
-                        </button>
-                        {patient.psaVelocity > 0.75 && (
-                          <button 
-                            onClick={() => handleEscalate(patient.id)}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-red-600 to-red-700 border border-red-600 rounded-lg shadow-sm hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
-                          >
-                            <AlertTriangle className="h-3 w-3 mr-1" />
-                            <span>Escalate</span>
-                          </button>
-                        )}
                         <button 
                           onClick={() => handleScheduleReview(patient.id)}
                           className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
@@ -451,6 +437,120 @@ const ActiveSurveillance = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add PSA Value Modal */}
+      {isPSAModalOpen && selectedPatientForPSA && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Add PSA Value</h2>
+                <p className="text-sm text-gray-600 mt-1">Patient: {selectedPatientForPSA.patientName}</p>
+              </div>
+              <button
+                onClick={closePSAModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddPSA} className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Test Date *
+                </label>
+                <input
+                  type="date"
+                  name="date"
+                  value={psaForm.date}
+                  onChange={handlePSAFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  PSA Value (ng/mL) *
+                </label>
+                <input
+                  type="number"
+                  name="value"
+                  value={psaForm.value}
+                  onChange={handlePSAFormChange}
+                  required
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  placeholder="e.g., 6.2"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Test Type *
+                </label>
+                <select
+                  name="type"
+                  value={psaForm.type}
+                  onChange={handlePSAFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="routine">Routine Test</option>
+                  <option value="follow-up">Follow-up Test</option>
+                  <option value="baseline">Baseline Test</option>
+                  <option value="urgent">Urgent Test</option>
+                </select>
+              </div>
+
+              {/* PSA Status Preview */}
+              {psaForm.value && (
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">PSA Status Preview:</h4>
+                  <div className="flex items-center space-x-2">
+                    {parseFloat(psaForm.value) <= 6.0 ? (
+                      <>
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span className="text-sm font-medium text-green-800">Normal (≤6.0 ng/mL)</span>
+                      </>
+                    ) : parseFloat(psaForm.value) <= 6.5 ? (
+                      <>
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <span className="text-sm font-medium text-yellow-800">Elevated (6.1-6.5 ng/mL)</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span className="text-sm font-medium text-red-800">High (&gt;6.5 ng/mL)</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={closePSAModal}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex items-center px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add PSA Value
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

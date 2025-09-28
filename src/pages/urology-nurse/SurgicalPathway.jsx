@@ -5,8 +5,6 @@ import {
   Search, 
   Eye,
   Calendar,
-  CheckCircle,
-  Clock,
   AlertTriangle,
   X,
   User,
@@ -18,7 +16,6 @@ import {
   ArrowRight,
   Plus,
   RefreshCw,
-  UserCheck,
   ClipboardList,
   Shield
 } from 'lucide-react';
@@ -180,14 +177,6 @@ const SurgicalPathway = () => {
     }
   };
 
-  const getPreOpStatusColor = (status) => {
-    switch (status) {
-      case 'Complete': return 'bg-green-100 text-green-800';
-      case 'In Progress': return 'bg-yellow-100 text-yellow-800';
-      case 'Pending': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const getRiskColor = (risk) => {
     switch (risk) {
@@ -211,31 +200,17 @@ const SurgicalPathway = () => {
   });
 
 
-  const preOpCompletionRate = (patient) => {
-    const total = Object.keys(patient.preOpChecklist).length;
-    const completed = Object.values(patient.preOpChecklist).filter(Boolean).length;
-    return Math.round((completed / total) * 100);
-  };
 
   const handleStatusUpdate = (patientId, newStatus) => {
     console.log(`Updating patient ${patientId} status to ${newStatus}`);
   };
 
-  const handlePreOpUpdate = (patientId, task, completed) => {
-    console.log(`Updating pre-op task ${task} for patient ${patientId}: ${completed}`);
-  };
 
   const handleScheduleSurgery = (patientId) => {
     navigate(`/urology-nurse/surgical-pathway/${patientId}/schedule`);
   };
 
-  const handleAssignSurgeon = (patientId) => {
-    navigate(`/urology-nurse/surgical-pathway/${patientId}/assign-surgeon`);
-  };
 
-  const handlePostOpUpdate = (patientId) => {
-    navigate(`/urology-nurse/surgical-pathway/${patientId}/post-op`);
-  };
 
   return (
     <div className="space-y-6">
@@ -298,15 +273,9 @@ const SurgicalPathway = () => {
       {/* Surgical Patients Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">Surgical Pathway</h2>
-              <p className="text-sm text-gray-600 mt-1">Manage pre-operative, surgical, and post-operative phases</p>
-            </div>
-            <button className="flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity">
-              <Plus className="h-4 w-4 mr-2" />
-              <span className="font-medium">Add Patient</span>
-            </button>
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Surgical Pathway</h2>
+            <p className="text-sm text-gray-600 mt-1">Manage pre-operative, surgical, and post-operative phases</p>
           </div>
         </div>
 
@@ -317,7 +286,6 @@ const SurgicalPathway = () => {
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Surgery Details</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Pre-Op Status</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Status</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Risk Category</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
@@ -334,9 +302,6 @@ const SurgicalPathway = () => {
                               {patient.patientName.split(' ').map(n => n[0]).join('')}
                             </span>
                           </div>
-                          {patient.status === 'Pre-Op' && preOpCompletionRate(patient) < 100 && (
-                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-500 rounded-full border-2 border-white"></div>
-                          )}
                         </div>
                         <div>
                           <p className="font-semibold text-gray-900">{patient.patientName}</p>
@@ -350,36 +315,6 @@ const SurgicalPathway = () => {
                         <p className="font-medium text-gray-900">{patient.surgeryType}</p>
                         <p className="text-sm text-gray-500">{patient.surgeryDate} at {patient.surgeryTime}</p>
                         <p className="text-xs text-gray-400">Surgeon: {patient.assignedSurgeon}</p>
-                      </div>
-                    </td>
-                    <td className="py-5 px-6">
-                      <div className="space-y-2">
-                        <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getPreOpStatusColor(patient.preOpStatus)}`}>
-                          {patient.preOpStatus}
-                        </span>
-                        <div className="flex items-center space-x-2">
-                          <div className="flex-1 bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                              style={{ width: `${preOpCompletionRate(patient)}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-xs text-gray-500">{preOpCompletionRate(patient)}%</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-1 text-xs">
-                          {Object.entries(patient.preOpChecklist).map(([task, completed]) => (
-                            <div key={task} className="flex items-center space-x-1">
-                              {completed ? (
-                                <CheckCircle className="h-3 w-3 text-green-600" />
-                              ) : (
-                                <Clock className="h-3 w-3 text-gray-400" />
-                              )}
-                              <span className={completed ? 'text-green-600' : 'text-gray-500'}>
-                                {task.replace(/([A-Z])/g, ' $1').trim()}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
                       </div>
                     </td>
                     <td className="py-5 px-6">
@@ -402,39 +337,12 @@ const SurgicalPathway = () => {
                           <Eye className="h-3 w-3 mr-1" />
                           <span>View</span>
                         </button>
-                        {patient.status === 'Scheduled' && (
-                          <button 
-                            onClick={() => handleScheduleSurgery(patient.id)}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                          >
-                            <Calendar className="h-3 w-3 mr-1" />
-                            <span>Reschedule</span>
-                          </button>
-                        )}
-                        {patient.status === 'Pre-Op' && (
-                          <button 
-                            onClick={() => handlePreOpUpdate(patient.id, 'checklist', true)}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                          >
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            <span>Update Checklist</span>
-                          </button>
-                        )}
-                        {patient.status === 'Post-Op' && (
-                          <button 
-                            onClick={() => handlePostOpUpdate(patient.id)}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 border border-purple-600 rounded-lg shadow-sm hover:from-purple-700 hover:to-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
-                          >
-                            <FileText className="h-3 w-3 mr-1" />
-                            <span>Post-Op Update</span>
-                          </button>
-                        )}
                         <button 
-                          onClick={() => handleAssignSurgeon(patient.id)}
+                          onClick={() => handleScheduleSurgery(patient.id)}
                           className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
                         >
-                          <UserCheck className="h-3 w-3 mr-1" />
-                          <span>Assign Surgeon</span>
+                          <Calendar className="h-3 w-3 mr-1" />
+                          <span>{patient.status === 'Scheduled' ? 'Reschedule' : 'Schedule'}</span>
                         </button>
                       </div>
                     </td>

@@ -149,6 +149,115 @@ const databaseSlice = createSlice({
         type: 'database_transition',
       });
     },
+    transitionPatient: (state, action) => {
+      const { patientId, fromDb, toDb, reason, clinicalData, assignedTo } = action.payload;
+      
+      // Find patient in source database
+      let patient = null;
+      if (fromDb === 'db1') {
+        const index = state.db1.patients.findIndex(p => p.id === patientId);
+        if (index !== -1) {
+          patient = state.db1.patients[index];
+          state.db1.patients.splice(index, 1);
+        }
+      } else if (fromDb === 'db2') {
+        const index = state.db2.patients.findIndex(p => p.id === patientId);
+        if (index !== -1) {
+          patient = state.db2.patients[index];
+          state.db2.patients.splice(index, 1);
+        }
+      } else if (fromDb === 'db3') {
+        const index = state.db3.patients.findIndex(p => p.id === patientId);
+        if (index !== -1) {
+          patient = state.db3.patients[index];
+          state.db3.patients.splice(index, 1);
+        }
+      } else if (fromDb === 'db4') {
+        const index = state.db4.patients.findIndex(p => p.id === patientId);
+        if (index !== -1) {
+          patient = state.db4.patients[index];
+          state.db4.patients.splice(index, 1);
+        }
+      }
+      
+      if (patient) {
+        // Update patient with transition data
+        patient = {
+          ...patient,
+          currentDatabase: toDb,
+          transitionReason: reason,
+          clinicalData: { ...patient.clinicalData, ...clinicalData },
+          assignedTo: assignedTo || patient.assignedTo,
+          lastTransition: new Date().toISOString(),
+        };
+        
+        // Add to target database
+        if (toDb === 'db1') {
+          state.db1.patients.push(patient);
+        } else if (toDb === 'db2') {
+          state.db2.patients.push(patient);
+        } else if (toDb === 'db3') {
+          state.db3.patients.push(patient);
+        } else if (toDb === 'db4') {
+          state.db4.patients.push(patient);
+        }
+        
+        // Log transition
+        state.transitions.push({
+          id: Date.now(),
+          patientId,
+          fromDb,
+          toDb,
+          reason,
+          clinicalData,
+          timestamp: new Date().toISOString(),
+        });
+        
+        // Add to audit trail
+        state.auditTrail.push({
+          id: Date.now(),
+          type: 'patient_transition',
+          patientId,
+          fromDb,
+          toDb,
+          reason,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    },
+    updatePatientStatus: (state, action) => {
+      const { patientId, database, status, data, assignedTo } = action.payload;
+      
+      let targetDb = null;
+      if (database === 'db1') targetDb = state.db1;
+      else if (database === 'db2') targetDb = state.db2;
+      else if (database === 'db3') targetDb = state.db3;
+      else if (database === 'db4') targetDb = state.db4;
+      
+      if (targetDb) {
+        const index = targetDb.patients.findIndex(p => p.id === patientId);
+        if (index !== -1) {
+          targetDb.patients[index] = {
+            ...targetDb.patients[index],
+            status,
+            ...data,
+            assignedTo: assignedTo || targetDb.patients[index].assignedTo,
+            lastUpdated: new Date().toISOString(),
+          };
+          
+          // Add to audit trail
+          state.auditTrail.push({
+            id: Date.now(),
+            type: 'patient_status_update',
+            patientId,
+            database,
+            status,
+            data,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      }
+    },
     
     // Audit trail
     addAuditEntry: (state, action) => {
@@ -187,6 +296,8 @@ export const {
   updateFollowUpSchedule,
   updateOutcomes,
   addTransition,
+  transitionPatient,
+  updatePatientStatus,
   addAuditEntry,
 } = databaseSlice.actions;
 

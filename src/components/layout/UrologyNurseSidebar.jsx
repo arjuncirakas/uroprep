@@ -95,6 +95,12 @@ const UrologyNurseSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse })
                           location.pathname.includes('/edit-appointment/') ||
                           location.pathname.startsWith('/urology-nurse/appointments/');
               }
+              // Special handling for patients section to include add-patient route
+              else if (item.href === '/urology-nurse/patients') {
+                isActive = isActive || location.pathname.includes('/add-patient') ||
+                          location.pathname.includes('/edit-patient/') ||
+                          location.pathname.startsWith('/urology-nurse/patients/');
+              }
               // General sub-route handling for other items (except dashboard)
               else if (item.href !== '/urology-nurse/dashboard') {
                 isActive = isActive || location.pathname.startsWith(item.href + '/');

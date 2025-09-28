@@ -6,8 +6,6 @@ import {
   Search,
   Eye,
   FileText,
-  CheckCircle,
-  Shield,
   X
 } from 'lucide-react';
 
@@ -229,15 +227,6 @@ const ReferralTriage = () => {
     }
   };
 
-  const getPSASuggestionColor = (suggestion) => {
-    switch (suggestion) {
-      case 'MDT/Urology OPD (urgent)': return 'bg-red-100 text-red-800 border-red-200';
-      case 'OPD Consultation': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'Active Surveillance': return 'bg-green-100 text-green-800 border-green-200';
-      case 'Discharge to GP': return 'bg-blue-100 text-blue-800 border-blue-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
 
   const filteredReferrals = enhancedReferrals.filter(referral => {
     // Status filter
@@ -280,7 +269,6 @@ const ReferralTriage = () => {
           >
                 <option value="pending">Pending Triage</option>
             <option value="triaged">Triaged</option>
-                <option value="active">Active Cases</option>
             <option value="ready_for_discharge">Ready for Discharge</option>
                 <option value="all">All Referrals</option>
           </select>
@@ -322,7 +310,6 @@ const ReferralTriage = () => {
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">PSA & Criteria</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">System Suggestion</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Referring GP</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Status</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
@@ -357,14 +344,6 @@ const ReferralTriage = () => {
                       </div>
                     </td>
                     <td className="py-5 px-6">
-                      <div className="space-y-2">
-                        <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full border ${getPSASuggestionColor(referral.psaSuggestion)}`}>
-                          {referral.psaSuggestion}
-                        </span>
-                        <p className="text-xs text-gray-500">Suggested: {referral.suggestedPathway}</p>
-                      </div>
-                    </td>
-                    <td className="py-5 px-6">
                       <div>
                         <p className="font-medium text-gray-900">{referral.referringGP}</p>
                         <p className="text-sm text-gray-500">{referral.practice}</p>
@@ -378,30 +357,12 @@ const ReferralTriage = () => {
                     <td className="py-5 px-6">
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => navigate(`/urology-nurse/patient-details/${referral.id}`)}
+                          onClick={() => navigate(`/urology-nurse/triage-patient-details/${referral.id}`)}
                           className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
                         >
                           <Eye className="h-3 w-3 mr-1" />
                           <span>View</span>
                         </button>
-                        {referral.status === 'pending' && (
-                          <div className="flex flex-col space-y-1">
-                            <button 
-                              onClick={() => navigate(`/urology-nurse/triage/${referral.id}`)}
-                              className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                            >
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              <span>Accept Suggestion</span>
-                            </button>
-                            <button 
-                              onClick={() => navigate(`/urology-nurse/triage/${referral.id}`)}
-                              className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                            >
-                              <Shield className="h-3 w-3 mr-1" />
-                              <span>Manual Assign</span>
-                            </button>
-                          </div>
-                        )}
                       </div>
                     </td>
                   </tr>

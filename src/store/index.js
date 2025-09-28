@@ -10,6 +10,7 @@ import referralReducer from './slices/referralSlice';
 import databaseReducer from './slices/databaseSlice';
 import mdtReducer from './slices/mdtSlice';
 import analyticsReducer from './slices/analyticsSlice';
+import notificationReducer from './slices/notificationSlice';
 
 const persistConfig = {
   key: 'root',
@@ -26,6 +27,7 @@ const rootReducer = combineReducers({
   databases: databaseReducer,
   mdt: mdtReducer,
   analytics: analyticsReducer,
+  notifications: notificationReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import ClinicalFindingsModal from '../../components/modals/ClinicalFindingsModal';
 import { 
   Search, 
   Eye, 
@@ -32,11 +33,13 @@ import {
 
 const OPDConsultations = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { db1 } = useSelector(state => state.databases);
   const { referrals } = useSelector(state => state.referrals);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [showClinicalDecisionModal, setShowClinicalDecisionModal] = useState(false);
+  const [showClinicalFindingsModal, setShowClinicalFindingsModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
   const [sortBy, setSortBy] = useState('priority');
@@ -204,9 +207,24 @@ const OPDConsultations = () => {
     setShowClinicalDecisionModal(true);
   };
 
+  const handleClinicalFindings = (patient) => {
+    setSelectedPatient(patient);
+    setShowClinicalFindingsModal(true);
+  };
+
   const closeClinicalDecisionModal = () => {
     setShowClinicalDecisionModal(false);
     setSelectedPatient(null);
+  };
+
+  const closeClinicalFindingsModal = () => {
+    setShowClinicalFindingsModal(false);
+    setSelectedPatient(null);
+  };
+
+  const handleClinicalFindingsSave = () => {
+    // Clinical findings are handled by the modal component
+    console.log('Clinical findings saved for patient:', selectedPatient?.id);
   };
 
   const getPriorityColor = (priority) => {
@@ -412,6 +430,13 @@ const OPDConsultations = () => {
                             <span>Chart</span>
                         </button>
                         <button
+                            onClick={() => handleClinicalFindings(patient)}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 border border-purple-600 rounded-lg shadow-sm hover:from-purple-700 hover:to-purple-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
+                        >
+                            <Stethoscope className="h-3 w-3 mr-1" />
+                            <span>Findings</span>
+                        </button>
+                        <button
                             onClick={() => handleClinicalDecision(patient)}
                             className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
                         >
@@ -611,6 +636,14 @@ const OPDConsultations = () => {
           </div>
         </div>
       )}
+
+      {/* Clinical Findings Modal */}
+      <ClinicalFindingsModal
+        patient={selectedPatient}
+        onSave={handleClinicalFindingsSave}
+        onClose={closeClinicalFindingsModal}
+        isOpen={showClinicalFindingsModal}
+      />
     </div>
   );
 };

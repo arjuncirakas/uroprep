@@ -6,7 +6,6 @@ import {
   Search,
   Eye,
   X,
-  Download,
   Grid3X3,
   List,
   ChevronLeft,
@@ -217,8 +216,8 @@ const Appointments = () => {
     const filterMatch = 
       (activeFilter === 'Today' && appointment.date === selectedDate) ||
       (activeFilter === 'Follow-ups' && (appointment.type === 'Follow-up' || appointment.type === 'Surveillance') && appointment.date === selectedDate) ||
-      (activeFilter === 'OPD' && appointment.type === 'OPD' && appointment.date === selectedDate) ||
-      (activeFilter === 'Surgery' && appointment.type === 'Surgery' && appointment.date === selectedDate);
+      (activeFilter === 'OPD Consultations' && appointment.type === 'OPD' && appointment.date === selectedDate) ||
+      (activeFilter === 'Surgeries' && appointment.type === 'Surgery' && appointment.date === selectedDate);
     
     // Search filter
     const searchMatch = searchTerm === '' || 
@@ -283,7 +282,7 @@ const Appointments = () => {
       {/* Filter Tabs */}
       <div className="px-6 py-4">
         <nav className="flex space-x-2" aria-label="Tabs">
-          {['Today', 'OPD Consultations', 'Investigations', 'Surgeries', 'Follow-ups'].map((filter) => (
+          {['Today', 'OPD Consultations', 'Surgeries', 'Follow-ups'].map((filter) => (
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
@@ -304,7 +303,6 @@ const Appointments = () => {
                      switch (filter) {
                        case 'Today': return appointment.date === selectedDate;
                        case 'OPD Consultations': return appointment.type === 'OPD' && appointment.date === selectedDate;
-                       case 'Investigations': return appointment.type === 'Investigation' && appointment.date === selectedDate;
                        case 'Surgeries': return appointment.type === 'Surgery' && appointment.date === selectedDate;
                        case 'Follow-ups': return (appointment.type === 'Follow-up' || appointment.type === 'Surveillance') && appointment.date === selectedDate;
                        default: return true;
@@ -347,10 +345,6 @@ const Appointments = () => {
             </select>
           </div>
           <div className="flex items-center space-x-3">
-            <button className="flex items-center px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-              <Download className="h-4 w-4 mr-2" />
-              <span className="font-medium">Export</span>
-            </button>
             <button
               onClick={() => navigate('/urology-nurse/book-appointment')}
               className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
@@ -639,6 +633,7 @@ const Appointments = () => {
           </div>
         )}
       </div>
+
 
     </div>
   );

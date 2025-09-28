@@ -45,6 +45,7 @@ import DataEntry from './pages/urology-nurse/DataEntry';
 import UrologyNursePatientDetails from './pages/urology-nurse/PatientDetails';
 import RescheduleAppointment from './pages/urology-nurse/RescheduleAppointment';
 import TriageReferral from './pages/urology-nurse/TriageReferral';
+import TriagePatientDetails from './pages/urology-nurse/TriagePatientDetails';
 import BookAppointment from './pages/urology-nurse/BookAppointment';
 import AppointmentDetails from './pages/urology-nurse/AppointmentDetails';
 import CalendarView from './pages/urology-nurse/CalendarView';
@@ -132,6 +133,7 @@ const AppRoutes = () => {
         <Route path="db4" element={<DB4Management />} />
         <Route path="data-entry" element={<DataEntry />} />
         <Route path="patient-details/:id" element={<UrologyNursePatientDetails />} />
+        <Route path="triage-patient-details/:id" element={<TriagePatientDetails />} />
         <Route path="reschedule/:id" element={<RescheduleAppointment />} />
         <Route path="triage/:id" element={<TriageReferral />} />
         <Route path="book-appointment" element={<BookAppointment />} />

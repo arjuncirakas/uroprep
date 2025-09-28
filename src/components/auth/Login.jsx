@@ -43,25 +43,21 @@ const Login = () => {
       
       // Navigate based on role
       const roleRoutes = {
-        admin: '/admin/dashboard',
         gp: '/gp/dashboard',
         urology_nurse: '/urology-nurse/dashboard',
-        urologist: '/urologist/dashboard',
-        mdt_coordinator: '/mdt-coordinator/dashboard'
+        urologist: '/urologist/dashboard'
       };
       
-      navigate(roleRoutes[formData.role] || '/admin/dashboard');
+      navigate(roleRoutes[formData.role] || '/urology-nurse/dashboard');
     } catch (err) {
       dispatch(loginFailure('Invalid credentials'));
     }
   };
 
   const roleIcons = {
-    admin: <Shield className="h-4 w-4" />,
     gp: <Activity className="h-4 w-4" />,
     urology_nurse: <Stethoscope className="h-4 w-4" />,
-    urologist: <UserCircle className="h-4 w-4" />,
-    mdt_coordinator: <Sparkles className="h-4 w-4" />
+    urologist: <UserCircle className="h-4 w-4" />
   };
 
   return (
@@ -161,11 +157,9 @@ const Login = () => {
                   onChange={handleChange}
                   className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors appearance-none cursor-pointer"
                 >
-                  <option value="admin">Administrator</option>
                   <option value="gp">General Practitioner (Read-Only)</option>
                   <option value="urology_nurse">Urology Clinical Nurse</option>
                   <option value="urologist">Urologist</option>
-                  <option value="mdt_coordinator">MDT Coordinator</option>
                 </select>
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

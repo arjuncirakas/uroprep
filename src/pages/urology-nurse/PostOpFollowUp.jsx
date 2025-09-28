@@ -5,15 +5,11 @@ import {
   Search, 
   Eye,
   Calendar,
-  CheckCircle,
-  Clock,
-  AlertTriangle,
   X,
   User,
   Phone,
   Mail,
   FileText,
-  Upload,
   Activity,
   ArrowRight,
   Plus,
@@ -22,8 +18,7 @@ import {
   ClipboardList,
   Shield,
   TrendingUp,
-  Download,
-  Send
+  Download
 } from 'lucide-react';
 
 const PostOpFollowUp = () => {
@@ -196,15 +191,6 @@ const PostOpFollowUp = () => {
     }
   ];
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Recovery': return 'bg-blue-100 text-blue-800';
-      case 'Follow-up': return 'bg-green-100 text-green-800';
-      case 'High Risk': return 'bg-red-100 text-red-800';
-      case 'Discharged': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const getRiskColor = (risk) => {
     switch (risk) {
@@ -236,21 +222,6 @@ const PostOpFollowUp = () => {
   });
 
 
-  const handlePSAEntry = (patientId) => {
-    navigate(`/urology-nurse/postop-followup/${patientId}/psa-entry`);
-  };
-
-  const handleUploadReport = (patientId) => {
-    navigate(`/urology-nurse/postop-followup/${patientId}/upload-report`);
-  };
-
-  const handleDischarge = (patientId) => {
-    navigate(`/urology-nurse/postop-followup/${patientId}/discharge`);
-  };
-
-  const handleMDTReferral = (patientId) => {
-    navigate(`/urology-nurse/postop-followup/${patientId}/mdt-referral`);
-  };
 
   const handleScheduleFollowUp = (patientId) => {
     navigate(`/urology-nurse/appointments?patient=${patientId}&type=followup`);
@@ -317,15 +288,9 @@ const PostOpFollowUp = () => {
       {/* Post-Op Patients Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">Post-Op Follow-Up</h2>
-              <p className="text-sm text-gray-600 mt-1">Manage recovery and discharge planning</p>
-            </div>
-            <button className="flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity">
-              <Plus className="h-4 w-4 mr-2" />
-              <span className="font-medium">Add Patient</span>
-            </button>
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Post-Op Follow-Up</h2>
+            <p className="text-sm text-gray-600 mt-1">Manage recovery and discharge planning</p>
           </div>
         </div>
 
@@ -338,7 +303,6 @@ const PostOpFollowUp = () => {
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Surgery Details</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Histopathology</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Latest PSA</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Status</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -388,21 +352,6 @@ const PostOpFollowUp = () => {
                       </div>
                     </td>
                     <td className="py-5 px-6">
-                      <div className="space-y-2">
-                        <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(patient.status)}`}>
-                          {patient.status}
-                        </span>
-                        <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getRiskColor(patient.riskAssessment)}`}>
-                          {patient.riskAssessment}
-                        </span>
-                        {patient.dischargeReady && (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                            Ready for Discharge
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-5 px-6">
                       <div className="flex flex-col space-y-1">
                         <button 
                           onClick={() => navigate(`/urology-nurse/patient-details/${patient.id}`)}
@@ -411,38 +360,6 @@ const PostOpFollowUp = () => {
                           <Eye className="h-3 w-3 mr-1" />
                           <span>View</span>
                         </button>
-                        <button 
-                          onClick={() => handlePSAEntry(patient.id)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          <span>PSA Entry</span>
-                        </button>
-                        <button 
-                          onClick={() => handleUploadReport(patient.id)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                        >
-                          <Upload className="h-3 w-3 mr-1" />
-                          <span>Upload Report</span>
-                        </button>
-                        {patient.dischargeReady && (
-                          <button 
-                            onClick={() => handleDischarge(patient.id)}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 border border-purple-600 rounded-lg shadow-sm hover:from-purple-700 hover:to-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
-                          >
-                            <Send className="h-3 w-3 mr-1" />
-                            <span>Discharge</span>
-                          </button>
-                        )}
-                        {patient.status === 'High Risk' && (
-                          <button 
-                            onClick={() => handleMDTReferral(patient.id)}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-red-600 to-red-700 border border-red-600 rounded-lg shadow-sm hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
-                          >
-                            <AlertTriangle className="h-3 w-3 mr-1" />
-                            <span>MDT Referral</span>
-                          </button>
-                        )}
                         <button 
                           onClick={() => handleScheduleFollowUp(patient.id)}
                           className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"

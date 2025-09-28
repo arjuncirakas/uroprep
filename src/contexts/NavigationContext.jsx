@@ -25,11 +25,23 @@ export const NavigationProvider = ({ children }) => {
   }, [location.pathname, currentPage]);
 
   const getActiveSidebarItem = () => {
-    // If we're on a patient details, appointment details, or reschedule page, return the previous page
+    // If we're on a patient details, appointment details, reschedule, or add-patient page, return the appropriate parent page
     if (location.pathname.includes('/patient-details/') || 
         location.pathname.includes('/appointment-details/') || 
         location.pathname.includes('/reschedule/')) {
       return previousPage;
+    }
+    // For triage patient details route, return the triage page to keep the Referral Triage tab active
+    if (location.pathname.includes('/triage-patient-details/')) {
+      return '/urology-nurse/triage';
+    }
+    // For add-patient route, return the patients page to keep the Patients tab active
+    if (location.pathname.includes('/add-patient')) {
+      return '/urology-nurse/patients';
+    }
+    // For edit-patient route, return the patients page to keep the Patients tab active
+    if (location.pathname.includes('/edit-patient/')) {
+      return '/urology-nurse/patients';
     }
     // Otherwise return current page
     return location.pathname;
@@ -55,11 +67,23 @@ export const NavigationProvider = ({ children }) => {
       }
       return '/gp/patient-search'; // Ultimate fallback
     }
+    // For triage patient details route, go back to triage list
+    if (location.pathname.includes('/triage-patient-details/')) {
+      return '/urology-nurse/triage';
+    }
     if (location.pathname.includes('/appointment-details/')) {
       return location.pathname.startsWith('/gp/') ? '/gp/dashboard' : '/urology-nurse/dashboard';
     }
     if (location.pathname.includes('/reschedule/')) {
       return location.pathname.startsWith('/gp/') ? '/gp/dashboard' : '/urology-nurse/dashboard';
+    }
+    // For add-patient route, go back to patients list
+    if (location.pathname.includes('/add-patient')) {
+      return '/urology-nurse/patients';
+    }
+    // For edit-patient route, go back to patients list
+    if (location.pathname.includes('/edit-patient/')) {
+      return '/urology-nurse/patients';
     }
     // Default fallback based on current path
     if (location.pathname.startsWith('/gp/')) {

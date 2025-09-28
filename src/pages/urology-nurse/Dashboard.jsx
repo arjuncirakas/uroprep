@@ -22,7 +22,8 @@ import {
   ArrowRight,
   Zap,
   Shield,
-  Target
+  Target,
+  Info
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -64,6 +65,10 @@ const UrologyNurseDashboard = () => {
   // Chart filter state
   const [chartFilter, setChartFilter] = useState('month');
   const [chartType, setChartType] = useState('line'); // line or bar
+
+  // Modal state
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Mock appointments data
   const mockAppointments = [
@@ -541,15 +546,6 @@ const UrologyNurseDashboard = () => {
       color: 'indigo',
       route: '/urology-nurse/patients',
       urgent: false
-    },
-    {
-      name: 'Active Alerts',
-      description: 'Elevated PSA, missed follow-ups, complications',
-      value: alerts.filter(a => a.status === 'active').length,
-      icon: AlertTriangle,
-      color: 'red',
-      route: '/urology-nurse/dashboard',
-      urgent: alerts.filter(a => a.status === 'active').length > 0
     }
   ];
 
@@ -616,6 +612,17 @@ const UrologyNurseDashboard = () => {
     { id: 3, task: 'Update surveillance protocol for Patient #1239', due: 'Tomorrow 11:00 AM', priority: 'medium' },
     { id: 4, task: 'Send discharge summary to GP', due: 'Day after tomorrow', priority: 'low' }
   ];
+
+  // Modal handlers
+  const handleViewDetails = (appointment) => {
+    setSelectedAppointment(appointment);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedAppointment(null);
+  };
 
 
   return (
@@ -808,16 +815,16 @@ const UrologyNurseDashboard = () => {
             </div>
             
       {/* Today's Schedule Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="border-b border-gray-200 px-6 py-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Today's Schedule</h2>
               <p className="text-sm text-gray-600 mt-1">Upcoming appointments and tasks for today</p>
             </div>
             <div className="flex items-center space-x-2">
-              <Calendar className="h-5 w-5 text-blue-500" />
-              <span className="text-sm font-medium text-blue-600">
+              <Calendar className="h-5 w-5 text-blue-600" />
+              <span className="text-sm font-medium text-gray-700">
                 {mockAppointments.filter(a => a.date === selectedDate).length} Appointments
               </span>
             </div>
@@ -825,47 +832,79 @@ const UrologyNurseDashboard = () => {
         </div>
         
         <div className="p-6">
-          <div className="space-y-4">
+          <div className="grid gap-4">
             {mockAppointments.filter(a => a.date === selectedDate).slice(0, 5).map((appointment) => (
-              <div key={appointment.id} className={`p-4 rounded-lg border-l-4 ${
-                appointment.priority === 'High' ? 'bg-red-50 border-red-500' :
-                appointment.priority === 'Medium' ? 'bg-yellow-50 border-yellow-500' :
-                'bg-green-50 border-green-500'
+              <div key={appointment.id} className={`relative overflow-hidden rounded-xl border-2 transition-all ${
+                appointment.priority === 'High' ? 'border-red-200 bg-red-50/30' :
+                appointment.priority === 'Medium' ? 'border-yellow-200 bg-yellow-50/30' :
+                'border-green-200 bg-green-50/30'
               }`}>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        appointment.priority === 'High' ? 'bg-red-100 text-red-800' :
-                        appointment.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {appointment.priority}
-                      </span>
-                      <span className="text-sm font-medium text-gray-900">{appointment.patientName}</span>
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(appointment.type)}`}>
-                        {appointment.type}
-                      </span>
+                {/* Header section with time and priority */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                      appointment.priority === 'High' ? 'bg-red-500' :
+                      appointment.priority === 'Medium' ? 'bg-yellow-500' :
+                      'bg-green-500'
+                    }`}>
+                      <div className="w-2 h-2 bg-white rounded-full"></div>
                     </div>
-                    <p className="text-sm text-gray-700 mb-2">{appointment.title}</p>
-                    <p className="text-xs text-gray-500">
-                      <strong>Description:</strong> {appointment.description}
-                    </p>
+                    <div>
+                      <div className="text-lg font-bold text-gray-900">{appointment.time}</div>
+                      <div className="text-xs text-gray-500 font-mono">{appointment.upi}</div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-gray-900">{appointment.time}</div>
-                    <div className="text-xs text-gray-500">{appointment.upi}</div>
+                  <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+                    appointment.priority === 'High' ? 'bg-red-100 text-red-800' :
+                    appointment.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-green-100 text-green-800'
+                  }`}>
+                    {appointment.priority}
+                  </span>
+                </div>
+                
+                {/* Content section */}
+                <div className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <h3 className="text-base font-semibold text-gray-900">{appointment.patientName}</h3>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(appointment.type)}`}>
+                          {appointment.type}
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium text-gray-800 mb-2">{appointment.title}</p>
+                      <p className="text-xs text-gray-600 leading-relaxed">{appointment.description}</p>
+                    </div>
+                    
+                    {/* View Details button */}
+                    <div className="ml-6 flex-shrink-0">
+                      <button
+                        onClick={() => handleViewDetails(appointment)}
+                        className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 transition-all duration-200"
+                      >
+                        <Info className="h-4 w-4 mr-2" />
+                        View Details
+                      </button>
+                    </div>
                   </div>
                 </div>
+                
+                {/* Subtle gradient overlay */}
+                <div className={`absolute inset-0 pointer-events-none opacity-5 ${
+                  appointment.priority === 'High' ? 'bg-gradient-to-r from-red-500 to-transparent' :
+                  appointment.priority === 'Medium' ? 'bg-gradient-to-r from-yellow-500 to-transparent' :
+                  'bg-gradient-to-r from-green-500 to-transparent'
+                }`}></div>
               </div>
             ))}
           </div>
           
           {mockAppointments.filter(a => a.date === selectedDate).length > 5 && (
-            <div className="mt-4 text-center">
+            <div className="mt-6 text-center">
               <button 
                 onClick={() => navigate('/urology-nurse/appointments')}
-                className="text-sm text-green-600 hover:text-green-700 font-medium"
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
               >
                 View All Appointments ({mockAppointments.filter(a => a.date === selectedDate).length})
               </button>
@@ -873,6 +912,115 @@ const UrologyNurseDashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Appointment Details Modal */}
+      {isModalOpen && selectedAppointment && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Appointment Details</h3>
+              <button
+                onClick={closeModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Patient Information */}
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Patient Information</h4>
+                    <div className="space-y-2">
+                      <div>
+                        <span className="text-sm text-gray-600">Name:</span>
+                        <span className="ml-2 font-medium text-gray-900">{selectedAppointment.patientName}</span>
+                      </div>
+                      <div>
+                        <span className="text-sm text-gray-600">UPI:</span>
+                        <span className="ml-2 font-mono text-gray-900">{selectedAppointment.upi}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Appointment Details</h4>
+                    <div className="space-y-2">
+                      <div>
+                        <span className="text-sm text-gray-600">Type:</span>
+                        <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(selectedAppointment.type)}`}>
+                          {selectedAppointment.type}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-sm text-gray-600">Priority:</span>
+                        <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${
+                          selectedAppointment.priority === 'High' ? 'bg-red-100 text-red-800' :
+                          selectedAppointment.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-green-100 text-green-800'
+                        }`}>
+                          {selectedAppointment.priority}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-sm text-gray-600">Status:</span>
+                        <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedAppointment.status)}`}>
+                          {selectedAppointment.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Schedule Information */}
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Schedule</h4>
+                    <div className="space-y-2">
+                      <div>
+                        <span className="text-sm text-gray-600">Date:</span>
+                        <span className="ml-2 font-medium text-gray-900">{formatDate(selectedAppointment.date)}</span>
+                      </div>
+                      <div>
+                        <span className="text-sm text-gray-600">Time:</span>
+                        <span className="ml-2 font-medium text-gray-900">{selectedAppointment.time}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Description</h4>
+                    <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+                      {selectedAppointment.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+                <button
+                  onClick={closeModal}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    closeModal();
+                    navigate('/urology-nurse/appointments');
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  View in Calendar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

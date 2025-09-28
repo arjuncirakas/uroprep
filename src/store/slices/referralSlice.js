@@ -69,13 +69,50 @@ const referralSlice = createSlice({
         id: `URP${new Date().getFullYear()}${String(state.referrals.length + 1).padStart(4, '0')}`,
         timestamp: new Date().toISOString(),
         status: 'pending',
+        assignedTo: 'urology_nurse',
+        lastUpdated: new Date().toISOString(),
+      };
+      state.referrals.push(referral);
+    },
+    addReferralToQueue: (state, action) => {
+      const referral = {
+        ...action.payload,
+        status: 'in_triage',
+        assignedTo: 'urology_nurse',
+        triageDate: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
       };
       state.referrals.push(referral);
     },
     updateReferral: (state, action) => {
       const index = state.referrals.findIndex(r => r.id === action.payload.id);
       if (index !== -1) {
-        state.referrals[index] = { ...state.referrals[index], ...action.payload };
+        state.referrals[index] = { 
+          ...state.referrals[index], 
+          ...action.payload,
+          lastUpdated: new Date().toISOString()
+        };
+      }
+    },
+    updateReferralStatus: (state, action) => {
+      const { id, status, notes, assignedTo } = action.payload;
+      const index = state.referrals.findIndex(r => r.id === id);
+      if (index !== -1) {
+        state.referrals[index].status = status;
+        state.referrals[index].statusNotes = notes;
+        state.referrals[index].assignedTo = assignedTo || state.referrals[index].assignedTo;
+        state.referrals[index].lastUpdated = new Date().toISOString();
+      }
+    },
+    assignToDatabase: (state, action) => {
+      const { referralId, targetDatabase, clinicalDecision, assignedTo } = action.payload;
+      const index = state.referrals.findIndex(r => r.id === referralId);
+      if (index !== -1) {
+        state.referrals[index].status = 'assigned_to_database';
+        state.referrals[index].targetDatabase = targetDatabase;
+        state.referrals[index].clinicalDecision = clinicalDecision;
+        state.referrals[index].assignedTo = assignedTo;
+        state.referrals[index].lastUpdated = new Date().toISOString();
       }
     },
     setCurrentReferral: (state, action) => {
@@ -103,7 +140,10 @@ export const {
   updateCpcCriteria,
   validateCpcCriteria,
   addReferral,
+  addReferralToQueue,
   updateReferral,
+  updateReferralStatus,
+  assignToDatabase,
   setCurrentReferral,
   setFilters,
   clearFilters,

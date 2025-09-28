@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import PSAEntryModal from '../../components/modals/PSAEntryModal';
 import { 
   Search, 
   Eye, 
@@ -47,10 +48,12 @@ import {
 
 const ActiveSurveillance = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { db2 } = useSelector(state => state.databases);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [showPSAModal, setShowPSAModal] = useState(false);
+  const [showPSAEntryModal, setShowPSAEntryModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
   const [sortBy, setSortBy] = useState('nextVisit');
@@ -230,9 +233,25 @@ const ActiveSurveillance = () => {
     setShowPSAModal(true);
   };
 
+  const handlePSAEntry = (patient) => {
+    setSelectedPatient(patient);
+    setShowPSAEntryModal(true);
+  };
+
   const closePSAModal = () => {
     setShowPSAModal(false);
     setSelectedPatient(null);
+  };
+
+  const closePSAEntryModal = () => {
+    setShowPSAEntryModal(false);
+    setSelectedPatient(null);
+  };
+
+  const handlePSAEntrySave = () => {
+    // PSA entry is handled by the modal component
+    // Refresh the patient data here if needed
+    console.log('PSA entry saved for patient:', selectedPatient?.id);
   };
 
   const getPriorityColor = (priority) => {
@@ -466,6 +485,13 @@ const ActiveSurveillance = () => {
                           <LineChart className="h-3 w-3 mr-1" />
                           <span>PSA Review</span>
                         </button>
+                        <button 
+                          onClick={() => handlePSAEntry(patient)}
+                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 border border-purple-600 rounded-lg shadow-sm hover:from-purple-700 hover:to-purple-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
+                        >
+                          <TestTube className="h-3 w-3 mr-1" />
+                          <span>Add PSA</span>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -650,6 +676,14 @@ const ActiveSurveillance = () => {
           </div>
         </div>
       )}
+
+      {/* PSA Entry Modal */}
+      <PSAEntryModal
+        patient={selectedPatient}
+        onSave={handlePSAEntrySave}
+        onClose={closePSAEntryModal}
+        isOpen={showPSAEntryModal}
+      />
     </div>
   );
 };

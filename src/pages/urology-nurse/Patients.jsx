@@ -4,8 +4,6 @@ import {
   Users, 
   Search, 
   Eye,
-  Edit,
-  Calendar,
   X,
   UserPlus
 } from 'lucide-react';
@@ -15,6 +13,7 @@ const Patients = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedPathway, setSelectedPathway] = useState('all');
+  const [selectedType, setSelectedType] = useState('all');
 
   // Mock patient data
   const mockPatients = [
@@ -28,6 +27,7 @@ const Patients = () => {
       email: 'john.smith@email.com',
       status: 'Active',
       pathway: 'OPD Queue',
+      type: 'OPD',
       lastAppointment: '2024-01-15',
       nextAppointment: '2024-01-22',
       lastPSA: 8.5,
@@ -45,6 +45,7 @@ const Patients = () => {
       email: 'michael.brown@email.com',
       status: 'Active',
       pathway: 'Active Surveillance',
+      type: 'OPD',
       lastAppointment: '2024-01-10',
       nextAppointment: '2024-04-10',
       lastPSA: 5.2,
@@ -62,6 +63,7 @@ const Patients = () => {
       email: 'david.wilson@email.com',
       status: 'Active',
       pathway: 'Surgical Pathway',
+      type: 'IPD',
       lastAppointment: '2024-01-12',
       nextAppointment: '2024-01-25',
       lastPSA: 4.8,
@@ -79,6 +81,7 @@ const Patients = () => {
       email: 'robert.davis@email.com',
       status: 'Discharged',
       pathway: 'Post-Op Follow-up',
+      type: 'OPD',
       lastAppointment: '2024-01-08',
       nextAppointment: '2024-04-08',
       lastPSA: 0.02,
@@ -96,6 +99,7 @@ const Patients = () => {
       email: 'james.anderson@email.com',
       status: 'Active',
       pathway: 'OPD Queue',
+      type: 'OPD',
       lastAppointment: '2024-01-14',
       nextAppointment: '2024-01-21',
       lastPSA: 6.8,
@@ -113,6 +117,7 @@ const Patients = () => {
       email: 'william.thompson@email.com',
       status: 'Active',
       pathway: 'Active Surveillance',
+      type: 'OPD',
       lastAppointment: '2024-01-11',
       nextAppointment: '2024-04-11',
       lastPSA: 4.5,
@@ -142,6 +147,14 @@ const Patients = () => {
     }
   };
 
+  const getTypeColor = (type) => {
+    switch (type) {
+      case 'OPD': return 'bg-blue-100 text-blue-800';
+      case 'IPD': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   const filteredPatients = mockPatients.filter(patient => {
     const searchMatch = searchTerm === '' || 
       patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -150,8 +163,9 @@ const Patients = () => {
     
     const statusMatch = selectedStatus === 'all' || patient.status === selectedStatus;
     const pathwayMatch = selectedPathway === 'all' || patient.pathway === selectedPathway;
+    const typeMatch = selectedType === 'all' || patient.type === selectedType;
     
-    return searchMatch && statusMatch && pathwayMatch;
+    return searchMatch && statusMatch && pathwayMatch && typeMatch;
   });
 
 
@@ -166,7 +180,7 @@ const Patients = () => {
           </div>
           <button
             onClick={() => navigate('/urology-nurse/add-patient')}
-            className="flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity shadow-sm"
+            className="flex items-center px-6 py-3 bg-gradient-to-r from-green-800 to-black text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl"
           >
             <UserPlus className="h-4 w-4 mr-2" />
             Add Patient
@@ -235,6 +249,16 @@ const Patients = () => {
                 <option value="Post-Op Follow-up">Post-Op Follow-up</option>
                 <option value="Discharged">Discharged</option>
               </select>
+              
+              <select
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+                className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
+              >
+                <option value="all">All Types</option>
+                <option value="OPD">OPD</option>
+                <option value="IPD">IPD</option>
+              </select>
             </div>
             
             <div className="bg-gradient-to-r from-green-50 to-gray-50 border border-green-200 rounded-xl p-3">
@@ -270,6 +294,7 @@ const Patients = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Type</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Pathway</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Latest PSA</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Next Appointment</th>
@@ -297,24 +322,20 @@ const Patients = () => {
                       </div>
                     </td>
                     <td className="py-5 px-6">
+                      <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getTypeColor(patient.type)}`}>
+                        {patient.type}
+                      </span>
+                    </td>
+                    <td className="py-5 px-6">
                       <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getPathwayColor(patient.pathway)}`}>
                         {patient.pathway}
                       </span>
                     </td>
                     <td className="py-5 px-6">
-                      <div>
-                        <p className="font-medium text-gray-900">{patient.lastPSA} ng/mL</p>
-                        <p className="text-xs text-gray-500">{patient.lastPSADate}</p>
-                      </div>
+                      <p className="font-medium text-gray-900">{patient.lastPSA} ng/mL</p>
                     </td>
                     <td className="py-5 px-6">
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="h-4 w-4 text-gray-400" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{patient.nextAppointment}</p>
-                          <p className="text-xs text-gray-500">Last: {patient.lastAppointment}</p>
-                        </div>
-                      </div>
+                      <p className="text-sm font-medium text-gray-900">{patient.nextAppointment}</p>
                     </td>
                     <td className="py-5 px-6">
                       <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(patient.status)}`}>
@@ -322,22 +343,13 @@ const Patients = () => {
                       </span>
                     </td>
                     <td className="py-5 px-6">
-                      <div className="flex items-center space-x-2">
-                        <button 
-                          onClick={() => navigate(`/urology-nurse/patient-details/${patient.id}`)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-                        >
-                          <Eye className="h-3 w-3 mr-1" />
-                          <span>View</span>
-                        </button>
-                        <button 
-                          onClick={() => navigate(`/urology-nurse/patient-details/${patient.id}/edit`)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                        >
-                          <Edit className="h-3 w-3 mr-1" />
-                          <span>Edit</span>
-                        </button>
-                      </div>
+                      <button 
+                        onClick={() => navigate(`/urology-nurse/patient-details/${patient.id}`)}
+                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        <span>View Details</span>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -360,6 +372,7 @@ const Patients = () => {
                     setSearchTerm('');
                     setSelectedStatus('all');
                     setSelectedPathway('all');
+                    setSelectedType('all');
                   }}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                 >
@@ -367,8 +380,8 @@ const Patients = () => {
                   Clear Filters
                 </button>
                 <button
-                  onClick={() => navigate('/urology-nurse/triage')}
-                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
+                  onClick={() => navigate('/urology-nurse/add-patient')}
+                  className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-800 to-black text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
                   Add New Patient
