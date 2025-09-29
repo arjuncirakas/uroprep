@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useNavigation } from '../../contexts/NavigationContext';
 import { 
   UserPlus, 
   ArrowLeft, 
@@ -22,6 +23,7 @@ import {
 
 const AddPatient = () => {
   const navigate = useNavigate();
+  const { getBackPath } = useNavigation();
   const [formData, setFormData] = useState({
     // Personal Information
     firstName: '',
@@ -138,8 +140,8 @@ const AddPatient = () => {
       
       console.log('New patient created:', newPatient);
       
-      // Navigate back to patients list
-      navigate('/urology-nurse/patients');
+      // Navigate back using NavigationContext
+      navigate(getBackPath());
       
     } catch (error) {
       console.error('Error creating patient:', error);
@@ -149,7 +151,8 @@ const AddPatient = () => {
   };
 
   const handleCancel = () => {
-    navigate('/urology-nurse/patients');
+    // Navigate back using NavigationContext
+    navigate(getBackPath());
   };
 
   return (

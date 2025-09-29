@@ -18,8 +18,7 @@ import {
 const OPDManagement = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [activeFilter, setActiveFilter] = useState('All patients');
 
   // Mock OPD queue data
   const mockOPDQueue = [
@@ -449,10 +448,14 @@ const OPDManagement = () => {
       patient.upi.toLowerCase().includes(searchTerm.toLowerCase()) ||
       patient.assignedUrologist.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const statusMatch = selectedStatus === 'all' || patient.status === selectedStatus;
-    const dateMatch = patient.appointmentDate === selectedDate;
+    // Status filter based on active tab
+    const statusMatch = 
+      (activeFilter === 'All patients') ||
+      (activeFilter === 'Waiting' && patient.status === 'Waiting') ||
+      (activeFilter === 'In Consultation' && patient.status === 'In Consultation') ||
+      (activeFilter === 'Awaiting Results' && patient.status === 'Awaiting Results');
     
-    return searchMatch && statusMatch && dateMatch;
+    return searchMatch && statusMatch;
   });
 
 
@@ -480,52 +483,43 @@ const OPDManagement = () => {
             </div>
           </div>
         </div>
-        <div className="p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="relative flex-1 max-w-md">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by patient name, UPI, or urologist..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4 text-gray-500" />
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+
+        {/* Filter Tabs */}
+        <div className="px-6 py-4">
+          <nav className="flex space-x-2" aria-label="Tabs">
+            {['All patients', 'Waiting', 'In Consultation', 'Awaiting Results'].map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setActiveFilter(filter)}
+                className={`px-4 py-2 rounded-full font-medium text-sm transition-all duration-200 ${
+                  activeFilter === filter
+                    ? 'bg-gradient-to-r from-green-600 to-green-700 text-white'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                }`}
               >
-                <option value="all">All Status</option>
-                <option value="Waiting">Waiting</option>
-                <option value="In Consultation">In Consultation</option>
-                <option value="Awaiting Results">Awaiting Results</option>
-                <option value="Completed">Completed</option>
-              </select>
-            </div>
-          </div>
+                <div className="flex items-center space-x-2">
+                  <span>{filter}</span>
+                  <span className={`py-0.5 px-2 rounded-full text-xs font-semibold transition-colors ${
+                    activeFilter === filter
+                      ? 'bg-white/20 text-white'
+                      : 'bg-gray-200 text-gray-700'
+                  }`}>
+                    {mockOPDQueue.filter(patient => {
+                       switch (filter) {
+                         case 'All patients': return true;
+                         case 'Waiting': return patient.status === 'Waiting';
+                         case 'In Consultation': return patient.status === 'In Consultation';
+                         case 'Awaiting Results': return patient.status === 'Awaiting Results';
+                         default: return true;
+                       }
+                     }).length}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </nav>
         </div>
+
       </div>
 
       {/* OPD Queue Table */}
@@ -540,6 +534,28 @@ const OPDManagement = () => {
               <RefreshCw className="h-4 w-4 mr-2" />
               <span className="font-medium">Refresh Queue</span>
             </button>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by patient name, UPI, or urologist..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -623,18 +639,15 @@ const OPDManagement = () => {
                 No patients in OPD queue
               </h3>
               <p className="text-gray-500 mb-6 max-w-md mx-auto">
-                {selectedDate === new Date().toISOString().split('T')[0] 
-                  ? 'No patients scheduled for today.'
-                  : `No patients scheduled for ${selectedDate}.`
-                }
+                No patients in the OPD queue.
               </p>
               <div className="flex items-center justify-center space-x-4">
                 <button
-                  onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+                  onClick={() => setActiveFilter('All patients')}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                 >
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Go to Today
+                  <Users className="h-4 w-4 mr-2" />
+                  Show All Patients
                 </button>
                 <button
                   onClick={() => navigate('/urology-nurse/appointments')}

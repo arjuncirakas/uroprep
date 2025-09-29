@@ -516,7 +516,10 @@ const PatientManagement = () => {
                       <td className="py-5 px-6">
                         <div className="flex items-center space-x-2">
                         <button
-                            onClick={() => navigate(`/urologist/patient-details/${patient.id}`)}
+                            onClick={() => {
+                              sessionStorage.setItem('lastVisitedPage', 'patient-management');
+                              navigate(`/urologist/patient-details/${patient.id}`);
+                            }}
                             className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
                           >
                             <Eye className="h-3 w-3 mr-1" />

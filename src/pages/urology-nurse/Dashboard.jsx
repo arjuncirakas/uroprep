@@ -23,7 +23,9 @@ import {
   Zap,
   Shield,
   Target,
-  Info
+  Info,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -60,7 +62,11 @@ const UrologyNurseDashboard = () => {
   // State for appointments table
   const [activeFilter, setActiveFilter] = useState('Today');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDate, setSelectedDate] = useState('2024-01-15');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // Calendar state
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [showCalendar, setShowCalendar] = useState(false);
   
   // Chart filter state
   const [chartFilter, setChartFilter] = useState('month');
@@ -70,15 +76,30 @@ const UrologyNurseDashboard = () => {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Mock appointments data
+  // Generate dates for next 5 days
+  const getNextDays = () => {
+    const dates = [];
+    const today = new Date();
+    for (let i = 0; i < 5; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      dates.push(date.toISOString().split('T')[0]);
+    }
+    return dates;
+  };
+
+  const nextDays = getNextDays();
+
+  // Mock appointments data with next 5 days
   const mockAppointments = [
+    // Today (2024-01-15)
     {
       id: 'APT001',
       patientName: 'John Doe',
       upi: 'URP2024001',
       title: 'PSA Follow-up',
       description: '3-month PSA review and consultation',
-      date: '2024-01-15',
+      date: nextDays[0],
       time: '9:00 AM',
       type: 'Follow-up',
       status: 'Confirmed',
@@ -90,7 +111,7 @@ const UrologyNurseDashboard = () => {
       upi: 'URP2024002',
       title: 'OPD Assessment',
       description: 'Initial assessment and triage',
-      date: '2024-01-15',
+      date: nextDays[0],
       time: '10:30 AM',
       type: 'OPD',
       status: 'Pending',
@@ -102,7 +123,7 @@ const UrologyNurseDashboard = () => {
       upi: 'URP2024003',
       title: 'Pre-op Consultation',
       description: 'Pre-operative assessment and planning',
-      date: '2024-01-15',
+      date: nextDays[0],
       time: '2:00 PM',
       type: 'Surgery',
       status: 'Confirmed',
@@ -110,50 +131,240 @@ const UrologyNurseDashboard = () => {
     },
     {
       id: 'APT004',
-      patientName: 'David Wilson',
+      patientName: 'Emily Johnson',
       upi: 'URP2024004',
       title: 'PSA Review',
       description: '6-month PSA monitoring',
-      date: '2024-01-16',
+      date: nextDays[0],
+      time: '3:30 PM',
+      type: 'Surveillance',
+      status: 'Confirmed',
+      priority: 'Medium'
+    },
+
+    // Tomorrow (2024-01-16)
+    {
+      id: 'APT005',
+      patientName: 'David Wilson',
+      upi: 'URP2024005',
+      title: 'PSA Review',
+      description: '6-month PSA monitoring',
+      date: nextDays[1],
       time: '9:00 AM',
       type: 'Surveillance',
       status: 'Scheduled',
       priority: 'Normal'
     },
     {
-      id: 'APT005',
+      id: 'APT006',
       patientName: 'Sarah Davis',
-      upi: 'URP2024005',
+      upi: 'URP2024006',
       title: 'Surveillance Check',
       description: 'Active surveillance monitoring',
-      date: '2024-01-16',
+      date: nextDays[1],
       time: '11:00 AM',
       type: 'Surveillance',
       status: 'Scheduled',
       priority: 'Normal'
     },
     {
-      id: 'APT006',
-      patientName: 'Michael Thompson',
-      upi: 'URP2024006',
-      title: 'Post-op Follow-up',
-      description: 'Post-operative assessment',
-      date: '2024-01-17',
-      time: '2:30 PM',
+      id: 'APT007',
+      patientName: 'James Miller',
+      upi: 'URP2024007',
+      title: 'OPD Assessment',
+      description: 'New patient consultation',
+      date: nextDays[1],
+      time: '1:30 PM',
+      type: 'OPD',
+      status: 'Confirmed',
+      priority: 'High'
+    },
+    {
+      id: 'APT008',
+      patientName: 'Lisa Anderson',
+      upi: 'URP2024008',
+      title: 'Follow-up Consultation',
+      description: 'Post-treatment follow-up',
+      date: nextDays[1],
+      time: '3:00 PM',
       type: 'Follow-up',
       status: 'Confirmed',
+      priority: 'Medium'
+    },
+
+    // Day 3 (2024-01-17)
+    {
+      id: 'APT009',
+      patientName: 'Michael Thompson',
+      upi: 'URP2024009',
+      title: 'Post-op Follow-up',
+      description: 'Post-operative assessment',
+      date: nextDays[2],
+      time: '9:30 AM',
+      type: 'Follow-up',
+      status: 'Confirmed',
+      priority: 'Normal'
+    },
+    {
+      id: 'APT010',
+      patientName: 'Jennifer Garcia',
+      upi: 'URP2024010',
+      title: 'Pre-op Assessment',
+      description: 'Pre-operative evaluation',
+      date: nextDays[2],
+      time: '11:15 AM',
+      type: 'Surgery',
+      status: 'Confirmed',
+      priority: 'High'
+    },
+    {
+      id: 'APT011',
+      patientName: 'Christopher Lee',
+      upi: 'URP2024011',
+      title: 'PSA Monitoring',
+      description: 'Regular PSA level check',
+      date: nextDays[2],
+      time: '2:00 PM',
+      type: 'Surveillance',
+      status: 'Scheduled',
+      priority: 'Normal'
+    },
+
+    // Day 4 (2024-01-18)
+    {
+      id: 'APT012',
+      patientName: 'Amanda White',
+      upi: 'URP2024012',
+      title: 'OPD Consultation',
+      description: 'General urology consultation',
+      date: nextDays[3],
+      time: '10:00 AM',
+      type: 'OPD',
+      status: 'Confirmed',
+      priority: 'Medium'
+    },
+    {
+      id: 'APT013',
+      patientName: 'Daniel Martinez',
+      upi: 'URP2024013',
+      title: 'Surgical Follow-up',
+      description: 'Post-surgical recovery assessment',
+      date: nextDays[3],
+      time: '1:00 PM',
+      type: 'Follow-up',
+      status: 'Confirmed',
+      priority: 'Normal'
+    },
+    {
+      id: 'APT014',
+      patientName: 'Rachel Taylor',
+      upi: 'URP2024014',
+      title: 'Active Surveillance',
+      description: 'Routine surveillance appointment',
+      date: nextDays[3],
+      time: '3:45 PM',
+      type: 'Surveillance',
+      status: 'Scheduled',
+      priority: 'Normal'
+    },
+
+    // Day 5 (2024-01-19)
+    {
+      id: 'APT015',
+      patientName: 'Kevin Wilson',
+      upi: 'URP2024015',
+      title: 'Pre-op Planning',
+      description: 'Pre-operative planning session',
+      date: nextDays[4],
+      time: '9:15 AM',
+      type: 'Surgery',
+      status: 'Confirmed',
+      priority: 'High'
+    },
+    {
+      id: 'APT016',
+      patientName: 'Nicole Brown',
+      upi: 'URP2024016',
+      title: 'PSA Follow-up',
+      description: '3-month PSA review',
+      date: nextDays[4],
+      time: '11:30 AM',
+      type: 'Follow-up',
+      status: 'Confirmed',
+      priority: 'Medium'
+    },
+    {
+      id: 'APT017',
+      patientName: 'Thomas Davis',
+      upi: 'URP2024017',
+      title: 'OPD Assessment',
+      description: 'Initial patient assessment',
+      date: nextDays[4],
+      time: '2:30 PM',
+      type: 'OPD',
+      status: 'Scheduled',
       priority: 'Normal'
     }
   ];
 
-  // Filter appointments based on active filter and search term
+  // Calendar helper functions
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    const days = [];
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+    
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(new Date(year, month, day));
+    }
+    
+    return days;
+  };
+
+  const getAppointmentsForDate = (date) => {
+    const dateString = date.toISOString().split('T')[0];
+    return mockAppointments.filter(apt => apt.date === dateString);
+  };
+
+  const navigateMonth = (direction) => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(prev.getMonth() + direction);
+      return newDate;
+    });
+  };
+
+  const isToday = (date) => {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  };
+
+  const isSelected = (date) => {
+    const selectedDateObj = new Date(selectedDate);
+    return date.toDateString() === selectedDateObj.toDateString();
+  };
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString('en-AU', { 
+      year: 'numeric', 
+      month: 'long' 
+    });
+  };
+
+  // Filter appointments based on selected date
   const filteredAppointments = mockAppointments.filter(appointment => {
-    // Status filter
-    const filterMatch = 
-      (activeFilter === 'Today' && appointment.date === selectedDate) ||
-      (activeFilter === 'Follow-ups' && (appointment.type === 'Follow-up' || appointment.type === 'Surveillance') && appointment.date === selectedDate) ||
-      (activeFilter === 'OPD' && appointment.type === 'OPD' && appointment.date === selectedDate) ||
-      (activeFilter === 'Surgery' && appointment.type === 'Surgery' && appointment.date === selectedDate);
+    // Date filter
+    const dateMatch = appointment.date === selectedDate;
     
     // Search filter
     const searchMatch = searchTerm === '' || 
@@ -162,13 +373,12 @@ const UrologyNurseDashboard = () => {
       appointment.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       appointment.type.toLowerCase().includes(searchTerm.toLowerCase());
     
-    return filterMatch && searchMatch;
+    return dateMatch && searchMatch;
   });
 
+  const days = getDaysInMonth(currentDate);
+
   // Helper functions
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-AU');
-  };
 
   const getTypeColor = (type) => {
     switch (type) {
@@ -292,44 +502,70 @@ const UrologyNurseDashboard = () => {
     }
   };
 
-  // PSA Trend Chart Data
-  const getPSATrendData = (filter) => {
+  // Patient Additions Chart Data
+  const getPatientAdditionsData = (filter) => {
     switch (filter) {
       case 'week':
         return {
           labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-          data: [4.2, 4.8, 3.9, 5.1, 4.6, 4.3, 4.7]
+          data: [3, 5, 2, 7, 4, 1, 2],
+          details: [
+            { date: 'Mon', patients: 3, names: ['John Smith', 'Mike Brown', 'David Wilson'] },
+            { date: 'Tue', patients: 5, names: ['Robert Davis', 'James Anderson', 'William Thompson', 'Michael Chen', 'Sarah Johnson'] },
+            { date: 'Wed', patients: 2, names: ['Christopher Lee', 'Richard Taylor'] },
+            { date: 'Thu', patients: 7, names: ['Thomas White', 'Mark Johnson', 'Steven Miller', 'Kevin Garcia', 'Daniel Martinez', 'Paul Rodriguez', 'Andrew Lewis'] },
+            { date: 'Fri', patients: 4, names: ['Robert Johnson', 'David Anderson', 'Michael Brown', 'James Wilson'] },
+            { date: 'Sat', patients: 1, names: ['William Taylor'] },
+            { date: 'Sun', patients: 2, names: ['Christopher Davis', 'Richard Miller'] }
+          ]
         };
       case 'month':
         return {
           labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-          data: [4.3, 4.7, 4.1, 4.9]
+          data: [12, 18, 15, 22],
+          details: [
+            { period: 'Week 1', patients: 12, description: '12 patients added this week' },
+            { period: 'Week 2', patients: 18, description: '18 patients added this week' },
+            { period: 'Week 3', patients: 15, description: '15 patients added this week' },
+            { period: 'Week 4', patients: 22, description: '22 patients added this week' }
+          ]
         };
       case 'quarter':
         return {
           labels: ['Month 1', 'Month 2', 'Month 3'],
-          data: [4.4, 4.6, 4.2]
+          data: [67, 89, 76],
+          details: [
+            { period: 'Month 1', patients: 67, description: '67 patients added this month' },
+            { period: 'Month 2', patients: 89, description: '89 patients added this month' },
+            { period: 'Month 3', patients: 76, description: '76 patients added this month' }
+          ]
         };
       default:
         return {
           labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-          data: [4.3, 4.7, 4.1, 4.9]
+          data: [12, 18, 15, 22],
+          details: [
+            { period: 'Week 1', patients: 12, description: '12 patients added this week' },
+            { period: 'Week 2', patients: 18, description: '18 patients added this week' },
+            { period: 'Week 3', patients: 15, description: '15 patients added this week' },
+            { period: 'Week 4', patients: 22, description: '22 patients added this week' }
+          ]
         };
     }
   };
 
-  const psaTrendData = getPSATrendData(chartFilter);
+  const patientAdditionsData = getPatientAdditionsData(chartFilter);
 
   // Debug: Log chart data
   console.log('Patient Distribution Data:', patientDistributionData);
-  console.log('PSA Trend Data:', psaTrendData);
+  console.log('Patient Additions Data:', patientAdditionsData);
 
-  const psaTrendChartData = {
-    labels: psaTrendData.labels,
+  const patientAdditionsChartData = {
+    labels: patientAdditionsData.labels,
     datasets: [
       {
-        label: 'Average PSA (ng/mL)',
-        data: psaTrendData.data,
+        label: 'Patients Added',
+        data: patientAdditionsData.data,
         borderColor: 'rgba(34, 197, 94, 1)',
         backgroundColor: 'rgba(34, 197, 94, 0.1)',
         borderWidth: 3,
@@ -344,7 +580,7 @@ const UrologyNurseDashboard = () => {
     ]
   };
 
-  const psaTrendOptions = {
+  const patientAdditionsOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -360,7 +596,16 @@ const UrologyNurseDashboard = () => {
         cornerRadius: 8,
         callbacks: {
           label: function(context) {
-            return `Average PSA: ${context.parsed.y} ng/mL`;
+            const dataIndex = context.dataIndex;
+            const details = patientAdditionsData.details[dataIndex];
+            if (details && details.names) {
+              return [
+                `Patients Added: ${context.parsed.y}`,
+                `Names: ${details.names.join(', ')}`
+              ];
+            } else {
+              return `Patients Added: ${context.parsed.y}`;
+            }
           }
         }
       }
@@ -379,9 +624,8 @@ const UrologyNurseDashboard = () => {
         }
       },
       y: {
-        beginAtZero: false,
+        beginAtZero: true,
         min: 0,
-        max: 10,
         grid: {
           color: 'rgba(107, 114, 128, 0.1)',
           drawBorder: false,
@@ -393,7 +637,7 @@ const UrologyNurseDashboard = () => {
             weight: '500'
           },
           callback: function(value) {
-            return value + ' ng/mL';
+            return value + ' patients';
           }
         }
       },
@@ -405,7 +649,7 @@ const UrologyNurseDashboard = () => {
   };
 
   // Bar Chart Options (same data as line chart)
-  const psaBarOptions = {
+  const patientAdditionsBarOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -421,7 +665,16 @@ const UrologyNurseDashboard = () => {
         cornerRadius: 8,
         callbacks: {
           label: function(context) {
-            return `Average PSA: ${context.parsed.y} ng/mL`;
+            const dataIndex = context.dataIndex;
+            const details = patientAdditionsData.details[dataIndex];
+            if (details && details.names) {
+              return [
+                `Patients Added: ${context.parsed.y}`,
+                `Names: ${details.names.join(', ')}`
+              ];
+            } else {
+              return `Patients Added: ${context.parsed.y}`;
+            }
           }
         }
       }
@@ -440,9 +693,8 @@ const UrologyNurseDashboard = () => {
         }
       },
       y: {
-        beginAtZero: false,
+        beginAtZero: true,
         min: 0,
-        max: 10,
         grid: {
           color: 'rgba(107, 114, 128, 0.1)',
           drawBorder: false,
@@ -454,7 +706,7 @@ const UrologyNurseDashboard = () => {
             weight: '500'
           },
           callback: function(value) {
-            return value + ' ng/mL';
+            return value + ' patients';
           }
         }
       },
@@ -464,12 +716,12 @@ const UrologyNurseDashboard = () => {
   };
 
   // Bar Chart Data (same as line chart)
-  const psaBarChartData = {
-    labels: psaTrendData.labels,
+  const patientAdditionsBarChartData = {
+    labels: patientAdditionsData.labels,
     datasets: [
       {
-        label: 'Average PSA (ng/mL)',
-        data: psaTrendData.data,
+        label: 'Patients Added',
+        data: patientAdditionsData.data,
         backgroundColor: 'rgba(34, 197, 94, 0.8)',
         borderColor: 'rgba(34, 197, 94, 1)',
         borderWidth: 1,
@@ -539,7 +791,7 @@ const UrologyNurseDashboard = () => {
       urgent: false
     },
     {
-      name: 'Discharges Pending',
+      name: 'Awaiting Discharge',
       description: 'Ready to be sent back to GP',
       value: referrals.filter(r => r.status === 'ready_for_discharge').length,
       icon: ClipboardList,
@@ -635,57 +887,84 @@ const UrologyNurseDashboard = () => {
       
       {/* Quick Action Buttons */}
       <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-          <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="quarter">This Quarter</option>
-          </select>
+        <div className="flex items-center space-x-4">
+          {/* Empty div to maintain layout */}
         </div>
-        <button 
-          onClick={() => navigate('/urology-nurse/appointments')}
-          className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
-        >
-          <Calendar className="h-4 w-4 mr-2" />
-          <span className="font-medium">Schedule Appointment</span>
-        </button>
+        <div className="flex items-center space-x-4">
+          <button 
+            onClick={() => navigate('/urology-nurse/add-patient')}
+            className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            <span className="font-medium">Add Patient</span>
+          </button>
+          <button 
+            onClick={() => navigate('/urology-nurse/appointments')}
+            className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            <span className="font-medium">Schedule Appointment</span>
+          </button>
+        </div>
       </div>
 
       {/* Workflow Cards - Main Command Center */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {workflowCards.map((card) => {
           const Icon = card.icon;
               return (
             <div 
               key={card.name} 
               onClick={() => navigate(card.route)}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md hover:scale-102 transition-all duration-200 group"
+              className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all duration-300 group relative overflow-hidden cursor-pointer"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-lg ${
-                  card.color === 'red' ? 'bg-gradient-to-br from-red-500 to-red-700' :
-                  card.color === 'blue' ? 'bg-gradient-to-br from-blue-500 to-blue-700' :
-                  card.color === 'purple' ? 'bg-gradient-to-br from-purple-500 to-purple-700' :
-                  card.color === 'green' ? 'bg-gradient-to-br from-green-500 to-green-700' :
-                  card.color === 'orange' ? 'bg-gradient-to-br from-orange-500 to-orange-700' :
-                  card.color === 'yellow' ? 'bg-gradient-to-br from-yellow-500 to-yellow-700' :
-                  card.color === 'indigo' ? 'bg-gradient-to-br from-indigo-500 to-indigo-700' :
-                  'bg-gradient-to-br from-gray-500 to-gray-700'
-                }`}>
-                  <Icon className="h-6 w-6 text-white" />
+              {/* Professional gradient overlay */}
+              <div className={`absolute inset-0 opacity-0 group-hover:opacity-3 transition-opacity duration-300 ${
+                card.color === 'red' ? 'bg-gradient-to-r from-red-50 to-transparent' :
+                card.color === 'blue' ? 'bg-gradient-to-r from-blue-50 to-transparent' :
+                card.color === 'purple' ? 'bg-gradient-to-r from-purple-50 to-transparent' :
+                card.color === 'green' ? 'bg-gradient-to-r from-green-50 to-transparent' :
+                card.color === 'orange' ? 'bg-gradient-to-r from-orange-50 to-transparent' :
+                card.color === 'yellow' ? 'bg-gradient-to-r from-yellow-50 to-transparent' :
+                card.color === 'indigo' ? 'bg-gradient-to-r from-indigo-50 to-transparent' :
+                'bg-gradient-to-r from-gray-50 to-transparent'
+              }`}></div>
+              
+              <div className="relative z-10 p-5">
+                {/* Icon, count, and title on same line */}
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className={`p-3 rounded-lg shadow-sm group-hover:shadow-md transition-all duration-300 ${
+                    card.color === 'red' ? 'bg-red-500' :
+                    card.color === 'blue' ? 'bg-blue-500' :
+                    card.color === 'purple' ? 'bg-purple-500' :
+                    card.color === 'green' ? 'bg-green-500' :
+                    card.color === 'orange' ? 'bg-orange-500' :
+                    card.color === 'yellow' ? 'bg-yellow-500' :
+                    card.color === 'indigo' ? 'bg-indigo-500' :
+                    'bg-gray-500'
+                  }`}>
+                    <Icon className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <p className="text-3xl font-bold text-gray-900">{card.value}</p>
+                    <p className="text-base font-semibold text-gray-900">{card.name}</p>
+                  </div>
+                  {card.urgent && (
+                    <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></div>
+                  )}
                 </div>
-                {card.urgent && (
-                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                )}
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">{card.name}</p>
-                <p className="text-3xl font-bold text-gray-900 mb-2">{card.value}</p>
-                <p className="text-xs text-gray-500 mb-3">{card.description}</p>
-                <div className="flex items-center text-green-600 text-sm font-medium group-hover:text-green-700">
-                  <span>View Details</span>
-                  <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                
+                {/* Description centered */}
+                <div className="text-center mb-4">
+                  <p className="text-sm text-gray-500">{card.description}</p>
+                </div>
+                
+                {/* View Details link centered */}
+                <div className="text-center">
+                  <div className="flex items-center justify-center text-green-600 group-hover:text-green-700 text-sm font-medium transition-colors duration-200 mx-auto">
+                    <span>View Details</span>
+                    <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform duration-200" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -730,13 +1009,13 @@ const UrologyNurseDashboard = () => {
           </div>
         </div>
 
-        {/* PSA Trend Chart */}
+        {/* Patient Additions Chart */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="border-b border-gray-200 px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">PSA Trend Analysis</h2>
-                <p className="text-sm text-gray-600 mt-1">Average PSA levels over time</p>
+                <h2 className="text-xl font-semibold text-gray-900">Patient Additions Trend</h2>
+                <p className="text-sm text-gray-600 mt-1">Number of patients added by nurse over time</p>
               </div>
               <div className="flex items-center space-x-2">
                 <button 
@@ -795,17 +1074,17 @@ const UrologyNurseDashboard = () => {
           
           <div className="p-6">
             <div className="h-64 w-full">
-              {psaTrendChartData.datasets[0].data.length > 0 ? (
+              {patientAdditionsChartData.datasets[0].data.length > 0 ? (
                 chartType === 'line' ? (
-                  <Line data={psaTrendChartData} options={psaTrendOptions} />
+                  <Line data={patientAdditionsChartData} options={patientAdditionsOptions} />
                 ) : (
-                  <Bar data={psaBarChartData} options={psaBarOptions} />
+                  <Bar data={patientAdditionsBarChartData} options={patientAdditionsBarOptions} />
                 )
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-500">
                   <div className="text-center">
                     <TrendingUp className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                    <p>No PSA trend data available</p>
+                    <p>No patient additions data available</p>
                   </div>
                 </div>
               )}
@@ -819,94 +1098,242 @@ const UrologyNurseDashboard = () => {
         <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Today's Schedule</h2>
-              <p className="text-sm text-gray-600 mt-1">Upcoming appointments and tasks for today</p>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {new Date(selectedDate).toLocaleDateString('en-AU', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })} Schedule
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">Upcoming appointments and tasks for selected date</p>
             </div>
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-5 w-5 text-blue-600" />
-              <span className="text-sm font-medium text-gray-700">
-                {mockAppointments.filter(a => a.date === selectedDate).length} Appointments
-              </span>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowCalendar(!showCalendar)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md ${
+                  showCalendar 
+                    ? 'bg-gradient-to-r from-green-800 to-black text-white' 
+                    : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800'
+                }`}
+                title={showCalendar ? "Hide calendar" : "Show calendar"}
+              >
+                <Calendar className="h-4 w-4" />
+                <span className="text-sm font-medium">
+                  {showCalendar ? 'Hide Calendar' : 'Show Calendar'}
+                </span>
+              </button>
+              <div className="flex items-center space-x-2 px-3 py-2 bg-gray-100 rounded-xl">
+                <Calendar className="h-4 w-4 text-gray-600" />
+                <span className="text-sm font-medium text-gray-700">
+                  {filteredAppointments.length} Appointments
+                </span>
+              </div>
             </div>
           </div>
         </div>
         
+        {/* Calendar Modal */}
+        {showCalendar && (
+          <div className="border-b border-gray-200 bg-gradient-to-br from-slate-50 to-blue-50 px-6 py-6">
+            <div className="max-w-lg mx-auto">
+              {/* Calendar Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">
+                    {formatDate(currentDate)}
+                  </h3>
+                  <p className="text-sm text-gray-600">Select a date to view appointments</p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => navigateMonth(-1)}
+                    className="p-2 hover:bg-white/60 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    <ChevronLeft className="h-5 w-5 text-gray-600" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCurrentDate(new Date());
+                      setSelectedDate(new Date().toISOString().split('T')[0]);
+                    }}
+                    className="px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    Today
+                  </button>
+                  <button
+                    onClick={() => navigateMonth(1)}
+                    className="p-2 hover:bg-white/60 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    <ChevronRight className="h-5 w-5 text-gray-600" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Calendar Grid */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20">
+                {/* Day Headers */}
+                <div className="grid grid-cols-7 gap-2 mb-4">
+                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                    <div key={day} className="text-center">
+                      <div className={`w-8 h-8 mx-auto flex items-center justify-center text-xs font-bold rounded-lg ${
+                        index === 0 || index === 6 ? 'text-red-500' : 'text-gray-600'
+                      }`}>
+                        {day}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Calendar Days */}
+                <div className="grid grid-cols-7 gap-2">
+                  {days.map((day, index) => {
+                    if (!day) {
+                      return <div key={index} className="h-10"></div>;
+                    }
+
+                    const appointments = getAppointmentsForDate(day);
+                    const isCurrentDay = isToday(day);
+                    const isSelectedDay = isSelected(day);
+                    const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+
+                    return (
+                      <div
+                        key={day.toISOString()}
+                        onClick={() => {
+                          setSelectedDate(day.toISOString().split('T')[0]);
+                          setShowCalendar(false);
+                        }}
+                        className={`relative h-10 w-10 mx-auto cursor-pointer rounded-xl transition-all duration-200 hover:scale-105 ${
+                          isCurrentDay 
+                            ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg' 
+                            : isSelectedDay 
+                              ? 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg' 
+                              : isWeekend
+                                ? 'bg-red-50 hover:bg-red-100 text-red-600'
+                                : 'bg-gray-50 hover:bg-white text-gray-700 hover:shadow-md'
+                        }`}
+                      >
+                        <div className="flex flex-col items-center justify-center h-full">
+                          <span className="text-sm font-semibold">{day.getDate()}</span>
+                          {appointments.length > 0 && (
+                            <div className="absolute -top-1 -right-1">
+                              <div className={`w-2 h-2 rounded-full ${
+                                isCurrentDay || isSelectedDay ? 'bg-yellow-300' : 'bg-green-500'
+                              }`}></div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Legend */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex items-center justify-center space-x-6 text-xs">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <span className="text-gray-600">Today</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <span className="text-gray-600">Selected</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <span className="text-gray-600">Has Appointments</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="p-6">
           <div className="grid gap-4">
-            {mockAppointments.filter(a => a.date === selectedDate).slice(0, 5).map((appointment) => (
-              <div key={appointment.id} className={`relative overflow-hidden rounded-xl border-2 transition-all ${
-                appointment.priority === 'High' ? 'border-red-200 bg-red-50/30' :
-                appointment.priority === 'Medium' ? 'border-yellow-200 bg-yellow-50/30' :
-                'border-green-200 bg-green-50/30'
-              }`}>
-                {/* Header section with time and priority */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                      appointment.priority === 'High' ? 'bg-red-500' :
-                      appointment.priority === 'Medium' ? 'bg-yellow-500' :
-                      'bg-green-500'
-                    }`}>
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
-                    </div>
-                    <div>
-                      <div className="text-lg font-bold text-gray-900">{appointment.time}</div>
-                      <div className="text-xs text-gray-500 font-mono">{appointment.upi}</div>
-                    </div>
-                  </div>
-                  <span className={`px-3 py-1 text-xs font-bold rounded-full ${
-                    appointment.priority === 'High' ? 'bg-red-100 text-red-800' :
-                    appointment.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-green-100 text-green-800'
-                  }`}>
-                    {appointment.priority}
-                  </span>
-                </div>
-                
-                {/* Content section */}
-                <div className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <h3 className="text-base font-semibold text-gray-900">{appointment.patientName}</h3>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(appointment.type)}`}>
-                          {appointment.type}
-                        </span>
-                      </div>
-                      <p className="text-sm font-medium text-gray-800 mb-2">{appointment.title}</p>
-                      <p className="text-xs text-gray-600 leading-relaxed">{appointment.description}</p>
-                    </div>
-                    
-                    {/* View Details button */}
-                    <div className="ml-6 flex-shrink-0">
-                      <button
-                        onClick={() => handleViewDetails(appointment)}
-                        className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 transition-all duration-200"
-                      >
-                        <Info className="h-4 w-4 mr-2" />
-                        View Details
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Subtle gradient overlay */}
-                <div className={`absolute inset-0 pointer-events-none opacity-5 ${
-                  appointment.priority === 'High' ? 'bg-gradient-to-r from-red-500 to-transparent' :
-                  appointment.priority === 'Medium' ? 'bg-gradient-to-r from-yellow-500 to-transparent' :
-                  'bg-gradient-to-r from-green-500 to-transparent'
-                }`}></div>
+            {filteredAppointments.length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-gray-500">No appointments scheduled for this date</p>
               </div>
-            ))}
+            ) : (
+              filteredAppointments.slice(0, 5).map((appointment) => (
+                <div key={appointment.id} className={`relative overflow-hidden rounded-xl border-2 transition-all ${
+                  appointment.priority === 'High' ? 'border-red-200 bg-red-50/30' :
+                  appointment.priority === 'Medium' ? 'border-yellow-200 bg-yellow-50/30' :
+                  'border-green-200 bg-green-50/30'
+                }`}>
+                  {/* Header section with time and priority */}
+                  <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                        appointment.priority === 'High' ? 'bg-red-500' :
+                        appointment.priority === 'Medium' ? 'bg-yellow-500' :
+                        'bg-green-500'
+                      }`}>
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      </div>
+                      <div>
+                        <div className="text-lg font-bold text-gray-900">{appointment.time}</div>
+                        <div className="text-xs text-gray-500 font-mono">{appointment.upi}</div>
+                      </div>
+                    </div>
+                    <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+                      appointment.priority === 'High' ? 'bg-red-100 text-red-800' :
+                      appointment.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {appointment.priority}
+                    </span>
+                  </div>
+                  
+                  {/* Content section */}
+                  <div className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h3 className="text-base font-semibold text-gray-900">{appointment.patientName}</h3>
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(appointment.type)}`}>
+                            {appointment.type}
+                          </span>
+                        </div>
+                        <p className="text-sm font-medium text-gray-800 mb-2">{appointment.title}</p>
+                        <p className="text-xs text-gray-600 leading-relaxed">{appointment.description}</p>
+                      </div>
+                      
+                      {/* View Details button */}
+                      <div className="ml-6 flex-shrink-0">
+                        <button
+                          onClick={() => handleViewDetails(appointment)}
+                          className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 transition-all duration-200"
+                        >
+                          <Info className="h-4 w-4 mr-2" />
+                          View Details
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Subtle gradient overlay */}
+                  <div className={`absolute inset-0 pointer-events-none opacity-5 ${
+                    appointment.priority === 'High' ? 'bg-gradient-to-r from-red-500 to-transparent' :
+                    appointment.priority === 'Medium' ? 'bg-gradient-to-r from-yellow-500 to-transparent' :
+                    'bg-gradient-to-r from-green-500 to-transparent'
+                  }`}></div>
+                </div>
+              ))
+            )}
           </div>
           
-          {mockAppointments.filter(a => a.date === selectedDate).length > 5 && (
+          {filteredAppointments.length > 5 && (
             <div className="mt-6 text-center">
               <button 
                 onClick={() => navigate('/urology-nurse/appointments')}
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium"
               >
-                View All Appointments ({mockAppointments.filter(a => a.date === selectedDate).length})
+                View All Appointments ({filteredAppointments.length})
               </button>
             </div>
           )}

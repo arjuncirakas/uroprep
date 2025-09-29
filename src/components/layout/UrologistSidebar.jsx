@@ -80,7 +80,7 @@ const UrologistSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) =>
               // Special case: Patient Management should be active for patient-related routes
               if (item.path === '/urologist/patient-management' && 
                   (location.pathname === '/urologist/add-patient' || 
-                   location.pathname.startsWith('/urologist/patient-'))) {
+                   location.pathname.startsWith('/urologist/patient-details/'))) {
                 isActive = true;
               }
               
@@ -88,6 +88,27 @@ const UrologistSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) =>
               if (item.path === '/urologist/opd-consultations' && 
                   location.pathname.startsWith('/urologist/psa-chart/')) {
                 isActive = true;
+              }
+              
+              // Handle patient details navigation context
+              if (location.pathname.startsWith('/urologist/patient-details/')) {
+                const lastVisitedPage = sessionStorage.getItem('lastVisitedPage');
+                
+      if (item.path === '/urologist/patient-management' && 
+          (lastVisitedPage === 'patient-management' || !lastVisitedPage)) {
+        isActive = true;
+      } else if (item.path === '/urologist/opd-consultations' && 
+                lastVisitedPage === 'opd-consultations') {
+        isActive = true;
+      } else if (item.path === '/urologist/mdt-cases' && 
+                lastVisitedPage === 'mdt-cases') {
+        isActive = true;
+      } else if (item.path === '/urologist/surgical-pathway' && 
+                lastVisitedPage === 'surgical-pathway') {
+        isActive = true;
+      } else {
+        isActive = false;
+      }
               }
               
               return (

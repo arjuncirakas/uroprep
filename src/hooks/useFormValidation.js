@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 
 // Validation rules
 export const validationRules = {
@@ -44,12 +44,16 @@ export const useFormValidation = (formData, rules) => {
   const [isValid, setIsValid] = useState(false);
   const [touched, setTouched] = useState({});
 
-  useEffect(() => {
+  // Memoize the rules object to prevent unnecessary re-renders
+  const memoizedRules = useMemo(() => rules, [JSON.stringify(rules)]);
+
+  // Memoize the validation function to prevent infinite loops
+  const validationResult = useMemo(() => {
     const validationErrors = {};
     let formValid = true;
 
-    Object.keys(rules).forEach(field => {
-      const rule = rules[field];
+    Object.keys(memoizedRules).forEach(field => {
+      const rule = memoizedRules[field];
       const value = getNestedValue(formData, field);
 
       // Skip validation if field hasn't been touched and is not required
@@ -75,33 +79,37 @@ export const useFormValidation = (formData, rules) => {
       }
     });
 
-    setErrors(validationErrors);
-    setIsValid(formValid);
-  }, [formData, rules, touched]);
+    return { validationErrors, formValid };
+  }, [formData, memoizedRules, touched]);
 
-  const validateField = (fieldName) => {
+  useEffect(() => {
+    setErrors(validationResult.validationErrors);
+    setIsValid(validationResult.formValid);
+  }, [validationResult]);
+
+  const validateField = useCallback((fieldName) => {
     setTouched(prev => ({ ...prev, [fieldName]: true }));
-  };
+  }, []);
 
-  const validateAll = () => {
+  const validateAll = useCallback(() => {
     const allTouched = {};
-    Object.keys(rules).forEach(field => {
+    Object.keys(memoizedRules).forEach(field => {
       allTouched[field] = true;
     });
     setTouched(allTouched);
-  };
+  }, [memoizedRules]);
 
-  const clearErrors = () => {
+  const clearErrors = useCallback(() => {
     setErrors({});
-  };
+  }, []);
 
-  const clearFieldError = (fieldName) => {
+  const clearFieldError = useCallback((fieldName) => {
     setErrors(prev => {
       const newErrors = { ...prev };
       delete newErrors[fieldName];
       return newErrors;
     });
-  };
+  }, []);
 
   return {
     errors,

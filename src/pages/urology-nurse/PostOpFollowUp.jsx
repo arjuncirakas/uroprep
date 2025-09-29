@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Heart, 
@@ -24,8 +24,26 @@ import {
 const PostOpFollowUp = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedRisk, setSelectedRisk] = useState('all');
+  const [activeFilter, setActiveFilter] = useState('All Status');
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [selectedPatientForSchedule, setSelectedPatientForSchedule] = useState(null);
+  const [scheduleForm, setScheduleForm] = useState({
+    date: '',
+    time: '',
+    type: 'followup',
+    doctor: '',
+    notes: ''
+  });
+
+  // Available doctors list
+  const availableDoctors = [
+    'Dr. Michael Chen',
+    'Dr. Sarah Wilson',
+    'Dr. Emma Wilson',
+    'Dr. James Brown',
+    'Dr. Lisa Davis'
+  ];
 
   // Mock post-op follow-up data
   const mockPostOpPatients = [
@@ -46,6 +64,10 @@ const PostOpFollowUp = () => {
       lastPSA: 0.02,
       lastPSADate: '2024-01-10',
       nextFollowUp: '2024-02-20',
+      appointmentScheduled: true,
+      scheduledDate: '2024-02-20',
+      scheduledTime: '10:00',
+      assignedDoctor: 'Dr. Sarah Wilson',
       histopathology: {
         gleasonScore: '3+4',
         marginStatus: 'Negative',
@@ -86,6 +108,10 @@ const PostOpFollowUp = () => {
       lastPSA: 0.05,
       lastPSADate: '2024-01-12',
       nextFollowUp: '2024-04-15',
+      appointmentScheduled: true,
+      scheduledDate: '2024-04-15',
+      scheduledTime: '14:30',
+      assignedDoctor: 'Dr. Michael Chen',
       histopathology: {
         gleasonScore: '3+3',
         marginStatus: 'Negative',
@@ -126,6 +152,7 @@ const PostOpFollowUp = () => {
       lastPSA: 0.3,
       lastPSADate: '2024-01-14',
       nextFollowUp: '2024-02-10',
+      appointmentScheduled: false,
       histopathology: {
         gleasonScore: '4+3',
         marginStatus: 'Positive',
@@ -166,6 +193,7 @@ const PostOpFollowUp = () => {
       lastPSA: 0.08,
       lastPSADate: '2024-01-08',
       nextFollowUp: '2024-02-05',
+      appointmentScheduled: false,
       histopathology: {
         gleasonScore: '3+4',
         marginStatus: 'Negative',
@@ -191,6 +219,19 @@ const PostOpFollowUp = () => {
     }
   ];
 
+  // Prevent background scrolling when modals are open
+  useEffect(() => {
+    if (showScheduleModal || showRescheduleModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup function to restore scrolling when component unmounts
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showScheduleModal, showRescheduleModal]);
 
   const getRiskColor = (risk) => {
     switch (risk) {
@@ -215,16 +256,107 @@ const PostOpFollowUp = () => {
       patient.upi.toLowerCase().includes(searchTerm.toLowerCase()) ||
       patient.surgeon.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const statusMatch = selectedStatus === 'all' || patient.status === selectedStatus;
-    const riskMatch = selectedRisk === 'all' || patient.riskAssessment === selectedRisk;
+    // Status filter based on active tab
+    const statusMatch = 
+      (activeFilter === 'All Status') ||
+      (activeFilter === 'Recovery' && patient.status === 'Recovery') ||
+      (activeFilter === 'Follow-up' && patient.status === 'Follow-up') ||
+      (activeFilter === 'High Risk' && patient.status === 'High Risk') ||
+      (activeFilter === 'Discharged' && patient.status === 'Discharged');
     
-    return searchMatch && statusMatch && riskMatch;
+    return searchMatch && statusMatch;
   });
 
 
 
   const handleScheduleFollowUp = (patientId) => {
-    navigate(`/urology-nurse/appointments?patient=${patientId}&type=followup`);
+    const patient = mockPostOpPatients.find(p => p.id === patientId);
+    setSelectedPatientForSchedule(patient);
+    setShowScheduleModal(true);
+  };
+
+  const handleReschedule = (patientId) => {
+    const patient = mockPostOpPatients.find(p => p.id === patientId);
+    setSelectedPatientForSchedule(patient);
+    
+    // Pre-populate form with existing appointment details
+    if (patient.appointmentScheduled) {
+      setScheduleForm({
+        date: patient.scheduledDate || '',
+        time: patient.scheduledTime || '',
+        type: 'followup',
+        doctor: patient.assignedDoctor || '',
+        notes: ''
+      });
+    }
+    
+    setShowRescheduleModal(true);
+  };
+
+  const handleScheduleFormChange = (e) => {
+    const { name, value } = e.target;
+    setScheduleForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleScheduleSubmit = (e) => {
+    e.preventDefault();
+    // In a real app, this would save to the backend
+    console.log('Scheduling follow-up for patient:', selectedPatientForSchedule?.id, scheduleForm);
+    
+    // Reset form and close modal
+    setScheduleForm({
+      date: '',
+      time: '',
+      type: 'followup',
+      doctor: '',
+      notes: ''
+    });
+    setSelectedPatientForSchedule(null);
+    setShowScheduleModal(false);
+  };
+
+  const handleRescheduleSubmit = (e) => {
+    e.preventDefault();
+    // In a real app, this would update the existing appointment
+    console.log('Rescheduling follow-up for patient:', selectedPatientForSchedule?.id, scheduleForm);
+    
+    // Reset form and close modal
+    setScheduleForm({
+      date: '',
+      time: '',
+      type: 'followup',
+      doctor: '',
+      notes: ''
+    });
+    setSelectedPatientForSchedule(null);
+    setShowRescheduleModal(false);
+  };
+
+  const closeScheduleModal = () => {
+    setShowScheduleModal(false);
+    setSelectedPatientForSchedule(null);
+    setScheduleForm({
+      date: '',
+      time: '',
+      type: 'followup',
+      doctor: '',
+      notes: ''
+    });
+  };
+
+  const closeRescheduleModal = () => {
+    setShowRescheduleModal(false);
+    setSelectedPatientForSchedule(null);
+    setScheduleForm({
+      date: '',
+      time: '',
+      type: 'followup',
+      doctor: '',
+      notes: ''
+    });
   };
 
   return (
@@ -237,60 +369,92 @@ const PostOpFollowUp = () => {
 
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="relative flex-1 max-w-md">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by patient name, UPI, or surgeon..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Search & Filter Post-Op Patients</h2>
+              <p className="text-sm text-gray-600 mt-1">Find patients in post-operative follow-up</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-sm text-gray-600">Live Search</span>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              <option value="all">All Status</option>
-              <option value="Recovery">Recovery</option>
-              <option value="Follow-up">Follow-up</option>
-              <option value="High Risk">High Risk</option>
-              <option value="Discharged">Discharged</option>
-            </select>
-            <select
-              value={selectedRisk}
-              onChange={(e) => setSelectedRisk(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              <option value="all">All Risk Levels</option>
-              <option value="Low Risk">Low Risk</option>
-              <option value="Intermediate Risk">Intermediate Risk</option>
-              <option value="High Risk">High Risk</option>
-            </select>
-          </div>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="px-6 py-4">
+          <nav className="flex space-x-2" aria-label="Tabs">
+            {['All Status', 'Recovery', 'Follow-up', 'High Risk', 'Discharged'].map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setActiveFilter(filter)}
+                className={`px-4 py-2 rounded-full font-medium text-sm transition-all duration-200 ${
+                  activeFilter === filter
+                    ? 'bg-gradient-to-r from-green-600 to-green-700 text-white'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <span>{filter}</span>
+                  <span className={`py-0.5 px-2 rounded-full text-xs font-semibold transition-colors ${
+                    activeFilter === filter
+                      ? 'bg-white/20 text-white'
+                      : 'bg-gray-200 text-gray-700'
+                  }`}>
+                    {mockPostOpPatients.filter(patient => {
+                       switch (filter) {
+                         case 'All Status': return true;
+                         case 'Recovery': return patient.status === 'Recovery';
+                         case 'Follow-up': return patient.status === 'Follow-up';
+                         case 'High Risk': return patient.status === 'High Risk';
+                         case 'Discharged': return patient.status === 'Discharged';
+                         default: return true;
+                       }
+                     }).length}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </nav>
         </div>
       </div>
 
       {/* Post-Op Patients Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Post-Op Follow-Up</h2>
-            <p className="text-sm text-gray-600 mt-1">Manage recovery and discharge planning</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Post-Op Follow-Up</h2>
+              <p className="text-sm text-gray-600 mt-1">Manage recovery and discharge planning</p>
+            </div>
+            <button className="flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              <span className="font-medium">Refresh Queue</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by patient name, UPI, or surgeon..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -360,13 +524,24 @@ const PostOpFollowUp = () => {
                           <Eye className="h-3 w-3 mr-1" />
                           <span>View</span>
                         </button>
-                        <button 
-                          onClick={() => handleScheduleFollowUp(patient.id)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                        >
-                          <Calendar className="h-3 w-3 mr-1" />
-                          <span>Schedule Follow-up</span>
-                        </button>
+                        
+                        {!patient.appointmentScheduled ? (
+                          <button 
+                            onClick={() => handleScheduleFollowUp(patient.id)}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                          >
+                            <Calendar className="h-3 w-3 mr-1" />
+                            <span>Schedule Follow-up</span>
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => handleReschedule(patient.id)}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                          >
+                            <Calendar className="h-3 w-3 mr-1" />
+                            <span>Reschedule</span>
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -388,8 +563,7 @@ const PostOpFollowUp = () => {
                 <button
                   onClick={() => {
                     setSearchTerm('');
-                    setSelectedStatus('all');
-                    setSelectedRisk('all');
+                    setActiveFilter('All Status');
                   }}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                 >
@@ -408,6 +582,230 @@ const PostOpFollowUp = () => {
           )}
         </div>
       </div>
+
+      {/* Schedule Follow-up Modal */}
+      {showScheduleModal && selectedPatientForSchedule && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Schedule Follow-up</h2>
+                <p className="text-sm text-gray-600 mt-1">Patient: {selectedPatientForSchedule.patientName}</p>
+              </div>
+              <button
+                onClick={closeScheduleModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleScheduleSubmit} className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Follow-up Date *
+                </label>
+                <input
+                  type="date"
+                  name="date"
+                  value={scheduleForm.date}
+                  onChange={handleScheduleFormChange}
+                  required
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Follow-up Time *
+                </label>
+                <input
+                  type="time"
+                  name="time"
+                  value={scheduleForm.time}
+                  onChange={handleScheduleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Follow-up Type *
+                </label>
+                <select
+                  name="type"
+                  value={scheduleForm.type}
+                  onChange={handleScheduleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="followup">Post-Op Follow-up</option>
+                  <option value="psa_check">PSA Check</option>
+                  <option value="continence_review">Continence Review</option>
+                  <option value="sexual_function">Sexual Function Review</option>
+                  <option value="discharge_planning">Discharge Planning</option>
+                  <option value="mdt_review">MDT Review</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assigned Doctor *
+                </label>
+                <select
+                  name="doctor"
+                  value={scheduleForm.doctor}
+                  onChange={handleScheduleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="">Select a doctor...</option>
+                  {availableDoctors.map((doctor) => (
+                    <option key={doctor} value={doctor}>
+                      {doctor}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Notes
+                </label>
+                <textarea
+                  name="notes"
+                  value={scheduleForm.notes}
+                  onChange={handleScheduleFormChange}
+                  rows={3}
+                  placeholder="Additional notes for the follow-up..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={closeScheduleModal}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex items-center px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Schedule Follow-up
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reschedule Follow-up Modal */}
+      {showRescheduleModal && selectedPatientForSchedule && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Reschedule Follow-up</h2>
+                <p className="text-sm text-gray-600 mt-1">Patient: {selectedPatientForSchedule.patientName}</p>
+              </div>
+              <button
+                onClick={closeRescheduleModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleRescheduleSubmit} className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  New Follow-up Date *
+                </label>
+                <input
+                  type="date"
+                  name="date"
+                  value={scheduleForm.date}
+                  onChange={handleScheduleFormChange}
+                  required
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  New Follow-up Time *
+                </label>
+                <input
+                  type="time"
+                  name="time"
+                  value={scheduleForm.time}
+                  onChange={handleScheduleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assigned Doctor *
+                </label>
+                <select
+                  name="doctor"
+                  value={scheduleForm.doctor}
+                  onChange={handleScheduleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="">Select a doctor...</option>
+                  {availableDoctors.map((doctor) => (
+                    <option key={doctor} value={doctor}>
+                      {doctor}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Reason for Reschedule
+                </label>
+                <textarea
+                  name="notes"
+                  value={scheduleForm.notes}
+                  onChange={handleScheduleFormChange}
+                  rows={3}
+                  placeholder="Please provide reason for rescheduling..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={closeRescheduleModal}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex items-center px-6 py-2 bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Reschedule Follow-up
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

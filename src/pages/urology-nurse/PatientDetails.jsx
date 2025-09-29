@@ -29,7 +29,8 @@ import {
   Eye,
   X,
   Save,
-  ChevronRight
+  ChevronRight,
+  Download
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -91,6 +92,14 @@ const PatientDetails = () => {
     value: '',
     type: 'routine'
   });
+  const [isImagingModalOpen, setIsImagingModalOpen] = useState(false);
+  const [imagingForm, setImagingForm] = useState({
+    type: '',
+    date: '',
+    result: '',
+    document: null,
+    documentName: ''
+  });
 
   // Mock patient data - in real app, fetch by ID
   const mockPatient = {
@@ -128,12 +137,40 @@ const PatientDetails = () => {
       socialHistory: 'Non-smoker, occasional alcohol, retired engineer'
     },
     imaging: [
-      { type: 'MRI Prostate', date: '2023-06-20', result: 'PIRADS 3 lesion in left peripheral zone' },
-      { type: 'CT Abdomen/Pelvis', date: '2023-06-25', result: 'No evidence of metastatic disease' }
+      { 
+        id: 'IMG001',
+        type: 'MRI Prostate', 
+        date: '2023-06-20', 
+        result: 'PIRADS 3 lesion in left peripheral zone',
+        document: 'mri_prostate_report_2023.pdf',
+        documentName: 'MRI Prostate Report - 20/06/2023'
+      },
+      { 
+        id: 'IMG002',
+        type: 'CT Abdomen/Pelvis', 
+        date: '2023-06-25', 
+        result: 'No evidence of metastatic disease',
+        document: 'ct_abdomen_report_2023.pdf',
+        documentName: 'CT Abdomen/Pelvis Report - 25/06/2023'
+      }
     ],
     procedures: [
-      { type: 'Prostate Biopsy', date: '2023-07-10', result: 'Gleason 6 (3+3), 2/12 cores positive' },
-      { type: 'Repeat Biopsy', date: '2024-01-15', result: 'Gleason 6 (3+3), 1/12 cores positive' }
+      { 
+        id: 'PROC001',
+        type: 'Prostate Biopsy', 
+        date: '2023-07-10', 
+        result: 'Gleason 6 (3+3), 2/12 cores positive',
+        document: 'biopsy_report_2023.pdf',
+        documentName: 'Prostate Biopsy Report - 10/07/2023'
+      },
+      { 
+        id: 'PROC002',
+        type: 'Repeat Biopsy', 
+        date: '2024-01-15', 
+        result: 'Gleason 6 (3+3), 1/12 cores positive',
+        document: 'repeat_biopsy_report_2024.pdf',
+        documentName: 'Repeat Biopsy Report - 15/01/2024'
+      }
     ],
     dischargeSummaries: [
       {
@@ -490,6 +527,51 @@ const PatientDetails = () => {
     setDischargeSummaries(prev => prev.filter(summary => summary.id !== summaryId));
   };
 
+  // Imaging modal handlers
+  const handleImagingFormChange = (e) => {
+    const { name, value } = e.target;
+    setImagingForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleDocumentUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImagingForm(prev => ({
+        ...prev,
+        document: file,
+        documentName: file.name
+      }));
+    }
+  };
+
+  const handleAddImaging = (e) => {
+    e.preventDefault();
+    console.log('Adding imaging/procedure:', imagingForm);
+    
+    setImagingForm({
+      type: '',
+      date: '',
+      result: '',
+      document: null,
+      documentName: ''
+    });
+    setIsImagingModalOpen(false);
+  };
+
+  const closeImagingModal = () => {
+    setIsImagingModalOpen(false);
+    setImagingForm({
+      type: '',
+      date: '',
+      result: '',
+      document: null,
+      documentName: ''
+    });
+  };
+
   // PSA Chart Configuration
   const getPSAChartData = (filter) => {
     const psaData = mockPatient.psaHistory;
@@ -629,7 +711,7 @@ const PatientDetails = () => {
 
   // Prevent background scrolling when modal is open
   useEffect(() => {
-    if (isClinicalHistoryModalOpen || isPSAModalOpen || isAppointmentModalOpen || isDischargeModalOpen) {
+    if (isClinicalHistoryModalOpen || isPSAModalOpen || isAppointmentModalOpen || isDischargeModalOpen || isImagingModalOpen) {
       // Save current scroll position
       const scrollY = window.scrollY;
       
@@ -646,13 +728,14 @@ const PatientDetails = () => {
         window.scrollTo(0, scrollY);
       };
     }
-  }, [isClinicalHistoryModalOpen, isPSAModalOpen, isAppointmentModalOpen, isDischargeModalOpen]);
+  }, [isClinicalHistoryModalOpen, isPSAModalOpen, isAppointmentModalOpen, isDischargeModalOpen, isImagingModalOpen]);
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: User },
     { id: 'clinical', name: 'Clinical History', icon: Stethoscope },
     { id: 'surveillance', name: 'PSA', icon: Activity },
     { id: 'appointments', name: 'Appointments', icon: CalendarIcon },
+    { id: 'imaging', name: 'Imaging & Procedures', icon: Activity },
     { id: 'discharge', name: 'Discharge Summaries', icon: FileText }
   ];
 
@@ -1136,6 +1219,129 @@ const PatientDetails = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Imaging & Procedures Tab */}
+          {activeTab === 'imaging' && (
+            <div className="space-y-6">
+              {/* Header with Add Button */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-lg">Imaging & Procedures Timeline</h3>
+                  <p className="text-sm text-gray-600 mt-1">Chronological record of imaging studies and procedures with documents</p>
+                </div>
+                <button
+                  onClick={() => setIsImagingModalOpen(true)}
+                  className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Imaging/Procedure
+                </button>
+              </div>
+
+              {/* Combined Timeline */}
+              <div className="relative">
+                <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                <div className="space-y-6">
+                  {/* Combine imaging and procedures and sort by date */}
+                  {[...mockPatient.imaging, ...mockPatient.procedures]
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))
+                    .map((item, index) => {
+                      const isImaging = mockPatient.imaging.some(img => img.id === item.id);
+                      const iconColor = isImaging ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800';
+                      const IconComponent = isImaging ? Activity : Stethoscope;
+                      
+                      return (
+                        <div key={item.id} className="relative flex items-start space-x-4">
+                          <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center ${iconColor}`}>
+                            <IconComponent className="h-4 w-4" />
+                          </div>
+                          <div className="flex-1 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                            <div className="flex items-start justify-between mb-3">
+                              <div>
+                                <h4 className="font-semibold text-gray-900">{item.type}</h4>
+                                <div className="flex items-center space-x-2 mt-1">
+                                  <span className="text-sm text-gray-600">{formatDate(item.date)}</span>
+                                  <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${iconColor}`}>
+                                    {isImaging ? 'Imaging' : 'Procedure'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-3 text-sm">
+                              <div>
+                                <span className="font-medium text-gray-600">Results:</span>
+                                <p className="text-gray-900 mt-1">{item.result}</p>
+                              </div>
+                              
+                              {item.document && (
+                                <div>
+                                  <span className="font-medium text-gray-600">Document:</span>
+                                  <div className="mt-2 flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                      <FileText className="h-4 w-4 text-blue-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-sm font-medium text-gray-900">{item.documentName}</p>
+                                      <p className="text-xs text-gray-500">PDF Document</p>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      <button className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors">
+                                        <Eye className="h-3 w-3 mr-1" />
+                                        View
+                                      </button>
+                                      <button className="inline-flex items-center px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors">
+                                        <Download className="h-3 w-3 mr-1" />
+                                        Download
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="border border-gray-200 rounded-lg p-5">
+                  <h3 className="font-semibold text-gray-900 mb-4 text-base">Imaging Summary</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                      <span className="text-sm font-medium text-gray-700">Total Imaging Studies</span>
+                      <span className="text-lg font-bold text-blue-600">{mockPatient.imaging.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                      <span className="text-sm font-medium text-gray-700">Documents Available</span>
+                      <span className="text-lg font-bold text-green-600">
+                        {mockPatient.imaging.filter(img => img.document).length}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border border-gray-200 rounded-lg p-5">
+                  <h3 className="font-semibold text-gray-900 mb-4 text-base">Procedures Summary</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+                      <span className="text-sm font-medium text-gray-700">Total Procedures</span>
+                      <span className="text-lg font-bold text-purple-600">{mockPatient.procedures.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                      <span className="text-sm font-medium text-gray-700">Documents Available</span>
+                      <span className="text-lg font-bold text-green-600">
+                        {mockPatient.procedures.filter(proc => proc.document).length}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1958,6 +2164,164 @@ const PatientDetails = () => {
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Add Discharge Summary
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Imaging/Procedure Modal */}
+      {isImagingModalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Add Imaging/Procedure</h2>
+              <button
+                onClick={closeImagingModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddImaging} className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Type *
+                  </label>
+                  <select
+                    name="type"
+                    value={imagingForm.type}
+                    onChange={handleImagingFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select Type</option>
+                    <optgroup label="Imaging Studies">
+                      <option value="MRI Prostate">MRI Prostate</option>
+                      <option value="CT Abdomen/Pelvis">CT Abdomen/Pelvis</option>
+                      <option value="Bone Scan">Bone Scan</option>
+                      <option value="PSMA PET Scan">PSMA PET Scan</option>
+                      <option value="Ultrasound">Ultrasound</option>
+                      <option value="X-Ray">X-Ray</option>
+                    </optgroup>
+                    <optgroup label="Procedures">
+                      <option value="Prostate Biopsy">Prostate Biopsy</option>
+                      <option value="Cystoscopy">Cystoscopy</option>
+                      <option value="Urodynamic Study">Urodynamic Study</option>
+                      <option value="Radical Prostatectomy">Radical Prostatectomy</option>
+                      <option value="Laparoscopic Surgery">Laparoscopic Surgery</option>
+                    </optgroup>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date *
+                  </label>
+                  <input
+                    type="date"
+                    name="date"
+                    value={imagingForm.date}
+                    onChange={handleImagingFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Results/Findings *
+                </label>
+                <textarea
+                  name="result"
+                  value={imagingForm.result}
+                  onChange={handleImagingFormChange}
+                  required
+                  rows={4}
+                  placeholder="Enter detailed results, findings, or procedure notes..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Upload Document
+                </label>
+                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-gray-400 transition-colors">
+                  <div className="space-y-1 text-center">
+                    <div className="mx-auto h-12 w-12 text-gray-400">
+                      <FileText className="h-full w-full" />
+                    </div>
+                    <div className="flex text-sm text-gray-600">
+                      <label
+                        htmlFor="document-upload"
+                        className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
+                      >
+                        <span>Upload a file</span>
+                        <input
+                          id="document-upload"
+                          name="document-upload"
+                          type="file"
+                          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                          onChange={handleDocumentUpload}
+                          className="sr-only"
+                        />
+                      </label>
+                      <p className="pl-1">or drag and drop</p>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      PDF, DOC, DOCX, JPG, PNG up to 10MB
+                    </p>
+                  </div>
+                </div>
+                
+                {imagingForm.documentName && (
+                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <FileText className="h-4 w-4 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-green-900">{imagingForm.documentName}</p>
+                        <p className="text-xs text-green-700">Ready to upload</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImagingForm(prev => ({
+                            ...prev,
+                            document: null,
+                            documentName: ''
+                          }));
+                          document.getElementById('document-upload').value = '';
+                        }}
+                        className="text-red-600 hover:text-red-800 transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={closeImagingModal}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex items-center px-6 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Add {imagingForm.type.includes('MRI') || imagingForm.type.includes('CT') || imagingForm.type.includes('Scan') || imagingForm.type.includes('Ultrasound') || imagingForm.type.includes('X-Ray') ? 'Imaging Study' : 'Procedure'}
                 </button>
               </div>
             </form>

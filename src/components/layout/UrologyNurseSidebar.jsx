@@ -97,9 +97,15 @@ const UrologyNurseSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse })
               }
               // Special handling for patients section to include add-patient route
               else if (item.href === '/urology-nurse/patients') {
-                isActive = isActive || location.pathname.includes('/add-patient') ||
-                          location.pathname.includes('/edit-patient/') ||
-                          location.pathname.startsWith('/urology-nurse/patients/');
+                // Only activate patients tab for add-patient if NavigationContext says so
+                // (i.e., if we didn't come from dashboard)
+                if (location.pathname.includes('/add-patient')) {
+                  // Let NavigationContext decide - don't override
+                  isActive = activeSidebarItem === '/urology-nurse/patients';
+                } else {
+                  isActive = isActive || location.pathname.includes('/edit-patient/') ||
+                            location.pathname.startsWith('/urology-nurse/patients/');
+                }
               }
               // General sub-route handling for other items (except dashboard)
               else if (item.href !== '/urology-nurse/dashboard') {

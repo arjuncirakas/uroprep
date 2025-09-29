@@ -18,13 +18,27 @@ export const NavigationProvider = ({ children }) => {
 
   useEffect(() => {
     // Update previous page when location changes
+    console.log('NavigationContext - Location changed:', {
+      currentPage,
+      newLocation: location.pathname,
+      previousPage
+    });
+    
     if (currentPage && currentPage !== location.pathname) {
+      console.log('NavigationContext - Setting previousPage to:', currentPage);
       setPreviousPage(currentPage);
     }
+    console.log('NavigationContext - Setting currentPage to:', location.pathname);
     setCurrentPage(location.pathname);
-  }, [location.pathname, currentPage]);
+  }, [location.pathname]); // Remove currentPage from dependencies to avoid infinite loops
 
   const getActiveSidebarItem = () => {
+    console.log('NavigationContext - getActiveSidebarItem called:', {
+      currentPath: location.pathname,
+      previousPage,
+      activeSidebarItem: previousPage === '/urology-nurse/dashboard' && location.pathname.includes('/add-patient') ? '/urology-nurse/dashboard' : location.pathname.includes('/add-patient') ? '/urology-nurse/patients' : location.pathname
+    });
+    
     // If we're on a patient details, appointment details, reschedule, or add-patient page, return the appropriate parent page
     if (location.pathname.includes('/patient-details/') || 
         location.pathname.includes('/appointment-details/') || 
@@ -35,8 +49,13 @@ export const NavigationProvider = ({ children }) => {
     if (location.pathname.includes('/triage-patient-details/')) {
       return '/urology-nurse/triage';
     }
-    // For add-patient route, return the patients page to keep the Patients tab active
+    // For add-patient route, check if we came from dashboard or patients page
     if (location.pathname.includes('/add-patient')) {
+      // If we came from dashboard, keep dashboard active
+      if (previousPage === '/urology-nurse/dashboard') {
+        return '/urology-nurse/dashboard';
+      }
+      // Otherwise, default to patients page
       return '/urology-nurse/patients';
     }
     // For edit-patient route, return the patients page to keep the Patients tab active
@@ -48,8 +67,14 @@ export const NavigationProvider = ({ children }) => {
   };
 
   const getBackPath = () => {
+    console.log('NavigationContext - getBackPath called:', {
+      currentPath: location.pathname,
+      previousPage
+    });
+    
     // If we have a previous page, go back to it
     if (previousPage) {
+      console.log('NavigationContext - Returning previousPage:', previousPage);
       return previousPage;
     }
     // Default fallbacks based on current page and user role
@@ -60,10 +85,20 @@ export const NavigationProvider = ({ children }) => {
         return '/gp/referral-status';
       } else if (lastVisitedPage === 'patient-search') {
         return '/gp/patient-search';
+      } else if (lastVisitedPage === 'opd-consultations') {
+        return '/urologist/opd-consultations';
+      } else if (lastVisitedPage === 'patient-management') {
+        return '/urologist/patient-management';
+      } else if (lastVisitedPage === 'mdt-cases') {
+        return '/urologist/mdt-cases';
+      } else if (lastVisitedPage === 'surgical-pathway') {
+        return '/urologist/surgical-pathway';
       } else if (location.pathname.startsWith('/gp/')) {
         return '/gp/patient-search'; // Default for GP
       } else if (location.pathname.startsWith('/urology-nurse/')) {
-        return '/urology-nurse/dashboard'; // Default for Urology Nurse
+        return '/urology-nurse/patients'; // Default for Urology Nurse
+      } else if (location.pathname.startsWith('/urologist/')) {
+        return '/urologist/patient-management'; // Default for Urologist
       }
       return '/gp/patient-search'; // Ultimate fallback
     }
@@ -77,8 +112,16 @@ export const NavigationProvider = ({ children }) => {
     if (location.pathname.includes('/reschedule/')) {
       return location.pathname.startsWith('/gp/') ? '/gp/dashboard' : '/urology-nurse/dashboard';
     }
-    // For add-patient route, go back to patients list
+    // For add-patient route, go back to the previous page (dashboard or patients)
     if (location.pathname.includes('/add-patient')) {
+      console.log('NavigationContext - Add-patient route detected, previousPage:', previousPage);
+      // If we came from dashboard, go back to dashboard
+      if (previousPage === '/urology-nurse/dashboard') {
+        console.log('NavigationContext - Returning dashboard as back path');
+        return '/urology-nurse/dashboard';
+      }
+      // Otherwise, default to patients list
+      console.log('NavigationContext - Returning patients as back path');
       return '/urology-nurse/patients';
     }
     // For edit-patient route, go back to patients list
