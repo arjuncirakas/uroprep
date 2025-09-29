@@ -708,7 +708,9 @@ const PatientDetails = () => {
           <button
             onClick={() => {
               const lastVisitedPage = sessionStorage.getItem('lastVisitedPage');
-              if (lastVisitedPage === 'opd-consultations') {
+              if (lastVisitedPage === 'dashboard') {
+                navigate('/urologist/dashboard');
+              } else if (lastVisitedPage === 'opd-consultations') {
                 navigate('/urologist/opd-consultations');
               } else if (lastVisitedPage === 'mdt-cases') {
                 navigate('/urologist/mdt-cases');

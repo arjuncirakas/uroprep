@@ -7,6 +7,7 @@ import {
   X,
   UserPlus
 } from 'lucide-react';
+import PatientDetailsModal from '../../components/modals/PatientDetailsModal';
 
 const Patients = () => {
   const navigate = useNavigate();
@@ -14,6 +15,8 @@ const Patients = () => {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedPathway, setSelectedPathway] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
+  const [isPatientDetailsModalOpen, setIsPatientDetailsModalOpen] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState(null);
 
   // Mock patient data
   const mockPatients = [
@@ -167,6 +170,16 @@ const Patients = () => {
     
     return searchMatch && statusMatch && pathwayMatch && typeMatch;
   });
+
+  const handleViewPatientDetails = (patientId) => {
+    setSelectedPatientId(patientId);
+    setIsPatientDetailsModalOpen(true);
+  };
+
+  const handleClosePatientDetailsModal = () => {
+    setIsPatientDetailsModalOpen(false);
+    setSelectedPatientId(null);
+  };
 
 
   return (
@@ -344,7 +357,7 @@ const Patients = () => {
                     </td>
                     <td className="py-5 px-6">
                       <button 
-                        onClick={() => navigate(`/urology-nurse/patient-details/${patient.id}`)}
+                        onClick={() => handleViewPatientDetails(patient.id)}
                         className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
                       >
                         <Eye className="h-4 w-4 mr-2" />
@@ -391,6 +404,13 @@ const Patients = () => {
           )}
         </div>
       </div>
+
+      {/* Patient Details Modal */}
+      <PatientDetailsModal
+        isOpen={isPatientDetailsModalOpen}
+        onClose={handleClosePatientDetailsModal}
+        patientId={selectedPatientId}
+      />
     </div>
   );
 };

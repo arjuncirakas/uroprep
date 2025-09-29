@@ -15,17 +15,12 @@ import {
   FileText,
   Search,
   Eye,
-  X,
   UserPlus,
   ClipboardList,
   ArrowRight,
   Shield,
   Target,
-  User,
-  Phone,
-  Mail,
-  MapPin,
-  Edit
+  User
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -67,9 +62,22 @@ const UrologistDashboard = () => {
   const [chartType, setChartType] = useState('line'); // line or bar
 
 
+
   // Helper functions
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-AU');
+  };
+
+  // Function to handle patient review - navigate to patient details page
+  const handlePatientReview = (patient, type) => {
+    // Store patient data in localStorage to pass to the details page
+    localStorage.setItem('selectedPatient', JSON.stringify({ ...patient, type }));
+    
+    // Set the last visited page in sessionStorage so the back button returns to dashboard
+    sessionStorage.setItem('lastVisitedPage', 'dashboard');
+    
+    // Navigate to the patient details page
+    navigate(`/urologist/patient-details/${patient.id}`);
   };
 
   // Calculate real-time KPIs
@@ -469,15 +477,7 @@ const UrologistDashboard = () => {
           </div>
       
       {/* Quick Action Buttons */}
-      <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-          <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="quarter">This Quarter</option>
-          </select>
-                </div>
+      <div className="flex items-center justify-end mb-6">
         <button 
           onClick={() => navigate('/urologist/patient-management')}
           className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
@@ -687,7 +687,7 @@ const UrologistDashboard = () => {
                   </div>
                 </div>
                       <button 
-                onClick={() => navigate('/urologist/opd-consultations')}
+                onClick={() => handlePatientReview(patient, 'OPD')}
                   className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
               >
                   Review
@@ -715,7 +715,7 @@ const UrologistDashboard = () => {
                   </div>
                 </div>
                 <button 
-                  onClick={() => navigate('/urologist/mdt-cases')}
+                  onClick={() => handlePatientReview(case_, 'MDT')}
                   className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
                 >
                   Review
@@ -743,7 +743,7 @@ const UrologistDashboard = () => {
                   </div>
                       </div>
                 <button 
-                  onClick={() => navigate('/urologist/surgical-pathway')}
+                  onClick={() => handlePatientReview(patient, 'Surgery')}
                   className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
                 >
                   Review

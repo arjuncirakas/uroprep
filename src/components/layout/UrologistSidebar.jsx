@@ -94,21 +94,24 @@ const UrologistSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) =>
               if (location.pathname.startsWith('/urologist/patient-details/')) {
                 const lastVisitedPage = sessionStorage.getItem('lastVisitedPage');
                 
-      if (item.path === '/urologist/patient-management' && 
-          (lastVisitedPage === 'patient-management' || !lastVisitedPage)) {
-        isActive = true;
-      } else if (item.path === '/urologist/opd-consultations' && 
-                lastVisitedPage === 'opd-consultations') {
-        isActive = true;
-      } else if (item.path === '/urologist/mdt-cases' && 
-                lastVisitedPage === 'mdt-cases') {
-        isActive = true;
-      } else if (item.path === '/urologist/surgical-pathway' && 
-                lastVisitedPage === 'surgical-pathway') {
-        isActive = true;
-      } else {
-        isActive = false;
-      }
+                if (item.path === '/urologist/dashboard' && 
+                    lastVisitedPage === 'dashboard') {
+                  isActive = true;
+                } else if (item.path === '/urologist/patient-management' && 
+                          (lastVisitedPage === 'patient-management' || !lastVisitedPage)) {
+                  isActive = true;
+                } else if (item.path === '/urologist/opd-consultations' && 
+                          lastVisitedPage === 'opd-consultations') {
+                  isActive = true;
+                } else if (item.path === '/urologist/mdt-cases' && 
+                          lastVisitedPage === 'mdt-cases') {
+                  isActive = true;
+                } else if (item.path === '/urologist/surgical-pathway' && 
+                          lastVisitedPage === 'surgical-pathway') {
+                  isActive = true;
+                } else {
+                  isActive = false;
+                }
               }
               
               return (
