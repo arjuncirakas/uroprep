@@ -1312,7 +1312,7 @@ const UrologyNurseDashboard = () => {
                         isSelectedDay ? 'ring-2 ring-blue-500 bg-blue-50' : ''
                       } ${
                         isDragOver ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-400' : ''
-                      } hover:shadow-md hover:scale-105`}
+                      }`}
                     >
                       <div className={`text-sm font-medium mb-2 flex-shrink-0 ${
                         isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
