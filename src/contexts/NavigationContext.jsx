@@ -39,15 +39,10 @@ export const NavigationProvider = ({ children }) => {
       activeSidebarItem: previousPage === '/urology-nurse/dashboard' && location.pathname.includes('/add-patient') ? '/urology-nurse/dashboard' : location.pathname.includes('/add-patient') ? '/urology-nurse/patients' : location.pathname
     });
     
-    // If we're on a patient details, appointment details, reschedule, or add-patient page, return the appropriate parent page
-    if (location.pathname.includes('/patient-details/') || 
-        location.pathname.includes('/appointment-details/') || 
+    // If we're on an appointment details, reschedule, or add-patient page, return the appropriate parent page
+    if (location.pathname.includes('/appointment-details/') || 
         location.pathname.includes('/reschedule/')) {
       return previousPage;
-    }
-    // For triage patient details route, return the triage page to keep the Referral Triage tab active
-    if (location.pathname.includes('/triage-patient-details/')) {
-      return '/urology-nurse/triage';
     }
     // For add-patient route, check if we came from dashboard or patients page
     if (location.pathname.includes('/add-patient')) {
@@ -76,35 +71,6 @@ export const NavigationProvider = ({ children }) => {
     if (previousPage) {
       console.log('NavigationContext - Returning previousPage:', previousPage);
       return previousPage;
-    }
-    // Default fallbacks based on current page and user role
-    if (location.pathname.includes('/patient-details/')) {
-      // Check sessionStorage for lastVisitedPage to determine correct back path
-      const lastVisitedPage = sessionStorage.getItem('lastVisitedPage');
-      if (lastVisitedPage === 'referral-status') {
-        return '/gp/referral-status';
-      } else if (lastVisitedPage === 'patient-search') {
-        return '/gp/patient-search';
-      } else if (lastVisitedPage === 'opd-consultations') {
-        return '/urologist/opd-consultations';
-      } else if (lastVisitedPage === 'patient-management') {
-        return '/urologist/patient-management';
-      } else if (lastVisitedPage === 'mdt-cases') {
-        return '/urologist/mdt-cases';
-      } else if (lastVisitedPage === 'surgical-pathway') {
-        return '/urologist/surgical-pathway';
-      } else if (location.pathname.startsWith('/gp/')) {
-        return '/gp/patient-search'; // Default for GP
-      } else if (location.pathname.startsWith('/urology-nurse/')) {
-        return '/urology-nurse/patients'; // Default for Urology Nurse
-      } else if (location.pathname.startsWith('/urologist/')) {
-        return '/urologist/patient-management'; // Default for Urologist
-      }
-      return '/gp/patient-search'; // Ultimate fallback
-    }
-    // For triage patient details route, go back to triage list
-    if (location.pathname.includes('/triage-patient-details/')) {
-      return '/urology-nurse/triage';
     }
     if (location.pathname.includes('/appointment-details/')) {
       return location.pathname.startsWith('/gp/') ? '/gp/dashboard' : '/urology-nurse/dashboard';

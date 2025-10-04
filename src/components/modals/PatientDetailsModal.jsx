@@ -28,7 +28,9 @@ import {
   X,
   Save,
   ChevronRight,
-  Download
+  Download,
+  Database,
+  Users
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -54,7 +56,7 @@ ChartJS.register(
   Legend
 );
 
-const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
+const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole = 'urologist' }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isClinicalHistoryModalOpen, setIsClinicalHistoryModalOpen] = useState(false);
   const [isPSAModalOpen, setIsPSAModalOpen] = useState(false);
@@ -279,6 +281,50 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
         medications: []
       }
     ],
+    mdtNotes: [
+      {
+        id: 'MDT001',
+        timestamp: '2024-01-20T10:00:00',
+        date: '2024-01-20',
+        time: '10:00',
+        mdtDate: '2024-01-20',
+        teamMembers: ['Dr. Sarah Wilson (Urologist)', 'Dr. Michael Chen (Oncologist)', 'Dr. Jennifer Lee (Radiologist)', 'Dr. David Wilson (Pathologist)'],
+        caseType: 'High-risk prostate cancer',
+        priority: 'High',
+        status: 'Review Complete',
+        discussionNotes: 'Patient presents with high-risk prostate cancer (Gleason 4+4=8, T3a disease). MRI shows extracapsular extension. PSMA PET scan shows no distant metastases. Team consensus reached on treatment approach.',
+        outcome: 'Proceed to Surgery',
+        recommendations: 'Schedule robotic-assisted laparoscopic prostatectomy (RALP) within 4 weeks. Pre-operative assessment including cardiology clearance required. Patient counseled on risks and benefits.',
+        followUpActions: [
+          'Schedule pre-operative cardiology assessment',
+          'Book surgery date for February 2024',
+          'Provide patient information booklet',
+          'Arrange pre-operative nursing consultation'
+        ],
+        documents: ['MDT_Summary_20240120.pdf', 'Treatment_Plan_20240120.pdf']
+      },
+      {
+        id: 'MDT002',
+        timestamp: '2023-12-15T14:30:00',
+        date: '2023-12-15',
+        time: '14:30',
+        mdtDate: '2023-12-15',
+        teamMembers: ['Dr. Sarah Wilson (Urologist)', 'Dr. Michael Chen (Oncologist)', 'Dr. Jennifer Lee (Radiologist)'],
+        caseType: 'Intermediate-risk prostate cancer',
+        priority: 'Medium',
+        status: 'Review Complete',
+        discussionNotes: 'Initial MDT discussion for newly diagnosed intermediate-risk prostate cancer. Patient has Gleason 3+4=7, T2c disease. No evidence of extracapsular extension on MRI.',
+        outcome: 'Active Surveillance',
+        recommendations: 'Continue active surveillance with 6-monthly PSA and annual MRI. Patient to be reviewed in 6 months or if PSA rises above 10 ng/mL.',
+        followUpActions: [
+          'Schedule 6-month PSA test',
+          'Book annual MRI for June 2024',
+          'Provide surveillance information',
+          'Arrange patient support group referral'
+        ],
+        documents: ['MDT_Summary_20231215.pdf']
+      }
+    ],
     clinicalNotes: [
       {
         id: 'CN001',
@@ -298,7 +344,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
         timestamp: '2024-01-15T10:15:00',
         date: '2024-01-15',
         time: '10:15',
-        author: 'Nurse Jennifer Lee',
+        author: 'Jennifer Lee',
         authorRole: 'Urology Nurse',
         type: 'vitals',
         priority: 'normal',
@@ -328,7 +374,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
         timestamp: '2024-01-14T09:20:00',
         date: '2024-01-14',
         time: '09:20',
-        author: 'Nurse David Park',
+        author: 'David Park',
         authorRole: 'Urology Nurse',
         type: 'medicine',
         priority: 'normal',
@@ -349,7 +395,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
         timestamp: '2024-01-14T14:20:00',
         date: '2024-01-14',
         time: '14:20',
-        author: 'Nurse David Park',
+        author: 'David Park',
         authorRole: 'Urology Nurse',
         type: 'medicine',
         priority: 'normal',
@@ -391,7 +437,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
         timestamp: '2024-01-12T15:10:00',
         date: '2024-01-12',
         time: '15:10',
-        author: 'Nurse Jennifer Lee',
+        author: 'Jennifer Lee',
         authorRole: 'Urology Nurse',
         type: 'vitals',
         priority: 'normal',
@@ -1115,20 +1161,21 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
   if (!isOpen) return null;
 
   const tabs = [
-    { id: 'overview', name: 'Overview', icon: User },
-    { id: 'clinical', name: 'Clinical History', icon: Stethoscope },
-    { id: 'surveillance', name: 'PSA', icon: Activity },
-    { id: 'appointments', name: 'Appointments', icon: CalendarIcon },
-    { id: 'imaging', name: 'Imaging & Procedures', icon: Activity },
-    { id: 'clinical-notes', name: 'Clinical Notes', icon: FileText },
-    { id: 'discharge', name: 'Discharge Summaries', icon: FileText }
+    { id: 'overview', name: 'Overview', icon: User, count: 1, active: activeTab === 'overview' },
+    { id: 'clinical-notes', name: 'Clinical Notes', icon: FileText, count: 4, active: activeTab === 'clinical-notes' },
+    { id: 'mdt-notes', name: 'MDT Notes', icon: Users, count: 2, active: activeTab === 'mdt-notes' },
+    { id: 'surveillance', name: 'PSA', icon: Activity, count: 5, active: activeTab === 'surveillance' },
+    { id: 'appointments', name: 'Appointments', icon: CalendarIcon, count: 2, active: activeTab === 'appointments' },
+    { id: 'imaging', name: 'Imaging & Procedures', icon: Database, count: 1, active: activeTab === 'imaging' },
+    { id: 'clinical', name: 'Clinical History', icon: Stethoscope, count: 3, active: activeTab === 'clinical' },
+    { id: 'discharge', name: 'Discharge Summaries', icon: FileText, count: 1, active: activeTab === 'discharge' }
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-6">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-[95vw] h-[90vh] min-h-[600px] overflow-hidden flex flex-col">
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-gray-50">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-gray-50 flex-shrink-0">
           <div className="flex items-center space-x-4">
             <div className="relative">
               <div className="w-12 h-12 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
@@ -1151,12 +1198,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
               </div>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <div className="text-right">
-              <p className="text-sm text-gray-600">Latest PSA</p>
-              <p className="text-lg font-semibold text-gray-900">{mockPatient.lastPSA.value} ng/mL</p>
-              <p className="text-sm text-gray-500">{formatDate(mockPatient.lastPSA.date)}</p>
-            </div>
+          <div className="flex items-center">
             <button
               onClick={onClose}
               className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -1166,33 +1208,57 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="border-b border-gray-200 bg-white">
-          <nav className="flex space-x-8 px-6" aria-label="Tabs">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-gray-900 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <tab.icon className="h-4 w-4 mr-2" />
-                {tab.name}
-              </button>
-            ))}
-          </nav>
+        {/* Professional Tab Navigation */}
+        <div className="border-b border-gray-200 bg-white flex-shrink-0 shadow-sm">
+          <div className="px-6">
+            <div 
+              className="flex items-center space-x-0 overflow-x-auto"
+              style={{
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                WebkitScrollbar: { display: 'none' }
+              }}
+            >
+              {tabs.map((tab) => {
+                const IconComponent = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`group relative flex items-center space-x-2 px-5 py-4 text-sm font-medium transition-all duration-300 whitespace-nowrap border-b-2 ${
+                      tab.active
+                        ? 'text-green-700 border-green-600 bg-green-50/30 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50/50 border-transparent hover:border-gray-300'
+                    }`}
+                  >
+                    <IconComponent className={`h-4 w-4 transition-colors duration-200 ${
+                      tab.active ? 'text-green-600' : 'text-gray-500 group-hover:text-gray-700'
+                    }`} />
+                    <span className="font-semibold tracking-wide">{tab.name}</span>
+                    <div className={`flex items-center justify-center min-w-[22px] h-5 px-2 rounded-full text-xs font-bold transition-all duration-200 ${
+                      tab.active
+                        ? 'bg-green-600 text-white shadow-sm'
+                        : 'bg-gray-200 text-gray-600 group-hover:bg-gray-300 group-hover:text-gray-700'
+                    }`}>
+                      {tab.count}
+                    </div>
+                    {tab.active && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-green-600 to-green-500 rounded-full shadow-sm"></div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* Modal Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-8" style={{ height: 'calc(90vh - 180px)', minHeight: '400px' }}>
           {/* Overview Tab */}
           {activeTab === 'overview' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="border border-gray-200 rounded-lg p-5">
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="border border-gray-200 rounded-lg p-6">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="font-semibold text-gray-900 text-base">Patient Information</h3>
                     <button
@@ -1204,29 +1270,29 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
                     </button>
                   </div>
                   <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="font-medium text-gray-600">Name:</span>
-                      <span className="text-gray-900">{mockPatient.name}</span>
+                      <span className="text-gray-900 text-right">{mockPatient.name}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="font-medium text-gray-600">UPI:</span>
-                      <span className="text-gray-900">{mockPatient.id}</span>
+                      <span className="text-gray-900 text-right">{mockPatient.id}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="font-medium text-gray-600">DOB:</span>
-                      <span className="text-gray-900">{formatDate(mockPatient.dob)}</span>
+                      <span className="text-gray-900 text-right">{formatDate(mockPatient.dob)}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="font-medium text-gray-600">Age:</span>
-                      <span className="text-gray-900">{calculateAge(mockPatient.dob)} years</span>
+                      <span className="text-gray-900 text-right">{calculateAge(mockPatient.dob)} years</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="font-medium text-gray-600">Medicare:</span>
-                      <span className="text-gray-900">{mockPatient.medicare}</span>
+                      <span className="text-gray-900 text-right">{mockPatient.medicare}</span>
                     </div>
                   </div>
                 </div>
-                <div className="border border-gray-200 rounded-lg p-5">
+                <div className="border border-gray-200 rounded-lg p-6">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="font-semibold text-gray-900 text-base">Contact Information</h3>
                     <button
@@ -1238,21 +1304,21 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
                     </button>
                   </div>
                   <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="font-medium text-gray-600">Phone:</span>
-                      <span className="text-gray-900">{mockPatient.phone}</span>
+                      <span className="text-gray-900 text-right">{mockPatient.phone}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-start">
                       <span className="font-medium text-gray-600">Address:</span>
-                      <span className="text-gray-900 text-right">{mockPatient.address}</span>
+                      <span className="text-gray-900 text-right max-w-xs">{mockPatient.address}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="font-medium text-gray-600">Emergency Contact:</span>
-                      <span className="text-gray-900">{mockPatient.emergencyContact}</span>
+                      <span className="text-gray-900 text-right">{mockPatient.emergencyContact}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="font-medium text-gray-600">Emergency Phone:</span>
-                      <span className="text-gray-900">{mockPatient.emergencyPhone}</span>
+                      <span className="text-gray-900 text-right">{mockPatient.emergencyPhone}</span>
                     </div>
                   </div>
                 </div>
@@ -1262,19 +1328,21 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
 
           {/* Clinical History Tab */}
           {activeTab === 'clinical' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold text-gray-900 text-lg">Clinical History Timeline</h3>
                   <p className="text-sm text-gray-600 mt-1">Chronological record of patient interactions and procedures</p>
                 </div>
-                <button
-                  onClick={() => setIsClinicalHistoryModalOpen(true)}
-                  className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Clinical History
-                </button>
+                {userRole !== 'gp' && (
+                  <button
+                    onClick={() => setIsClinicalHistoryModalOpen(true)}
+                    className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Clinical History
+                  </button>
+                )}
               </div>
 
               <div className="relative">
@@ -1289,7 +1357,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
                         </div>
                         <div className="flex-1 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                           <div className="flex items-start justify-between mb-3">
-                            <div>
+                            <div className="flex-1">
                               <h4 className="font-semibold text-gray-900">{entry.title}</h4>
                               <div className="flex items-center space-x-2 mt-1">
                                 <span className="text-sm text-gray-600">{formatDate(entry.date)}</span>
@@ -1301,14 +1369,16 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
                                 )}
                               </div>
                             </div>
-                            <button
-                              onClick={() => handleEditClinicalHistory(entry)}
-                              className="flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded hover:bg-gray-200 transition-colors"
-                              title="Edit clinical history entry"
-                            >
-                              <Edit className="h-3 w-3 mr-1" />
-                              Edit
-                            </button>
+                            {userRole !== 'gp' && (
+                              <button
+                                onClick={() => handleEditClinicalHistory(entry)}
+                                className="flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded hover:bg-gray-200 transition-colors"
+                                title="Edit clinical history entry"
+                              >
+                                <Edit className="h-3 w-3 mr-1" />
+                                Edit
+                              </button>
+                            )}
                           </div>
                           
                           <div className="space-y-3 text-sm">
@@ -1357,7 +1427,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
           {/* For brevity, I'm including the key structure. The full content would be similar to the original PatientDetails component */}
           
           {activeTab === 'surveillance' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">PSA Level Trends</h2>
@@ -1374,7 +1444,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
 
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-center mb-6">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-center space-x-2">
                     <button 
                       onClick={() => setPsaChartFilter('3months')}
                       className={`px-3 py-1 text-sm border rounded-lg transition-colors cursor-pointer ${
@@ -1475,7 +1545,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
                         <div className="flex items-center space-x-4">
                           <div className={`w-4 h-4 ${psaStatus.dot} rounded-full`}></div>
                           <div className="flex items-center space-x-6">
-                            <div>
+                            <div className="text-left">
                               <p className="font-semibold text-gray-900 text-lg">{psa.value} ng/mL</p>
                               <p className="text-sm text-gray-600">{formatDate(psa.date)}</p>
                             </div>
@@ -1502,14 +1572,16 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
                               </p>
                             )}
                           </div>
-                          <button
-                            onClick={() => handleEditPSA(psa)}
-                            className="flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded hover:bg-gray-200 transition-colors"
-                            title="Edit PSA test"
-                          >
-                            <Edit className="h-3 w-3 mr-1" />
-                            Edit
-                          </button>
+                          {userRole !== 'gp' && (
+                            <button
+                              onClick={() => handleEditPSA(psa)}
+                              className="flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded hover:bg-gray-200 transition-colors"
+                              title="Edit PSA test"
+                            >
+                              <Edit className="h-3 w-3 mr-1" />
+                              Edit
+                            </button>
+                          )}
                         </div>
                       </div>
                     );
@@ -1520,22 +1592,24 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
           )}
 
           {activeTab === 'appointments' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-gray-900 text-base">Appointments</h3>
-                <button className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Schedule Appointment
-                </button>
+                {userRole !== 'gp' && (
+                  <button className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Schedule Appointment
+                  </button>
+                )}
               </div>
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
                 <div className="space-y-3">
                   {mockPatient.appointments.map((appointment, index) => (
                     <div key={appointment.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
-                      <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-4 flex-1">
                         <div className="flex items-center space-x-3">
                           <Calendar className="h-5 w-5 text-green-600" />
-                          <div>
+                          <div className="text-left">
                             <p className="font-medium text-gray-900">{appointment.type}</p>
                             <p className="text-sm text-gray-600">{formatDate(appointment.date)} at {appointment.time}</p>
                             <p className="text-xs text-gray-500 flex items-center">
@@ -1556,14 +1630,16 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
                           <Eye className="h-3 w-3 mr-1" />
                           <span>View</span>
                         </button>
-                        <button
-                          onClick={() => handleEditAppointment(appointment)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
-                          title="Edit appointment"
-                        >
-                          <Edit className="h-3 w-3 mr-1" />
-                          <span>Edit</span>
-                        </button>
+                        {userRole !== 'gp' && (
+                          <button
+                            onClick={() => handleEditAppointment(appointment)}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
+                            title="Edit appointment"
+                          >
+                            <Edit className="h-3 w-3 mr-1" />
+                            <span>Edit</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1572,20 +1648,47 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
             </div>
           )}
 
+          {activeTab === 'imaging' && (
+            <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-lg">Imaging & Procedures</h3>
+                  <p className="text-sm text-gray-600 mt-1">Medical imaging and procedure records</p>
+                </div>
+                {userRole !== 'gp' && (
+                  <button
+                    onClick={() => setIsImagingModalOpen(true)}
+                    className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Imaging
+                  </button>
+                )}
+              </div>
+              <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                <Database className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No imaging records</h3>
+                <p className="text-gray-500">Add imaging and procedure records for this patient</p>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'clinical-notes' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold text-gray-900 text-lg">Clinical Notes Timeline</h3>
                   <p className="text-sm text-gray-600 mt-1">Real-time clinical notes from doctors and nurses throughout the day</p>
                 </div>
-                <button
-                  onClick={() => setIsClinicalNotesModalOpen(true)}
-                  className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Clinical Note
-                </button>
+                {userRole !== 'gp' && (
+                  <button
+                    onClick={() => setIsClinicalNotesModalOpen(true)}
+                    className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Clinical Note
+                  </button>
+                )}
               </div>
 
               <div className="relative">
@@ -1637,14 +1740,16 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
                                       </span>
                                     </div>
                                   </div>
-                                  <button
-                                    onClick={() => handleEditClinicalNote(note)}
-                                    className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
-                                    title="Edit clinical note"
-                                  >
-                                    <Edit className="h-3 w-3 mr-1" />
-                                    <span>Edit</span>
-                                  </button>
+                                  {userRole !== 'gp' && (
+                                    <button
+                                      onClick={() => handleEditClinicalNote(note)}
+                                      className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
+                                      title="Edit clinical note"
+                                    >
+                                      <Edit className="h-3 w-3 mr-1" />
+                                      <span>Edit</span>
+                                    </button>
+                                  )}
                                 </div>
                                 
                         {/* Type and Priority Badges */}
@@ -1826,6 +1931,197 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
             </div>
           )}
 
+          {activeTab === 'mdt-notes' && (
+            <div className="space-y-8">
+              <div>
+                <h3 className="font-semibold text-gray-900 text-lg">MDT Notes Timeline</h3>
+                <p className="text-sm text-gray-600 mt-1">Multidisciplinary team discussions, decisions, and outcomes</p>
+              </div>
+
+              {/* MDT Notes Timeline */}
+              <div className="relative">
+                <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-green-200 to-blue-200"></div>
+                <div className="space-y-8">
+                  {mockPatient.mdtNotes.map((mdtNote, index) => {
+                    const getPriorityColor = (priority) => {
+                      switch (priority) {
+                        case 'High': return 'bg-red-100 text-red-800 border-red-200';
+                        case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                        case 'Low': return 'bg-green-100 text-green-800 border-green-200';
+                        default: return 'bg-gray-100 text-gray-800 border-gray-200';
+                      }
+                    };
+
+                    const getStatusColor = (status) => {
+                      switch (status) {
+                        case 'Review Complete': return 'bg-green-100 text-green-800';
+                        case 'Under Review': return 'bg-yellow-100 text-yellow-800';
+                        case 'Pending Review': return 'bg-blue-100 text-blue-800';
+                        default: return 'bg-gray-100 text-gray-800';
+                      }
+                    };
+
+                    const getOutcomeColor = (outcome) => {
+                      switch (outcome) {
+                        case 'Proceed to Surgery': return 'bg-red-100 text-red-800';
+                        case 'Active Surveillance': return 'bg-green-100 text-green-800';
+                        case 'Radiation Therapy': return 'bg-purple-100 text-purple-800';
+                        case 'Systemic Therapy': return 'bg-orange-100 text-orange-800';
+                        default: return 'bg-gray-100 text-gray-800';
+                      }
+                    };
+
+                    return (
+                      <div key={mdtNote.id} className="relative flex items-start space-x-4">
+                        <div className="relative z-10 w-8 h-8 bg-gradient-to-br from-green-600 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                          <Users className="h-4 w-4 text-white" />
+                        </div>
+                        <div className="flex-1 bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-3 mb-2">
+                                <h4 className="font-semibold text-gray-900 text-lg">MDT Discussion</h4>
+                                <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(mdtNote.priority)}`}>
+                                  {mdtNote.priority} Priority
+                                </span>
+                                <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(mdtNote.status)}`}>
+                                  {mdtNote.status}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                <span className="flex items-center">
+                                  <Calendar className="h-4 w-4 mr-1" />
+                                  {formatDate(mdtNote.mdtDate)} at {mdtNote.time}
+                                </span>
+                                <span className="text-gray-400">•</span>
+                                <span className="font-medium text-gray-700">{mdtNote.caseType}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Team Members */}
+                          <div className="mb-4">
+                            <h5 className="text-sm font-semibold text-gray-700 mb-2">Team Members</h5>
+                            <div className="flex flex-wrap gap-2">
+                              {mdtNote.teamMembers.map((member, idx) => (
+                                <span key={idx} className="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-md border border-blue-200">
+                                  {member}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Discussion Notes */}
+                          <div className="mb-4">
+                            <h5 className="text-sm font-semibold text-gray-700 mb-2">Discussion Notes</h5>
+                            <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                              {mdtNote.discussionNotes}
+                            </p>
+                          </div>
+
+                          {/* Outcome */}
+                          <div className="mb-4">
+                            <h5 className="text-sm font-semibold text-gray-700 mb-2">MDT Outcome</h5>
+                            <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${getOutcomeColor(mdtNote.outcome)}`}>
+                              {mdtNote.outcome}
+                            </span>
+                          </div>
+
+                          {/* Recommendations */}
+                          <div className="mb-4">
+                            <h5 className="text-sm font-semibold text-gray-700 mb-2">Recommendations</h5>
+                            <p className="text-sm text-gray-900 bg-green-50 p-3 rounded-lg border border-green-200">
+                              {mdtNote.recommendations}
+                            </p>
+                          </div>
+
+                          {/* Follow-up Actions */}
+                          <div className="mb-4">
+                            <h5 className="text-sm font-semibold text-gray-700 mb-2">Follow-up Actions</h5>
+                            <ul className="space-y-1">
+                              {mdtNote.followUpActions.map((action, idx) => (
+                                <li key={idx} className="flex items-center text-sm text-gray-700">
+                                  <CheckCircle className="h-3 w-3 text-green-500 mr-2 flex-shrink-0" />
+                                  {action}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          {/* Documents */}
+                          {mdtNote.documents && mdtNote.documents.length > 0 && (
+                            <div>
+                              <h5 className="text-sm font-semibold text-gray-700 mb-2">Documents</h5>
+                              <div className="flex flex-wrap gap-2">
+                                {mdtNote.documents.map((doc, idx) => (
+                                  <button
+                                    key={idx}
+                                    onClick={() => console.log('Download:', doc)}
+                                    className="flex items-center px-3 py-1 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                                  >
+                                    <Download className="h-3 w-3 mr-1" />
+                                    {doc}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* MDT Notes Summary */}
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">MDT Notes Summary</h4>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
+                    <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Users className="h-6 w-6 text-white" />
+                    </div>
+                    <p className="text-3xl font-bold text-green-600">
+                      {mockPatient.mdtNotes.length}
+                    </p>
+                    <p className="text-sm font-medium text-gray-700">Total MDT Reviews</p>
+                    <p className="text-xs text-gray-500 mt-1">Team discussions</p>
+                  </div>
+                  <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
+                    <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <CheckCircle className="h-6 w-6 text-white" />
+                    </div>
+                    <p className="text-3xl font-bold text-blue-600">
+                      {mockPatient.mdtNotes.filter(note => note.status === 'Review Complete').length}
+                    </p>
+                    <p className="text-sm font-medium text-gray-700">Completed Reviews</p>
+                    <p className="text-xs text-gray-500 mt-1">Decisions made</p>
+                  </div>
+                  <div className="text-center p-6 bg-gradient-to-br from-red-50 to-red-100 rounded-xl border border-red-200">
+                    <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Target className="h-6 w-6 text-white" />
+                    </div>
+                    <p className="text-3xl font-bold text-red-600">
+                      {mockPatient.mdtNotes.filter(note => note.outcome === 'Proceed to Surgery').length}
+                    </p>
+                    <p className="text-sm font-medium text-gray-700">Surgical Decisions</p>
+                    <p className="text-xs text-gray-500 mt-1">Surgery recommended</p>
+                  </div>
+                  <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200">
+                    <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Activity className="h-6 w-6 text-white" />
+                    </div>
+                    <p className="text-3xl font-bold text-purple-600">
+                      {mockPatient.mdtNotes.filter(note => note.outcome === 'Active Surveillance').length}
+                    </p>
+                    <p className="text-sm font-medium text-gray-700">Surveillance Cases</p>
+                    <p className="text-xs text-gray-500 mt-1">Continued monitoring</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'imaging' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -1833,13 +2129,15 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
                   <h3 className="font-semibold text-gray-900 text-lg">Imaging & Procedures Timeline</h3>
                   <p className="text-sm text-gray-600 mt-1">Chronological record of imaging studies and procedures with documents</p>
                 </div>
-                <button
-                  onClick={() => setIsImagingModalOpen(true)}
-                  className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Imaging/Procedure
-                </button>
+                {userRole !== 'gp' && (
+                  <button
+                    onClick={() => setIsImagingModalOpen(true)}
+                    className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Imaging/Procedure
+                  </button>
+                )}
               </div>
 
               <div className="relative">
@@ -1868,14 +2166,16 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
                                   </span>
                                 </div>
                               </div>
-                              <button
-                                onClick={() => handleEditImaging(item)}
-                                className="flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded hover:bg-gray-200 transition-colors"
-                                title="Edit imaging/procedure entry"
-                              >
-                                <Edit className="h-3 w-3 mr-1" />
-                                Edit
-                              </button>
+                              {userRole !== 'gp' && (
+                                <button
+                                  onClick={() => handleEditImaging(item)}
+                                  className="flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded hover:bg-gray-200 transition-colors"
+                                  title="Edit imaging/procedure entry"
+                                >
+                                  <Edit className="h-3 w-3 mr-1" />
+                                  Edit
+                                </button>
+                              )}
                             </div>
                             
                             <div className="space-y-3 text-sm">
@@ -1956,13 +2256,15 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-gray-900 text-base">Discharge Summaries</h3>
-                <button
-                  onClick={() => setIsDischargeModalOpen(true)}
-                  className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Discharge Summary
-                </button>
+                {userRole !== 'gp' && (
+                  <button
+                    onClick={() => setIsDischargeModalOpen(true)}
+                    className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Discharge Summary
+                  </button>
+                )}
               </div>
               
               <div className="space-y-6">
@@ -2001,20 +2303,24 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId }) => {
                                   <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
                                     {summary.status}
                                   </span>
-                                  <button
-                                    onClick={() => handleEditDischarge(summary)}
-                                    className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded transition-colors"
-                                    title="Edit discharge summary"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => removeDischargeSummary(summary.id)}
-                                    className="p-1 text-red-600 hover:text-red-800 hover:bg-red-100 rounded transition-colors"
-                                    title="Remove discharge summary"
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </button>
+                                  {userRole !== 'gp' && (
+                                    <button
+                                      onClick={() => handleEditDischarge(summary)}
+                                      className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded transition-colors"
+                                      title="Edit discharge summary"
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </button>
+                                  )}
+                                  {userRole !== 'gp' && (
+                                    <button
+                                      onClick={() => removeDischargeSummary(summary.id)}
+                                      className="p-1 text-red-600 hover:text-red-800 hover:bg-red-100 rounded transition-colors"
+                                      title="Remove discharge summary"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </button>
+                                  )}
                                 </div>
                                 <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
                                   {summary.readmissionRisk}

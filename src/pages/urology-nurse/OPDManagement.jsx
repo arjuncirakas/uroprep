@@ -6,19 +6,19 @@ import {
   Eye,
   Calendar,
   X,
-  User,
-  Phone,
-  Mail,
-  Activity,
-  Stethoscope,
-  ArrowRight,
   RefreshCw
 } from 'lucide-react';
+import BookAppointmentModalWithPatient from '../../components/modals/BookAppointmentModalWithPatient';
+import PatientDetailsModal from '../../components/modals/PatientDetailsModal';
 
 const OPDManagement = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All patients');
+  const [activeFilter, setActiveFilter] = useState('Waiting for Scheduling');
+  const [isBookAppointmentModalOpen, setIsBookAppointmentModalOpen] = useState(false);
+  const [selectedPatientForAppointment, setSelectedPatientForAppointment] = useState(null);
+  const [isPatientDetailsModalOpen, setIsPatientDetailsModalOpen] = useState(false);
+  const [selectedPatientForDetails, setSelectedPatientForDetails] = useState(null);
 
   // Mock OPD queue data
   const mockOPDQueue = [
@@ -33,7 +33,7 @@ const OPDManagement = () => {
       latestPSA: 8.5,
       appointmentDate: '2024-01-15',
       appointmentTime: '9:00 AM',
-      status: 'Waiting',
+      status: 'Waiting for Scheduling',
       waitTime: '15 minutes',
       priority: 'High',
       reason: 'Elevated PSA with abnormal DRE',
@@ -51,7 +51,7 @@ const OPDManagement = () => {
       latestPSA: 6.8,
       appointmentDate: '2024-01-15',
       appointmentTime: '10:30 AM',
-      status: 'In Consultation',
+      status: 'Scheduled Doctor Appointment',
       waitTime: '0 minutes',
       priority: 'Urgent',
       reason: 'Suspicious MRI findings',
@@ -69,7 +69,7 @@ const OPDManagement = () => {
       latestPSA: 5.2,
       appointmentDate: '2024-01-15',
       appointmentTime: '11:00 AM',
-      status: 'Awaiting Results',
+      status: 'Waiting for Secondary Appointment',
       waitTime: '0 minutes',
       priority: 'Medium',
       reason: 'Family history of prostate cancer',
@@ -87,7 +87,7 @@ const OPDManagement = () => {
       latestPSA: 4.8,
       appointmentDate: '2024-01-15',
       appointmentTime: '2:00 PM',
-      status: 'Waiting',
+      status: 'Waiting for Scheduling',
       waitTime: '5 minutes',
       priority: 'Normal',
       reason: 'Routine PSA monitoring',
@@ -105,7 +105,7 @@ const OPDManagement = () => {
       latestPSA: 7.2,
       appointmentDate: '2024-01-15',
       appointmentTime: '2:30 PM',
-      status: 'Waiting',
+      status: 'Waiting for Scheduling',
       waitTime: '10 minutes',
       priority: 'High',
       reason: 'Rising PSA levels',
@@ -123,7 +123,7 @@ const OPDManagement = () => {
       latestPSA: 9.1,
       appointmentDate: '2024-01-15',
       appointmentTime: '3:00 PM',
-      status: 'Waiting',
+      status: 'Waiting for Scheduling',
       waitTime: '25 minutes',
       priority: 'Urgent',
       reason: 'High PSA with urinary symptoms',
@@ -141,7 +141,7 @@ const OPDManagement = () => {
       latestPSA: 4.2,
       appointmentDate: '2024-01-15',
       appointmentTime: '3:30 PM',
-      status: 'In Consultation',
+      status: 'Scheduled for Procedure',
       waitTime: '0 minutes',
       priority: 'Medium',
       reason: 'Post-surgery follow-up',
@@ -159,7 +159,7 @@ const OPDManagement = () => {
       latestPSA: 6.5,
       appointmentDate: '2024-01-15',
       appointmentTime: '4:00 PM',
-      status: 'Waiting',
+      status: 'Waiting for Scheduling',
       waitTime: '35 minutes',
       priority: 'High',
       reason: 'Abnormal DRE findings',
@@ -177,7 +177,7 @@ const OPDManagement = () => {
       latestPSA: 5.8,
       appointmentDate: '2024-01-15',
       appointmentTime: '4:30 PM',
-      status: 'Awaiting Results',
+      status: 'Waiting for Secondary Appointment',
       waitTime: '0 minutes',
       priority: 'Medium',
       reason: 'Active surveillance monitoring',
@@ -195,7 +195,7 @@ const OPDManagement = () => {
       latestPSA: 3.9,
       appointmentDate: '2024-01-15',
       appointmentTime: '5:00 PM',
-      status: 'Waiting',
+      status: 'Waiting for Scheduling',
       waitTime: '45 minutes',
       priority: 'Normal',
       reason: 'Annual PSA check',
@@ -231,7 +231,7 @@ const OPDManagement = () => {
       latestPSA: 4.6,
       appointmentDate: '2024-01-15',
       appointmentTime: '6:00 PM',
-      status: 'Waiting',
+      status: 'Waiting for Scheduling',
       waitTime: '55 minutes',
       priority: 'Medium',
       reason: 'Family history screening',
@@ -249,7 +249,7 @@ const OPDManagement = () => {
       latestPSA: 8.9,
       appointmentDate: '2024-01-15',
       appointmentTime: '6:30 PM',
-      status: 'In Consultation',
+      status: 'Scheduled Doctor Appointment',
       waitTime: '0 minutes',
       priority: 'Urgent',
       reason: 'Rapidly rising PSA',
@@ -267,7 +267,7 @@ const OPDManagement = () => {
       latestPSA: 5.1,
       appointmentDate: '2024-01-15',
       appointmentTime: '7:00 PM',
-      status: 'Awaiting Results',
+      status: 'Scheduled for Procedure',
       waitTime: '0 minutes',
       priority: 'Medium',
       reason: 'Pre-operative assessment',
@@ -285,7 +285,7 @@ const OPDManagement = () => {
       latestPSA: 6.3,
       appointmentDate: '2024-01-15',
       appointmentTime: '7:30 PM',
-      status: 'Waiting',
+      status: 'Waiting for Scheduling',
       waitTime: '65 minutes',
       priority: 'High',
       reason: 'Urinary retention episodes',
@@ -304,7 +304,7 @@ const OPDManagement = () => {
       latestPSA: 7.4,
       appointmentDate: new Date().toISOString().split('T')[0],
       appointmentTime: '9:30 AM',
-      status: 'Waiting',
+      status: 'Waiting for Scheduling',
       waitTime: '20 minutes',
       priority: 'High',
       reason: 'Elevated PSA with family history',
@@ -340,7 +340,7 @@ const OPDManagement = () => {
       latestPSA: 8.2,
       appointmentDate: new Date().toISOString().split('T')[0],
       appointmentTime: '11:15 AM',
-      status: 'Waiting',
+      status: 'Waiting for Scheduling',
       waitTime: '35 minutes',
       priority: 'Urgent',
       reason: 'High PSA with urinary symptoms',
@@ -376,7 +376,7 @@ const OPDManagement = () => {
       latestPSA: 6.7,
       appointmentDate: new Date().toISOString().split('T')[0],
       appointmentTime: '3:30 PM',
-      status: 'Waiting',
+      status: 'Waiting for Scheduling',
       waitTime: '50 minutes',
       priority: 'High',
       reason: 'Rising PSA trend',
@@ -395,7 +395,7 @@ const OPDManagement = () => {
       latestPSA: 5.5,
       appointmentDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       appointmentTime: '9:00 AM',
-      status: 'Waiting',
+      status: 'Waiting for Scheduling',
       waitTime: '0 minutes',
       priority: 'Normal',
       reason: 'Annual PSA screening',
@@ -413,34 +413,70 @@ const OPDManagement = () => {
       latestPSA: 7.9,
       appointmentDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       appointmentTime: '10:30 AM',
-      status: 'Waiting',
+      status: 'Awaiting Results',
       waitTime: '0 minutes',
       priority: 'High',
       reason: 'Pre-operative assessment',
       assignedUrologist: 'Dr. Sarah Wilson',
-      notes: 'Scheduled for RALP next week'
+      notes: 'Awaiting pathology results from biopsy'
+    },
+    {
+      id: 'OPD023',
+      patientName: 'Edward Thompson',
+      upi: 'URP2024027',
+      age: 61,
+      gender: 'Male',
+      phone: '+61 423 456 890',
+      referralSource: 'GP',
+      latestPSA: 6.1,
+      appointmentDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      appointmentTime: '2:00 PM',
+      status: 'Awaiting Results',
+      waitTime: '0 minutes',
+      priority: 'Medium',
+      reason: 'Follow-up consultation',
+      assignedUrologist: 'Dr. Michael Chen',
+      notes: 'Awaiting MRI results and lab reports'
+    },
+    {
+      id: 'OPD024',
+      patientName: 'George Wilson',
+      upi: 'URP2024028',
+      age: 55,
+      gender: 'Male',
+      phone: '+61 434 567 901',
+      referralSource: 'GP',
+      latestPSA: 5.3,
+      appointmentDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      appointmentTime: '11:00 AM',
+      status: 'Scheduled',
+      waitTime: '0 minutes',
+      priority: 'Normal',
+      reason: 'Annual PSA monitoring',
+      assignedUrologist: 'Dr. Emma Wilson',
+      notes: 'Routine annual check-up scheduled'
+    },
+    {
+      id: 'OPD025',
+      patientName: 'Frank Davis',
+      upi: 'URP2024029',
+      age: 67,
+      gender: 'Male',
+      phone: '+61 445 678 012',
+      referralSource: 'IPD',
+      latestPSA: 8.3,
+      appointmentDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      appointmentTime: '3:30 PM',
+      status: 'Scheduled',
+      waitTime: '0 minutes',
+      priority: 'High',
+      reason: 'Pre-operative assessment',
+      assignedUrologist: 'Dr. Lisa Davis',
+      notes: 'Scheduled for prostatectomy consultation'
     }
   ];
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Waiting': return 'bg-yellow-100 text-yellow-800';
-      case 'In Consultation': return 'bg-blue-100 text-blue-800';
-      case 'Awaiting Results': return 'bg-purple-100 text-purple-800';
-      case 'Completed': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'Urgent': return 'bg-red-100 text-red-800';
-      case 'High': return 'bg-orange-100 text-orange-800';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800';
-      case 'Normal': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const filteredOPDQueue = mockOPDQueue.filter(patient => {
     const searchMatch = searchTerm === '' || 
@@ -450,36 +486,56 @@ const OPDManagement = () => {
     
     // Status filter based on active tab
     const statusMatch = 
-      (activeFilter === 'All patients') ||
-      (activeFilter === 'Waiting' && patient.status === 'Waiting') ||
-      (activeFilter === 'In Consultation' && patient.status === 'In Consultation') ||
+      (activeFilter === 'Waiting for Scheduling' && patient.status === 'Waiting for Scheduling') ||
+      (activeFilter === 'Scheduled Doctor Appointment' && patient.status === 'Scheduled Doctor Appointment') ||
+      (activeFilter === 'Scheduled for Procedure' && patient.status === 'Scheduled for Procedure') ||
+      (activeFilter === 'Waiting for Secondary Appointment' && patient.status === 'Waiting for Secondary Appointment') ||
       (activeFilter === 'Awaiting Results' && patient.status === 'Awaiting Results');
     
     return searchMatch && statusMatch;
   });
 
+  const handleBookAppointment = (patient) => {
+    setSelectedPatientForAppointment(patient);
+    setIsBookAppointmentModalOpen(true);
+  };
+
+  const handleAppointmentBooked = (appointmentData) => {
+    console.log('Appointment booked:', appointmentData);
+    // Here you would typically update the patient's status in your state management
+    // For now, we'll just close the modal and show a success message
+    setIsBookAppointmentModalOpen(false);
+    setSelectedPatientForAppointment(null);
+    alert('Appointment booked successfully!');
+  };
+
+  const handleCloseModal = () => {
+    setIsBookAppointmentModalOpen(false);
+    setSelectedPatientForAppointment(null);
+  };
+
+  const handleViewPatientDetails = (patient) => {
+    setSelectedPatientForDetails(patient);
+    setIsPatientDetailsModalOpen(true);
+  };
+
+  const handleClosePatientDetailsModal = () => {
+    setIsPatientDetailsModalOpen(false);
+    setSelectedPatientForDetails(null);
+  };
+
+
 
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">OPD Management</h1>
-        <p className="text-gray-600 mt-1">Track patients in OPD queue and manage consultation flow</p>
-      </div>
-
-
-      {/* Search and Filters */}
+      {/* Page Header with Filter Tabs */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Search & Filter OPD Queue</h2>
-              <p className="text-sm text-gray-600 mt-1">Find patients in the OPD queue</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-gray-600">Live Search</span>
+              <h1 className="text-2xl font-bold text-gray-900">OPD Management</h1>
+              <p className="text-gray-600 mt-1">Track patients in OPD queue and manage consultation flow</p>
             </div>
           </div>
         </div>
@@ -487,7 +543,7 @@ const OPDManagement = () => {
         {/* Filter Tabs */}
         <div className="px-6 py-4">
           <nav className="flex space-x-2" aria-label="Tabs">
-            {['All patients', 'Waiting', 'In Consultation', 'Awaiting Results'].map((filter) => (
+            {['Waiting for Scheduling', 'Scheduled Doctor Appointment', 'Scheduled for Procedure', 'Awaiting Results', 'Waiting for Secondary Appointment'].map((filter) => (
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
@@ -506,11 +562,12 @@ const OPDManagement = () => {
                   }`}>
                     {mockOPDQueue.filter(patient => {
                        switch (filter) {
-                         case 'All patients': return true;
-                         case 'Waiting': return patient.status === 'Waiting';
-                         case 'In Consultation': return patient.status === 'In Consultation';
+                         case 'Waiting for Scheduling': return patient.status === 'Waiting for Scheduling';
+                         case 'Scheduled Doctor Appointment': return patient.status === 'Scheduled Doctor Appointment';
+                         case 'Scheduled for Procedure': return patient.status === 'Scheduled for Procedure';
+                         case 'Waiting for Secondary Appointment': return patient.status === 'Waiting for Secondary Appointment';
                          case 'Awaiting Results': return patient.status === 'Awaiting Results';
-                         default: return true;
+                         default: return false;
                        }
                      }).length}
                   </span>
@@ -566,9 +623,6 @@ const OPDManagement = () => {
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Appointment</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Status</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Priority</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Urologist</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -602,29 +656,24 @@ const OPDManagement = () => {
                       </div>
                     </td>
                     <td className="py-5 px-6">
-                      <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(patient.status)}`}>
-                        {patient.status}
-                      </span>
-                    </td>
-                    <td className="py-5 px-6">
-                      <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getPriorityColor(patient.priority)}`}>
-                        {patient.priority}
-                      </span>
-                    </td>
-                    <td className="py-5 px-6">
-                      <div>
-                        <p className="font-medium text-gray-900">{patient.assignedUrologist}</p>
-                        <p className="text-sm text-gray-500">PSA: {patient.latestPSA} ng/mL</p>
+                      <div className="flex items-center space-x-2">
+                        <button 
+                          onClick={() => handleViewPatientDetails(patient)}
+                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          <span>View</span>
+                        </button>
+                        {patient.status === 'Waiting for Scheduling' && (
+                          <button 
+                            onClick={() => handleBookAppointment(patient)}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-800 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                          >
+                            <Calendar className="h-3 w-3 mr-1" />
+                            <span>Book Appointment</span>
+                          </button>
+                        )}
                       </div>
-                    </td>
-                    <td className="py-5 px-6">
-                      <button 
-                        onClick={() => navigate(`/urology-nurse/patient-details/${patient.id}`)}
-                        className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-                      >
-                        <Eye className="h-3 w-3 mr-1" />
-                        <span>View</span>
-                      </button>
                     </td>
                   </tr>
                 ))}
@@ -643,11 +692,11 @@ const OPDManagement = () => {
               </p>
               <div className="flex items-center justify-center space-x-4">
                 <button
-                  onClick={() => setActiveFilter('All patients')}
+                  onClick={() => setActiveFilter('Waiting for Scheduling')}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                 >
                   <Users className="h-4 w-4 mr-2" />
-                  Show All Patients
+                  Show Waiting Patients
                 </button>
                 <button
                   onClick={() => navigate('/urology-nurse/appointments')}
@@ -661,6 +710,22 @@ const OPDManagement = () => {
           )}
         </div>
       </div>
+
+      {/* Book Appointment Modal */}
+      <BookAppointmentModalWithPatient
+        isOpen={isBookAppointmentModalOpen}
+        onClose={handleCloseModal}
+        onAppointmentBooked={handleAppointmentBooked}
+        selectedPatientData={selectedPatientForAppointment}
+      />
+
+      {/* Patient Details Modal */}
+      <PatientDetailsModal
+        isOpen={isPatientDetailsModalOpen}
+        onClose={handleClosePatientDetailsModal}
+        patientId={selectedPatientForDetails?.id}
+        userRole="urology-nurse"
+      />
     </div>
   );
 };

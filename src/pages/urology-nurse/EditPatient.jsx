@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { usePatientDetails } from '../../contexts/PatientDetailsContext';
 import { useSelector, useDispatch } from 'react-redux';
 import { ArrowLeft, User, Phone, Mail, MapPin, Calendar, Save, AlertCircle } from 'lucide-react';
 import { usePatientValidation } from '../../hooks/useFormValidation';
@@ -8,6 +9,7 @@ const EditPatient = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { openPatientDetails } = usePatientDetails();
   
   const patients = useSelector(state => state.patients.patients);
   const [patient, setPatient] = useState(null);
@@ -127,7 +129,7 @@ const EditPatient = () => {
     });
 
     // Navigate back to patient details
-    navigate(`/urology-nurse/patient-details/${patient.id}`);
+    openPatientDetails(patient.id);
   };
 
   const relationshipOptions = [
@@ -156,7 +158,7 @@ const EditPatient = () => {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => navigate(`/urology-nurse/patient-details/${patient.id}`)}
+            onClick={() => openPatientDetails(patient.id)}
             className="flex items-center text-blue-600 hover:text-blue-800 mb-4"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
@@ -427,7 +429,7 @@ const EditPatient = () => {
           {/* Action Buttons */}
           <div className="flex items-center justify-end space-x-4">
             <button
-              onClick={() => navigate(`/urology-nurse/patient-details/${patient.id}`)}
+              onClick={() => openPatientDetails(patient.id)}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               Cancel

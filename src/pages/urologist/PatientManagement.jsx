@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import AddPatientModal from '../../components/modals/AddPatientModal';
+import { usePatientDetails } from '../../contexts/PatientDetailsContext';
 import { 
   Search, 
   UserPlus, 
@@ -31,16 +33,24 @@ const PatientManagement = () => {
   const navigate = useNavigate();
   const { db1, db2, db3, db4 } = useSelector(state => state.databases);
   const { referrals } = useSelector(state => state.referrals);
+  const { openPatientDetails } = usePatientDetails();
+  
+  // Mock logged-in doctor (in real app, this would come from auth state)
+  const loggedInDoctor = 'Dr. Michael Chen';
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilter, setActiveFilter] = useState('all');
+  const [selectedPathway, setSelectedPathway] = useState('all');
+  const [activeTab, setActiveTab] = useState('All Patients');
   const [sortBy, setSortBy] = useState('name');
+  
+  // Add Patient Modal state
+  const [showAddPatientModal, setShowAddPatientModal] = useState(false);
 
   // Mock patient data combining all databases
   const allPatients = [
     // DB1 - OPD Queue
     {
-      id: 'URP001',
+      id: 'URP2024001',
       name: 'John Smith',
       age: 65,
       dob: '1959-03-15',
@@ -56,7 +66,8 @@ const PatientManagement = () => {
       clinicalNotes: 'Elevated PSA with family history',
       lastAppointment: '2024-01-15',
       nextAppointment: '2024-01-22',
-      priority: 'High'
+      priority: 'High',
+      assignedDoctor: 'Dr. Michael Chen'
     },
     {
       id: 'URP002',
@@ -75,7 +86,8 @@ const PatientManagement = () => {
       clinicalNotes: 'Rapidly rising PSA',
       lastAppointment: '2024-01-16',
       nextAppointment: '2024-01-23',
-      priority: 'High'
+      priority: 'High',
+      assignedDoctor: 'Dr. Sarah Wilson'
     },
     // DB2 - Active Surveillance
     {
@@ -97,10 +109,11 @@ const PatientManagement = () => {
       nextAppointment: '2024-06-15',
       priority: 'Normal',
       gleasonScore: '3+3=6',
-      stage: 'T1c'
+      stage: 'T1c',
+      assignedDoctor: 'Dr. Sarah Wilson'
     },
     {
-      id: 'URP004',
+      id: 'URP2024004',
       name: 'David Wilson',
       age: 68,
       dob: '1956-05-12',
@@ -118,7 +131,8 @@ const PatientManagement = () => {
       nextAppointment: '2024-05-20',
       priority: 'Normal',
       gleasonScore: '3+3=6',
-      stage: 'T1c'
+      stage: 'T1c',
+      assignedDoctor: 'Dr. Michael Chen'
     },
     // DB3 - Surgical Pathway
     {
@@ -142,7 +156,8 @@ const PatientManagement = () => {
       gleasonScore: '4+3=7',
       stage: 'T2b',
       surgeryDate: '2024-02-15',
-      surgeryType: 'RALP'
+      surgeryType: 'RALP',
+      assignedDoctor: 'Dr. Sarah Wilson'
     },
     {
       id: 'URP006',
@@ -165,7 +180,8 @@ const PatientManagement = () => {
       gleasonScore: '3+4=7',
       stage: 'T2a',
       surgeryDate: '2024-02-20',
-      surgeryType: 'RALP'
+      surgeryType: 'RALP',
+      assignedDoctor: 'Dr. Michael Chen'
     },
     // DB4 - Post-Op Follow-Up
     {
@@ -190,7 +206,8 @@ const PatientManagement = () => {
       stage: 'T2c',
       surgeryDate: '2023-08-15',
       surgeryType: 'RALP',
-      histopathology: 'Negative margins, organ-confined'
+      histopathology: 'Negative margins, organ-confined',
+      assignedDoctor: 'Dr. Sarah Wilson'
     },
     {
       id: 'URP008',
@@ -214,7 +231,8 @@ const PatientManagement = () => {
       stage: 'T3a',
       surgeryDate: '2023-06-20',
       surgeryType: 'Open Prostatectomy',
-      histopathology: 'Positive margins, extracapsular extension'
+      histopathology: 'Positive margins, extracapsular extension',
+      assignedDoctor: 'Dr. Michael Chen'
     },
     // Additional IPD Patients
     {
@@ -238,7 +256,8 @@ const PatientManagement = () => {
       gleasonScore: '3+4=7',
       stage: 'T2b',
       surgeryDate: '2024-01-25',
-      surgeryType: 'RALP'
+      surgeryType: 'RALP',
+      assignedDoctor: 'Dr. Sarah Wilson'
     },
     {
       id: 'URP010',
@@ -261,27 +280,67 @@ const PatientManagement = () => {
       gleasonScore: '4+4=8',
       stage: 'T3b',
       surgeryDate: '2024-01-28',
-      surgeryType: 'Open Prostatectomy'
+      surgeryType: 'Open Prostatectomy',
+      assignedDoctor: 'Dr. Michael Chen'
+    },
+    // Additional patients from PatientDetailsModal
+    {
+      id: 'URP2024010',
+      name: 'Thomas Miller',
+      age: 65,
+      dob: '1959-04-22',
+      phone: '+61 414 567 890',
+      email: 'thomas.miller@email.com',
+      address: '789 Pine Street, Melbourne VIC 3002',
+      psa: 2.1,
+      status: 'Discharged',
+      database: 'DB4',
+      patientType: 'OPD',
+      referralDate: '2023-11-15',
+      referringGP: 'Dr. Sarah Wilson',
+      clinicalNotes: 'PSA levels normalized',
+      lastAppointment: '2023-11-15',
+      nextAppointment: null,
+      priority: 'Normal',
+      assignedDoctor: 'Dr. Sarah Wilson'
+    },
+    {
+      id: 'URP2024011',
+      name: 'Jennifer Taylor',
+      age: 57,
+      dob: '1967-09-18',
+      phone: '+61 415 678 901',
+      email: 'jennifer.taylor@email.com',
+      address: '321 Elm Drive, Melbourne VIC 3003',
+      psa: 1.8,
+      status: 'Discharged',
+      database: 'DB4',
+      patientType: 'OPD',
+      referralDate: '2023-10-20',
+      referringGP: 'Dr. Sarah Wilson',
+      clinicalNotes: 'Normal PSA levels',
+      lastAppointment: '2023-10-20',
+      nextAppointment: null,
+      priority: 'Normal',
+      assignedDoctor: 'Dr. Michael Chen'
     }
   ];
 
   // Filter and search logic
   const filteredPatients = allPatients.filter(patient => {
-    const matchesSearch = searchTerm === '' || 
+    const searchMatch = searchTerm === '' || 
       patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       patient.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       patient.phone.includes(searchTerm) ||
       patient.email.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesFilter = activeFilter === 'all' || 
-      (activeFilter === 'opd' && patient.patientType === 'OPD') ||
-      (activeFilter === 'ipd' && patient.patientType === 'IPD') ||
-      (activeFilter === 'opd-queue' && patient.database === 'DB1') ||
-      (activeFilter === 'surveillance' && patient.database === 'DB2') ||
-      (activeFilter === 'surgery' && patient.database === 'DB3') ||
-      (activeFilter === 'postop' && patient.database === 'DB4');
+    const pathwayMatch = selectedPathway === 'all' || patient.status === selectedPathway;
     
-    return matchesSearch && matchesFilter;
+    // Tab filtering
+    const tabMatch = activeTab === 'All Patients' || 
+      (activeTab === 'My Patients' && patient.assignedDoctor === loggedInDoctor);
+    
+    return searchMatch && pathwayMatch && tabMatch;
   });
 
   // Sort patients
@@ -344,18 +403,33 @@ const PatientManagement = () => {
     return new Date(dateString).toLocaleDateString('en-AU');
   };
 
+  // Add Patient Modal handlers
+  const handleAddPatient = () => {
+    setShowAddPatientModal(true);
+  };
+
+  const handlePatientAdded = (newPatient) => {
+    console.log('New patient added:', newPatient);
+    // Here you could update your local state or dispatch to Redux store
+  };
+
+  const handleCloseAddPatientModal = () => {
+    setShowAddPatientModal(false);
+  };
+
+  // Patient Details Modal handlers
+  const handleViewPatientDetails = (patientId) => {
+    openPatientDetails(patientId);
+  };
+
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Patient Management</h1>
-            <p className="text-sm text-gray-600 mt-1">Search, add, and view patient timelines across all databases</p>
-          </div>
+        <div className="flex items-center justify-end">
           <button 
-            onClick={() => navigate('/urologist/add-patient')}
+            onClick={handleAddPatient}
             className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
           >
             <UserPlus className="h-4 w-4 mr-2" />
@@ -369,71 +443,55 @@ const PatientManagement = () => {
         <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Search & Filter Patients</h2>
-              <p className="text-sm text-gray-600 mt-1">Find patients across all databases and pathways</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-gray-600">Live Search</span>
+              <h2 className="text-2xl font-bold text-gray-900">Patient Management</h2>
+              <p className="text-sm text-gray-600 mt-1">Search, add, and view patient timelines across all databases</p>
             </div>
           </div>
         </div>
+        {/* Patient Tab Switcher */}
+        <div className="px-6 py-4 bg-white border-b border-gray-200">
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setActiveTab('All Patients')}
+              className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                activeTab === 'All Patients'
+                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              All Patients
+              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                activeTab === 'All Patients'
+                  ? 'bg-green-400 text-white'
+                  : 'bg-gray-200 text-gray-600'
+              }`}>
+                {allPatients.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('My Patients')}
+              className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                activeTab === 'My Patients'
+                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              My Patients
+              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                activeTab === 'My Patients'
+                  ? 'bg-green-400 text-white'
+                  : 'bg-gray-200 text-gray-600'
+              }`}>
+                {allPatients.filter(p => p.assignedDoctor === loggedInDoctor).length}
+              </span>
+            </button>
+          </div>
+        </div>
+        
         <div className="p-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-              {/* Search Input */}
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by name, ID, phone, or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-              
-              <select
-                value={activeFilter}
-                onChange={(e) => setActiveFilter(e.target.value)}
-                className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-              >
-                <option value="all">All Patients</option>
-                <option value="opd">OPD Patients</option>
-                <option value="ipd">IPD Patients</option>
-                <option value="opd-queue">OPD Queue (DB1)</option>
-                <option value="surveillance">Active Surveillance (DB2)</option>
-                <option value="surgery">Surgical Pathway (DB3)</option>
-                <option value="postop">Post-Op Follow-Up (DB4)</option>
-              </select>
-              
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-              >
-                <option value="name">Sort by Name</option>
-                <option value="psa">Sort by PSA</option>
-                <option value="age">Sort by Age</option>
-                <option value="priority">Sort by Priority</option>
-              </select>
-            </div>
-            
-            <div className="bg-gradient-to-r from-green-50 to-gray-50 border border-green-200 rounded-xl p-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-semibold text-green-900">
-                  {sortedPatients.length} Patients Found
-                </span>
-              </div>
+              {/* Search Input removed - moved to table header */}
             </div>
           </div>
         </div>
@@ -447,20 +505,37 @@ const PatientManagement = () => {
               <h2 className="text-xl font-semibold text-gray-900">Patient List</h2>
               <p className="text-sm text-gray-600 mt-1">All patients under urologist care</p>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-gray-600">Live Data</span>
-            </div>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by name, ID, phone, or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
         
         <div className="overflow-x-auto">
-          {sortedPatients.length > 0 ? (
+          {filteredPatients.length > 0 ? (
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Type</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Pathway</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Latest PSA</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Next Appointment</th>
@@ -469,7 +544,7 @@ const PatientManagement = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {sortedPatients.map((patient, index) => {
+                {filteredPatients.map((patient, index) => {
                 const DatabaseIcon = getDatabaseIcon(patient.database);
                 return (
                     <tr key={patient.id} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
@@ -493,12 +568,7 @@ const PatientManagement = () => {
                         </div>
                       </td>
                       <td className="py-5 px-6">
-                        <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getPatientTypeColor(patient.patientType)}`}>
-                          {patient.patientType}
-                        </span>
-                      </td>
-                      <td className="py-5 px-6">
-                        <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(patient.status)}`}>
+                        <span className={`inline-flex items-center justify-center text-center px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(patient.status)}`}>
                           {patient.status}
                         </span>
                       </td>
@@ -516,13 +586,10 @@ const PatientManagement = () => {
                       <td className="py-5 px-6">
                         <div className="flex items-center space-x-2">
                         <button
-                            onClick={() => {
-                              sessionStorage.setItem('lastVisitedPage', 'patient-management');
-                              navigate(`/urologist/patient-details/${patient.id}`);
-                            }}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                            onClick={() => handleViewPatientDetails(patient.id)}
+                            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
                           >
-                            <Eye className="h-3 w-3 mr-1" />
+                            <Eye className="h-4 w-4 mr-2" />
                             <span>View Details</span>
                         </button>
                       </div>
@@ -544,31 +611,36 @@ const PatientManagement = () => {
                 {searchTerm ? 'No patients match your search criteria. Try adjusting your filters or search terms.' : 'No patients are currently in the system.'}
               </p>
               <div className="flex items-center justify-center space-x-4">
-                {searchTerm && (
-                  <button
-                    onClick={() => {
-                      setSearchTerm('');
-                      setActiveFilter('all');
-                    }}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Clear Filters
-                  </button>
-                )}
-                  <button
-                  onClick={() => navigate('/urologist/add-patient')}
-                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
+                <button
+                  onClick={() => {
+                    setSearchTerm('');
+                    setActiveTab('All Patients');
+                  }}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Clear Filters
+                </button>
+                <button
+                  onClick={handleAddPatient}
+                  className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-800 to-black text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
                   Add New Patient
-                  </button>
+                </button>
               </div>
             </div>
           )}
         </div>
       </div>
 
+      {/* Add Patient Modal */}
+      <AddPatientModal
+        isOpen={showAddPatientModal}
+        onClose={handleCloseAddPatientModal}
+        onPatientAdded={handlePatientAdded}
+        isUrologist={true}
+      />
 
     </div>
   );

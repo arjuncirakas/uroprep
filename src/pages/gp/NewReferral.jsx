@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { Save, Send, Printer, User, TestTube, Stethoscope, FileText } from 'lucide-react'
+import { Send, User, TestTube, Stethoscope, FileText } from 'lucide-react'
 
 const NewReferral = () => {
   const dispatch = useDispatch()
@@ -36,13 +36,10 @@ const NewReferral = () => {
     
     // GP Details (auto-filled)
     gpName: user?.name || '',
-    providerNumber: user?.providerNumber || '',
-    clinicName: user?.clinicName || '',
-    clinicContact: user?.clinicContact || ''
+    providerNumber: user?.providerNumber || ''
   })
 
   const [errors, setErrors] = useState({})
-  const [isDraft, setIsDraft] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // CPC Criteria options
@@ -70,32 +67,12 @@ const NewReferral = () => {
     'Other'
   ]
 
-  // Auto-save functionality
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (isDraft) {
-        saveDraft()
-      }
-    }, 2000) // Auto-save after 2 seconds of inactivity
-
-    return () => clearTimeout(timer)
-  }, [formData, isDraft])
-
-  // Load draft on component mount
-  useEffect(() => {
-    const savedDraft = localStorage.getItem('referralDraft')
-    if (savedDraft) {
-      setFormData(JSON.parse(savedDraft))
-      setIsDraft(true)
-    }
-  }, [])
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }))
-    setIsDraft(true)
     
     // Clear error when user starts typing
     if (errors[field]) {
@@ -111,7 +88,6 @@ const NewReferral = () => {
       ...prev,
       [field]: file
     }))
-    setIsDraft(true)
   }
 
   const handleComorbidityChange = (comorbidity) => {
@@ -121,7 +97,6 @@ const NewReferral = () => {
         ? prev.comorbidities.filter(c => c !== comorbidity)
         : [...prev.comorbidities, comorbidity]
     }))
-    setIsDraft(true)
   }
 
   const validateForm = () => {
@@ -149,39 +124,7 @@ const NewReferral = () => {
     return Object.keys(newErrors).length === 0
   }
 
-  const saveDraft = () => {
-    localStorage.setItem('referralDraft', JSON.stringify(formData))
-    setIsDraft(true)
-  }
 
-  const clearDraft = () => {
-    localStorage.removeItem('referralDraft')
-    setIsDraft(false)
-    setFormData({
-      patientName: '',
-      dateOfBirth: '',
-      medicareNumber: '',
-      contactNumber: '',
-      email: '',
-      address: '',
-      idProof: null,
-      insuranceInfo: null,
-      referralType: 'cpc',
-      cpcCriteria: '',
-      clinicalOverrideReason: '',
-      psaValue: '',
-      psaDate: '',
-      labReport: null,
-      dreFinding: '',
-      familyHistory: false,
-      comorbidities: [],
-      imaging: null,
-      gpName: user?.name || '',
-      providerNumber: user?.providerNumber || '',
-      clinicName: user?.clinicName || '',
-      clinicContact: user?.clinicContact || ''
-    })
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -210,9 +153,6 @@ const NewReferral = () => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000))
       
-      // Clear draft and reset form
-      clearDraft()
-      
       // Show success message
       alert('Referral submitted successfully! Patient ID: ' + patientId)
       
@@ -224,10 +164,6 @@ const NewReferral = () => {
     }
   }
 
-  const handlePrintConfirmation = () => {
-    // Generate confirmation PDF (would integrate with PDF generation library)
-    window.print()
-  }
 
   return (
     <div className="min-h-screen bg-white py-8">
@@ -236,12 +172,6 @@ const NewReferral = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">New Referral</h1>
           <p className="text-gray-600">CPC or Clinical Override Entry</p>
-          {isDraft && (
-            <div className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 mt-3">
-              <Save className="w-4 h-4 mr-1.5" />
-              Draft saved automatically
-            </div>
-          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -665,64 +595,17 @@ const NewReferral = () => {
                   />
                 </div>
                 
-                <div className="space-y-2">
-                  <label htmlFor="clinicName" className="block text-sm font-medium text-gray-700">
-                    Clinic Name
-                  </label>
-                  <input
-                    id="clinicName"
-                    type="text"
-                    value={formData.clinicName}
-                    readOnly
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-md text-sm bg-gray-50 text-gray-600 cursor-not-allowed"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="clinicContact" className="block text-sm font-medium text-gray-700">
-                    Clinic Contact Number
-                  </label>
-                  <input
-                    id="clinicContact"
-                    type="text"
-                    value={formData.clinicContact}
-                    readOnly
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-md text-sm bg-gray-50 text-gray-600 cursor-not-allowed"
-                  />
-                </div>
               </div>
             </div>
           </div>
 
           {/* Action Buttons */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
-              <div className="flex gap-3 order-2 sm:order-1">
-                <button
-                  type="button"
-                  onClick={saveDraft}
-                  disabled={isSubmitting}
-                  className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Draft
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={handlePrintConfirmation}
-                  disabled={isSubmitting}
-                  className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Printer className="w-4 h-4 mr-2" />
-                  Print Confirmation
-                </button>
-              </div>
-              
+            <div className="flex justify-end">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex items-center px-6 py-2.5 bg-gradient-to-r from-green-800 to-black text-white font-semibold rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 order-1 sm:order-2"
+                className="inline-flex items-center px-6 py-2.5 bg-gradient-to-r from-green-800 to-black text-white font-semibold rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
                 {isSubmitting ? (
                   <>

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import AddPatientModal from '../../components/modals/AddPatientModal';
+import BookAppointmentModal from '../../components/modals/BookAppointmentModal';
 import { 
   Users, 
   Calendar, 
@@ -90,6 +92,12 @@ const UrologyNurseDashboard = () => {
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [rescheduleData, setRescheduleData] = useState(null);
   const [localAppointments, setLocalAppointments] = useState([]);
+  
+  // Add Patient Modal state
+  const [showAddPatientModal, setShowAddPatientModal] = useState(false);
+  
+  // Book Appointment Modal state
+  const [showBookAppointmentModal, setShowBookAppointmentModal] = useState(false);
 
   // Generate dates for next 5 days
   const getNextDays = () => {
@@ -996,6 +1004,36 @@ const UrologyNurseDashboard = () => {
     setDraggedAppointment(null);
   };
 
+  // Add Patient Modal handlers
+  const handleAddPatient = () => {
+    setShowAddPatientModal(true);
+  };
+
+  const handlePatientAdded = (newPatient) => {
+    console.log('New patient added:', newPatient);
+    // Here you could update your local state or dispatch to Redux store
+    // For now, we'll just log it
+  };
+
+  const handleCloseAddPatientModal = () => {
+    setShowAddPatientModal(false);
+  };
+
+  // Book Appointment Modal handlers
+  const handleBookAppointment = () => {
+    setShowBookAppointmentModal(true);
+  };
+
+  const handleAppointmentBooked = (appointmentData) => {
+    console.log('Appointment booked:', appointmentData);
+    // Here you could update your local state or dispatch to Redux store
+    // For now, we'll just log it
+  };
+
+  const handleCloseBookAppointmentModal = () => {
+    setShowBookAppointmentModal(false);
+  };
+
 
   return (
     <div className="space-y-6">
@@ -1032,14 +1070,14 @@ const UrologyNurseDashboard = () => {
         </div>
         <div className="flex items-center space-x-4">
           <button 
-            onClick={() => navigate('/urology-nurse/add-patient')}
+            onClick={handleAddPatient}
             className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
           >
             <UserPlus className="h-4 w-4 mr-2" />
             <span className="font-medium">Add Patient</span>
           </button>
           <button 
-            onClick={() => navigate('/urology-nurse/appointments')}
+            onClick={handleBookAppointment}
             className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
           >
             <Calendar className="h-4 w-4 mr-2" />
@@ -1077,9 +1115,6 @@ const UrologyNurseDashboard = () => {
                     <p className="text-2xl font-bold text-gray-900">{card.value}</p>
                     <p className="text-sm font-semibold text-gray-900 leading-tight">{card.name}</p>
                   </div>
-                  {card.urgent && (
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                  )}
                 </div>
                 
                 {/* Description - smaller text */}
@@ -1241,8 +1276,8 @@ const UrologyNurseDashboard = () => {
         </div>
         
         {/* Calendar */}
-        <div className="bg-gradient-to-br from-slate-50 to-blue-50 px-6 py-6">
-          <div className="max-w-6xl mx-auto">
+        <div className="px-6 py-6">
+          <div className="w-full">
             {/* Calendar Header */}
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -1277,7 +1312,7 @@ const UrologyNurseDashboard = () => {
             </div>
 
             {/* Calendar Grid */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20">
+            <div className="w-full">
               {/* Day Headers */}
               <div className="grid grid-cols-7 gap-1 mb-4">
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
@@ -1306,13 +1341,13 @@ const UrologyNurseDashboard = () => {
                       onDragOver={(e) => handleDragOver(e, day)}
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, day)}
-                      className={`min-h-[120px] max-h-[200px] p-2 border border-gray-200 rounded-lg transition-all duration-200 flex flex-col cursor-pointer ${
+                      className={`min-h-[150px] p-2 border border-gray-200 rounded-lg transition-all duration-200 flex flex-col cursor-pointer ${
                         isCurrentMonth ? 'bg-white' : 'bg-gray-50'
                       } ${isToday ? 'ring-2 ring-green-500' : ''} ${
                         isSelectedDay ? 'ring-2 ring-blue-500 bg-blue-50' : ''
                       } ${
                         isDragOver ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-400' : ''
-                      } hover:shadow-md hover:scale-105`}
+                      }`}
                     >
                       <div className={`text-sm font-medium mb-2 flex-shrink-0 ${
                         isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
@@ -1394,14 +1429,14 @@ const UrologyNurseDashboard = () => {
       {/* Appointment Details Modal */}
       {isModalOpen && selectedAppointment && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden transform transition-all">
+          <div className="bg-white rounded-lg border border-gray-200 max-w-5xl w-full mx-4 max-h-[90vh] overflow-hidden">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-green-50 to-gray-50 px-6 py-4 border-b border-gray-200">
+            <div className="bg-gray-50 px-8 py-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
-                      <span className="text-white font-semibold text-lg">
+                    <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-semibold text-base">
                         {selectedAppointment.patientName.split(' ').map(n => n[0]).join('')}
                       </span>
                     </div>
@@ -1411,11 +1446,11 @@ const UrologyNurseDashboard = () => {
                     <p className="text-sm text-gray-600">{selectedAppointment.patientName} - {selectedAppointment.upi}</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
                   {!isEditing ? (
                     <button
                       onClick={handleEditAppointment}
-                      className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
                     >
                       <Edit3 className="h-4 w-4 mr-2" />
                       Edit
@@ -1424,13 +1459,13 @@ const UrologyNurseDashboard = () => {
                     <>
                       <button
                         onClick={handleCancelEdit}
-                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={handleSaveAppointment}
-                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
                       >
                         <Save className="h-4 w-4 mr-2" />
                         Save
@@ -1439,7 +1474,7 @@ const UrologyNurseDashboard = () => {
                   )}
                   <button
                     onClick={closeModal}
-                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -1448,16 +1483,18 @@ const UrologyNurseDashboard = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="px-6 py-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="px-8 py-8 overflow-y-auto max-h-[calc(90vh-180px)]">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Patient Information */}
-                <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <User className="h-5 w-5 mr-2 text-green-600" />
+                <div className="space-y-6">
+                  <div className="bg-white rounded-lg p-6 border border-gray-200">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                      <div className="w-6 h-6 bg-gray-600 rounded flex items-center justify-center mr-3">
+                        <User className="h-3 w-3 text-white" />
+                      </div>
                       Patient Information
                     </h4>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Patient Name</label>
                         {isEditing ? (
@@ -1465,7 +1502,7 @@ const UrologyNurseDashboard = () => {
                             type="text"
                             value={editFormData.patientName || ''}
                             onChange={(e) => handleInputChange('patientName', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white transition-colors"
                           />
                         ) : (
                           <p className="text-sm text-gray-900">{selectedAppointment.patientName}</p>
@@ -1482,7 +1519,7 @@ const UrologyNurseDashboard = () => {
                             type="number"
                             value={editFormData.age || ''}
                             onChange={(e) => handleInputChange('age', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white transition-colors"
                           />
                         ) : (
                           <p className="text-sm text-gray-900">{selectedAppointment.age} years</p>
@@ -1495,11 +1532,11 @@ const UrologyNurseDashboard = () => {
                             type="tel"
                             value={editFormData.phone || ''}
                             onChange={(e) => handleInputChange('phone', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white transition-colors"
                           />
                         ) : (
                           <p className="text-sm text-gray-900 flex items-center">
-                            <Phone className="h-4 w-4 mr-2" />
+                            <Phone className="h-4 w-4 mr-2 text-gray-500" />
                             {selectedAppointment.phone}
                           </p>
                         )}
@@ -1511,11 +1548,11 @@ const UrologyNurseDashboard = () => {
                             type="email"
                             value={editFormData.email || ''}
                             onChange={(e) => handleInputChange('email', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white transition-colors"
                           />
                         ) : (
                           <p className="text-sm text-gray-900 flex items-center">
-                            <Mail className="h-4 w-4 mr-2" />
+                            <Mail className="h-4 w-4 mr-2 text-gray-500" />
                             {selectedAppointment.email}
                           </p>
                         )}
@@ -1527,11 +1564,11 @@ const UrologyNurseDashboard = () => {
                             value={editFormData.address || ''}
                             onChange={(e) => handleInputChange('address', e.target.value)}
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white transition-colors"
                           />
                         ) : (
                           <p className="text-sm text-gray-900 flex items-start">
-                            <MapPin className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                            <MapPin className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0 text-gray-500" />
                             {selectedAppointment.address}
                           </p>
                         )}
@@ -1541,13 +1578,15 @@ const UrologyNurseDashboard = () => {
                 </div>
 
                 {/* Appointment Details */}
-                <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <CalendarIcon className="h-5 w-5 mr-2 text-blue-600" />
+                <div className="space-y-6">
+                  <div className="bg-white rounded-lg p-6 border border-gray-200">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                      <div className="w-6 h-6 bg-gray-600 rounded flex items-center justify-center mr-3">
+                        <CalendarIcon className="h-3 w-3 text-white" />
+                      </div>
                       Appointment Details
                     </h4>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                         {isEditing ? (
@@ -1555,7 +1594,7 @@ const UrologyNurseDashboard = () => {
                             type="text"
                             value={editFormData.title || ''}
                             onChange={(e) => handleInputChange('title', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white transition-colors"
                           />
                         ) : (
                           <p className="text-sm text-gray-900">{selectedAppointment.title}</p>
@@ -1568,7 +1607,7 @@ const UrologyNurseDashboard = () => {
                             value={editFormData.description || ''}
                             onChange={(e) => handleInputChange('description', e.target.value)}
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white transition-colors"
                           />
                         ) : (
                           <p className="text-sm text-gray-900">{selectedAppointment.description}</p>
@@ -1582,11 +1621,11 @@ const UrologyNurseDashboard = () => {
                               type="date"
                               value={editFormData.date || ''}
                               onChange={(e) => handleInputChange('date', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white transition-colors"
                             />
                           ) : (
                             <p className="text-sm text-gray-900 flex items-center">
-                              <CalendarIcon className="h-4 w-4 mr-2" />
+                              <CalendarIcon className="h-4 w-4 mr-2 text-gray-500" />
                               {new Date(selectedAppointment.date).toLocaleDateString('en-AU')}
                             </p>
                           )}
@@ -1598,11 +1637,11 @@ const UrologyNurseDashboard = () => {
                               type="time"
                               value={editFormData.time || ''}
                               onChange={(e) => handleInputChange('time', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white transition-colors"
                             />
                           ) : (
                             <p className="text-sm text-gray-900 flex items-center">
-                              <ClockIcon className="h-4 w-4 mr-2" />
+                              <ClockIcon className="h-4 w-4 mr-2 text-gray-500" />
                               {selectedAppointment.time}
                             </p>
                           )}
@@ -1615,7 +1654,7 @@ const UrologyNurseDashboard = () => {
                             <select
                               value={editFormData.type || ''}
                               onChange={(e) => handleInputChange('type', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white transition-colors"
                             >
                               <option value="OPD">OPD</option>
                               <option value="Follow-up">Follow-up</option>
@@ -1623,7 +1662,7 @@ const UrologyNurseDashboard = () => {
                               <option value="Surveillance">Surveillance</option>
                             </select>
                           ) : (
-                            <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getTypeColor(selectedAppointment.type)}`}>
+                            <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-md ${getTypeColor(selectedAppointment.type)}`}>
                               {selectedAppointment.type}
                             </span>
                           )}
@@ -1634,7 +1673,7 @@ const UrologyNurseDashboard = () => {
                             <select
                               value={editFormData.status || ''}
                               onChange={(e) => handleInputChange('status', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white transition-colors"
                             >
                               <option value="Confirmed">Confirmed</option>
                               <option value="Pending">Pending</option>
@@ -1642,7 +1681,7 @@ const UrologyNurseDashboard = () => {
                               <option value="Cancelled">Cancelled</option>
                             </select>
                           ) : (
-                            <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedAppointment.status)}`}>
+                            <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-md ${getStatusColor(selectedAppointment.status)}`}>
                               {selectedAppointment.status}
                             </span>
                           )}
@@ -1656,7 +1695,7 @@ const UrologyNurseDashboard = () => {
                               type="number"
                               value={editFormData.duration || ''}
                               onChange={(e) => handleInputChange('duration', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white transition-colors"
                             />
                           ) : (
                             <p className="text-sm text-gray-900">{selectedAppointment.duration} minutes</p>
@@ -1668,13 +1707,13 @@ const UrologyNurseDashboard = () => {
                             <select
                               value={editFormData.priority || ''}
                               onChange={(e) => handleInputChange('priority', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white transition-colors"
                             >
                               <option value="Normal">Normal</option>
                               <option value="High">High</option>
                             </select>
                           ) : (
-                            <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getPriorityColor(selectedAppointment.priority)}`}>
+                            <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-md ${getPriorityColor(selectedAppointment.priority)}`}>
                               {selectedAppointment.priority}
                             </span>
                           )}
@@ -1687,11 +1726,11 @@ const UrologyNurseDashboard = () => {
                             type="text"
                             value={editFormData.doctor || ''}
                             onChange={(e) => handleInputChange('doctor', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white transition-colors"
                           />
                         ) : (
                           <p className="text-sm text-gray-900 flex items-center">
-                            <Stethoscope className="h-4 w-4 mr-2" />
+                            <Stethoscope className="h-4 w-4 mr-2 text-gray-500" />
                             {selectedAppointment.doctor}
                           </p>
                         )}
@@ -1703,7 +1742,7 @@ const UrologyNurseDashboard = () => {
                             type="text"
                             value={editFormData.room || ''}
                             onChange={(e) => handleInputChange('room', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white transition-colors"
                           />
                         ) : (
                           <p className="text-sm text-gray-900">{selectedAppointment.room}</p>
@@ -1713,9 +1752,11 @@ const UrologyNurseDashboard = () => {
                   </div>
 
                   {/* Notes Section */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <FileText className="h-5 w-5 mr-2 text-purple-600" />
+                  <div className="bg-white rounded-lg p-6 border border-gray-200">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                      <div className="w-6 h-6 bg-gray-600 rounded flex items-center justify-center mr-3">
+                        <FileText className="h-3 w-3 text-white" />
+                      </div>
                       Notes
                     </h4>
                     <div>
@@ -1724,11 +1765,11 @@ const UrologyNurseDashboard = () => {
                           value={editFormData.notes || ''}
                           onChange={(e) => handleInputChange('notes', e.target.value)}
                           rows={4}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white transition-colors"
                           placeholder="Add appointment notes..."
                         />
                       ) : (
-                        <p className="text-sm text-gray-900">{selectedAppointment.notes || 'No notes available'}</p>
+                        <p className="text-sm text-gray-900 leading-relaxed">{selectedAppointment.notes || 'No notes available'}</p>
                       )}
                     </div>
                   </div>
@@ -1737,12 +1778,12 @@ const UrologyNurseDashboard = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+            <div className="bg-gray-50 px-8 py-4 border-t border-gray-200">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
                   <button
                     onClick={handleDeleteAppointment}
-                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete Appointment
@@ -1751,7 +1792,7 @@ const UrologyNurseDashboard = () => {
                 <div className="flex items-center space-x-3">
                   <button
                     onClick={closeModal}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
                   >
                     Close
                   </button>
@@ -1858,6 +1899,20 @@ const UrologyNurseDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Add Patient Modal */}
+      <AddPatientModal
+        isOpen={showAddPatientModal}
+        onClose={handleCloseAddPatientModal}
+        onPatientAdded={handlePatientAdded}
+      />
+
+      {/* Book Appointment Modal */}
+      <BookAppointmentModal
+        isOpen={showBookAppointmentModal}
+        onClose={handleCloseBookAppointmentModal}
+        onAppointmentBooked={handleAppointmentBooked}
+      />
 
     </div>
   );

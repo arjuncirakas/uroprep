@@ -17,13 +17,17 @@ import {
   Plus,
   RefreshCw,
   ClipboardList,
-  Shield
+  Shield,
+  Clock
 } from 'lucide-react';
+import BookAppointmentModalWithPatient from '../../components/modals/BookAppointmentModalWithPatient';
+import { usePatientDetails } from '../../contexts/PatientDetailsContext';
 
 const SurgicalPathway = () => {
   const navigate = useNavigate();
+  const { openPatientDetails } = usePatientDetails();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All Status');
+  const [activeFilter, setActiveFilter] = useState('Scheduled');
   const [selectedDoctor, setSelectedDoctor] = useState('All Doctors');
   const [doctorSearchTerm, setDoctorSearchTerm] = useState('');
   const [isDoctorDropdownOpen, setIsDoctorDropdownOpen] = useState(false);
@@ -38,6 +42,8 @@ const SurgicalPathway = () => {
     doctor: '',
     notes: ''
   });
+  const [isBookAppointmentModalOpen, setIsBookAppointmentModalOpen] = useState(false);
+  const [selectedPatientForAppointment, setSelectedPatientForAppointment] = useState(null);
 
   // Mock surgical pathway data
   const mockSurgicalPatients = [
@@ -180,6 +186,146 @@ const SurgicalPathway = () => {
         complications: 'None',
         dischargePlanning: 'In Progress'
       }
+    },
+    {
+      id: 'SURG005',
+      patientName: 'Christopher Lee',
+      upi: 'URP2024012',
+      age: 59,
+      gender: 'Male',
+      phone: '+61 416 789 012',
+      email: 'christopher.lee@email.com',
+      surgeryDate: '2024-02-05',
+      surgeryTime: '11:00 AM',
+      surgeryType: 'RALP',
+      assignedSurgeon: 'Dr. Emma Wilson',
+      status: 'Scheduled',
+      appointmentScheduled: true,
+      preOpStatus: 'In Progress',
+      postOpStatus: 'Pending',
+      lastPSA: 8.1,
+      riskCategory: 'High Risk',
+      notes: 'Pre-operative assessment in progress',
+      preOpChecklist: {
+        ecg: true,
+        anesthesiaClearance: false,
+        bloodWork: true,
+        imaging: true,
+        consent: false,
+        preOpVisit: false
+      },
+      postOpTasks: {
+        histopathology: 'Pending',
+        marginStatus: 'Pending',
+        gleasonScore: 'Pending',
+        complications: 'None',
+        dischargePlanning: 'Pending'
+      }
+    },
+    {
+      id: 'SURG006',
+      patientName: 'Mark Johnson',
+      upi: 'URP2024013',
+      age: 67,
+      gender: 'Male',
+      phone: '+61 427 890 123',
+      email: 'mark.johnson@email.com',
+      surgeryDate: '2024-02-08',
+      surgeryTime: '7:30 AM',
+      surgeryType: 'RALP',
+      assignedSurgeon: 'Dr. James Brown',
+      status: 'Pre-Op',
+      appointmentScheduled: true,
+      preOpStatus: 'Complete',
+      postOpStatus: 'Pending',
+      lastPSA: 9.2,
+      riskCategory: 'High Risk',
+      notes: 'All pre-operative requirements completed, ready for surgery',
+      preOpChecklist: {
+        ecg: true,
+        anesthesiaClearance: true,
+        bloodWork: true,
+        imaging: true,
+        consent: true,
+        preOpVisit: true
+      },
+      postOpTasks: {
+        histopathology: 'Pending',
+        marginStatus: 'Pending',
+        gleasonScore: 'Pending',
+        complications: 'None',
+        dischargePlanning: 'Pending'
+      }
+    },
+    {
+      id: 'SURG007',
+      patientName: 'Steven Garcia',
+      upi: 'URP2024014',
+      age: 54,
+      gender: 'Male',
+      phone: '+61 438 901 234',
+      email: 'steven.garcia@email.com',
+      surgeryDate: '2024-01-18',
+      surgeryTime: '1:00 PM',
+      surgeryType: 'RALP',
+      assignedSurgeon: 'Dr. Lisa Davis',
+      status: 'Post-Op',
+      appointmentScheduled: false,
+      preOpStatus: 'Complete',
+      postOpStatus: 'Complete',
+      lastPSA: 0.05,
+      riskCategory: 'Intermediate Risk',
+      notes: 'Surgery completed successfully, patient ready for discharge',
+      preOpChecklist: {
+        ecg: true,
+        anesthesiaClearance: true,
+        bloodWork: true,
+        imaging: true,
+        consent: true,
+        preOpVisit: true
+      },
+      postOpTasks: {
+        histopathology: 'Complete',
+        marginStatus: 'Negative',
+        gleasonScore: '3+4',
+        complications: 'None',
+        dischargePlanning: 'Complete'
+      }
+    },
+    {
+      id: 'SURG008',
+      patientName: 'Anthony Martinez',
+      upi: 'URP2024015',
+      age: 61,
+      gender: 'Male',
+      phone: '+61 449 012 345',
+      email: 'anthony.martinez@email.com',
+      surgeryDate: '2024-02-12',
+      surgeryTime: '10:00 AM',
+      surgeryType: 'RALP',
+      assignedSurgeon: 'Dr. Michael Chen',
+      status: 'Scheduled',
+      appointmentScheduled: true,
+      preOpStatus: 'In Progress',
+      postOpStatus: 'Pending',
+      lastPSA: 7.8,
+      riskCategory: 'High Risk',
+      notes: 'Awaiting final pre-operative clearance',
+      preOpChecklist: {
+        ecg: true,
+        anesthesiaClearance: true,
+        bloodWork: false,
+        imaging: true,
+        consent: true,
+        preOpVisit: false
+      },
+      postOpTasks: {
+        histopathology: 'Pending',
+        marginStatus: 'Pending',
+        gleasonScore: 'Pending',
+        complications: 'None',
+        dischargePlanning: 'Pending'
+      }
     }
   ];
 
@@ -200,7 +346,7 @@ const SurgicalPathway = () => {
 
   // Prevent background scrolling when modals are open
   useEffect(() => {
-    if (showScheduleModal || showRescheduleModal) {
+    if (showScheduleModal || showRescheduleModal || isBookAppointmentModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -210,7 +356,7 @@ const SurgicalPathway = () => {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [showScheduleModal, showRescheduleModal]);
+  }, [showScheduleModal, showRescheduleModal, isBookAppointmentModalOpen]);
 
   // Available doctors list
   const availableDoctors = [
@@ -250,7 +396,6 @@ const SurgicalPathway = () => {
     
     // Status filter based on active tab
     const statusMatch = 
-      (activeFilter === 'All Status') ||
       (activeFilter === 'Scheduled' && patient.status === 'Scheduled') ||
       (activeFilter === 'Pre-Op' && patient.status === 'Pre-Op') ||
       (activeFilter === 'In Surgery' && patient.status === 'In Surgery') ||
@@ -361,69 +506,33 @@ const SurgicalPathway = () => {
     });
   };
 
+  const handleViewPatientDetails = (patientId) => {
+    openPatientDetails(patientId);
+  };
+
+  const handleBookAppointment = (patient) => {
+    setSelectedPatientForAppointment(patient);
+    setIsBookAppointmentModalOpen(true);
+  };
+
+  const handleAppointmentBooked = (appointmentData) => {
+    console.log('Appointment booked:', appointmentData);
+    // Here you would typically update the patient's status in your state management
+    // For now, we'll just close the modal and show a success message
+    setIsBookAppointmentModalOpen(false);
+    setSelectedPatientForAppointment(null);
+    alert('Appointment booked successfully!');
+  };
+
+  const handleCloseAppointmentModal = () => {
+    setIsBookAppointmentModalOpen(false);
+    setSelectedPatientForAppointment(null);
+  };
+
 
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Surgical Pathway</h1>
-        <p className="text-gray-600 mt-1">Manage surgical scheduling and pre/post-operative steps</p>
-      </div>
-
-
-      {/* Search and Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Search & Filter Surgical Patients</h2>
-              <p className="text-sm text-gray-600 mt-1">Find patients in surgical pathway</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-gray-600">Live Search</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="px-6 py-4">
-          <nav className="flex space-x-2" aria-label="Tabs">
-            {['All Status', 'Scheduled', 'Pre-Op', 'In Surgery', 'Post-Op'].map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setActiveFilter(filter)}
-                className={`px-4 py-2 rounded-full font-medium text-sm transition-all duration-200 ${
-                  activeFilter === filter
-                    ? 'bg-gradient-to-r from-green-600 to-green-700 text-white'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  <span>{filter}</span>
-                  <span className={`py-0.5 px-2 rounded-full text-xs font-semibold transition-colors ${
-                    activeFilter === filter
-                      ? 'bg-white/20 text-white'
-                      : 'bg-gray-200 text-gray-700'
-                  }`}>
-                    {mockSurgicalPatients.filter(patient => {
-                       switch (filter) {
-                         case 'All Status': return true;
-                         case 'Scheduled': return patient.status === 'Scheduled';
-                         case 'Pre-Op': return patient.status === 'Pre-Op';
-                         case 'In Surgery': return patient.status === 'In Surgery';
-                         case 'Post-Op': return patient.status === 'Post-Op';
-                         default: return true;
-                       }
-                     }).length}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </nav>
-        </div>
-      </div>
 
       {/* Surgical Patients Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -535,8 +644,8 @@ const SurgicalPathway = () => {
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Surgery Details</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Status</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Risk Category</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">View</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -567,41 +676,36 @@ const SurgicalPathway = () => {
                       </div>
                     </td>
                     <td className="py-5 px-6">
-                      <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(patient.status)}`}>
-                        {patient.status}
-                      </span>
-                    </td>
-                    <td className="py-5 px-6">
                       <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getRiskColor(patient.riskCategory)}`}>
                         {patient.riskCategory}
                       </span>
-                      <p className="text-xs text-gray-500 mt-1">PSA: {patient.lastPSA} ng/mL</p>
+                    </td>
+                    <td className="py-5 px-6">
+                      <button 
+                        onClick={() => handleViewPatientDetails(patient.id)}
+                        className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        <span>View</span>
+                      </button>
                     </td>
                     <td className="py-5 px-6">
                       <div className="flex flex-col space-y-1">
-                        <button 
-                          onClick={() => navigate(`/urology-nurse/patient-details/${patient.id}`)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-                        >
-                          <Eye className="h-3 w-3 mr-1" />
-                          <span>View</span>
-                        </button>
-                        
                         {!patient.appointmentScheduled ? (
                           <button 
-                            onClick={() => handleScheduleSurgery(patient.id)}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                            onClick={() => handleBookAppointment(patient)}
+                            className="inline-flex items-center justify-center w-40 px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
                           >
                             <Calendar className="h-3 w-3 mr-1" />
-                            <span>Schedule Surgery</span>
+                            <span>Book Surgery</span>
                           </button>
                         ) : (
                           <button 
-                            onClick={() => handleReschedule(patient.id)}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                            onClick={() => handleBookAppointment(patient)}
+                            className="inline-flex items-center justify-center w-40 px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
                           >
-                            <Calendar className="h-3 w-3 mr-1" />
-                            <span>Reschedule</span>
+                            <Clock className="h-3 w-3 mr-1" />
+                            <span>Update Surgery</span>
                           </button>
                         )}
                       </div>
@@ -625,7 +729,7 @@ const SurgicalPathway = () => {
                 <button
                   onClick={() => {
                     setSearchTerm('');
-                    setActiveFilter('All Status');
+                    setActiveFilter('Scheduled');
                     setSelectedDoctor('All Doctors');
                   }}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
@@ -645,6 +749,7 @@ const SurgicalPathway = () => {
           )}
         </div>
       </div>
+
 
       {/* Schedule Surgery Modal */}
       {showScheduleModal && selectedPatientForSchedule && (
@@ -867,6 +972,14 @@ const SurgicalPathway = () => {
           </div>
         </div>
       )}
+
+      {/* Book Appointment Modal */}
+      <BookAppointmentModalWithPatient
+        isOpen={isBookAppointmentModalOpen}
+        onClose={handleCloseAppointmentModal}
+        onAppointmentBooked={handleAppointmentBooked}
+        selectedPatientData={selectedPatientForAppointment}
+      />
     </div>
   );
 };

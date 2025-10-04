@@ -18,7 +18,6 @@ const GPSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
     { path: '/gp/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/gp/new-referral', label: 'New Referral', icon: UserPlus },
     { path: '/gp/referral-status', label: 'Referral Status', icon: ClipboardList, relatedPaths: ['/gp/referral-details', '/gp/patient-details'] },
-    { path: '/gp/discharge-summaries', label: 'Discharge Summaries', icon: FileText, relatedPaths: ['/gp/referral-details'] },
   ];
 
   return (
@@ -74,10 +73,7 @@ const GPSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
                 const referrer = document.referrer;
                 
                 // Only activate the item that matches the source page
-                if (item.path === '/gp/discharge-summaries') {
-                  isActive = lastVisitedPage === 'discharge-summaries' || 
-                            referrer.includes('/gp/discharge-summaries');
-                } else if (item.path === '/gp/referral-status') {
+                if (item.path === '/gp/referral-status') {
                   isActive = lastVisitedPage === 'referral-status' || 
                             referrer.includes('/gp/referral-status');
                 } else {

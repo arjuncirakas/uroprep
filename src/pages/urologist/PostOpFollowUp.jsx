@@ -1,6 +1,19 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { usePatientDetails } from '../../contexts/PatientDetailsContext';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Bar, Line } from 'react-chartjs-2';
 import { 
   Search, 
   Eye, 
@@ -39,18 +52,33 @@ import {
   Microscope,
   TestTube,
   FileBarChart,
-  Zap
+  Zap,
+  RefreshCw
 } from 'lucide-react';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const PostOpFollowUp = () => {
   const navigate = useNavigate();
   const { db4 } = useSelector(state => state.databases);
+  const { openPatientDetails } = usePatientDetails();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [showHistopathologyModal, setShowHistopathologyModal] = useState(false);
+  const [showPSAChartModal, setShowPSAChartModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
   const [sortBy, setSortBy] = useState('surgeryDate');
+  const [psaChartFilter, setPsaChartFilter] = useState('6months');
 
   // Mock post-op follow-up data
   const postOpPatients = [
@@ -90,7 +118,9 @@ const PostOpFollowUp = () => {
       histopathologyComplete: true,
       marginStatusComplete: true,
       complicationsAssessed: true,
-      followUpScheduled: true
+      followUpScheduled: true,
+      psaHistory: [12.5, 18.3, 20.1, 22.5],
+      psaDates: ['2023-01-15', '2023-06-15', '2023-12-15', '2024-01-05']
     },
     {
       id: 'POSTOP002',
@@ -128,7 +158,9 @@ const PostOpFollowUp = () => {
       histopathologyComplete: true,
       marginStatusComplete: true,
       complicationsAssessed: true,
-      followUpScheduled: true
+      followUpScheduled: true,
+      psaHistory: [5.2, 6.8, 7.9, 12.8],
+      psaDates: ['2023-01-15', '2023-06-15', '2023-12-15', '2024-01-10']
     },
     {
       id: 'POSTOP003',
@@ -166,7 +198,9 @@ const PostOpFollowUp = () => {
       histopathologyComplete: true,
       marginStatusComplete: true,
       complicationsAssessed: true,
-      followUpScheduled: true
+      followUpScheduled: true,
+      psaHistory: [8.5, 12.3, 14.1, 18.3],
+      psaDates: ['2023-01-15', '2023-06-15', '2023-12-15', '2024-01-08']
     }
   ];
 
@@ -219,6 +253,16 @@ const PostOpFollowUp = () => {
     setSelectedPatient(null);
   };
 
+  const handlePSAChart = (patient) => {
+    setSelectedPatient(patient);
+    setShowPSAChartModal(true);
+  };
+
+  const closePSAChartModal = () => {
+    setShowPSAChartModal(false);
+    setSelectedPatient(null);
+  };
+
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'High': return 'bg-red-100 text-red-800';
@@ -257,102 +301,161 @@ const PostOpFollowUp = () => {
     return new Date(dateString).toLocaleDateString('en-AU');
   };
 
+  const calculatePSAVelocity = (psaHistory, psaDates) => {
+    if (psaHistory.length < 2) return 0;
+    const latest = psaHistory[psaHistory.length - 1];
+    const previous = psaHistory[psaHistory.length - 2];
+    const timeDiff = (new Date(psaDates[psaDates.length - 1]) - new Date(psaDates[psaDates.length - 2])) / (1000 * 60 * 60 * 24 * 365);
+    return ((latest - previous) / timeDiff).toFixed(2);
+  };
+
+  // PSA Chart Configuration
+  const getPSAChartData = (patient, filter) => {
+    if (!patient || !patient.psaHistory || !patient.psaDates) return { labels: [], psaValues: [] };
+    
+    const psaData = patient.psaHistory.map((value, index) => ({
+      value: value,
+      date: patient.psaDates[index]
+    }));
+    
+    let filteredData = psaData;
+    
+    switch (filter) {
+      case '3months':
+        filteredData = psaData.slice(-3);
+        break;
+      case '6months':
+        filteredData = psaData.slice(-6);
+        break;
+      case '1year':
+        filteredData = psaData.slice(-8);
+        break;
+      case 'all':
+      default:
+        filteredData = psaData;
+        break;
+    }
+
+    return {
+      labels: filteredData.map(item => new Date(item.date).toLocaleDateString('en-AU', { month: 'short', day: 'numeric' })),
+      psaValues: filteredData.map(item => item.value)
+    };
+  };
+
+  const getPSAChartConfig = (patient, filter) => {
+    const chartData = getPSAChartData(patient, filter);
+    
+    return {
+      lineChart: {
+        labels: chartData.labels,
+        datasets: [
+          {
+            label: 'PSA Level',
+            data: chartData.psaValues,
+            borderColor: 'rgb(34, 197, 94)',
+            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: 'rgb(34, 197, 94)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+          }
+        ],
+      },
+      barChart: {
+        labels: chartData.labels,
+        datasets: [
+          {
+            label: 'PSA Level',
+            data: chartData.psaValues,
+            backgroundColor: chartData.psaValues.map(value => 
+              value > 10 ? 'rgba(239, 68, 68, 0.8)' : 
+              value > 4 ? 'rgba(245, 158, 11, 0.8)' : 
+              'rgba(34, 197, 94, 0.8)'
+            ),
+            borderColor: chartData.psaValues.map(value => 
+              value > 10 ? 'rgb(239, 68, 68)' : 
+              value > 4 ? 'rgb(245, 158, 11)' : 
+              'rgb(34, 197, 94)'
+            ),
+            borderWidth: 2,
+            borderRadius: 4,
+            borderSkipped: false,
+          }
+        ],
+      }
+    };
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderWidth: 1,
+        cornerRadius: 8,
+        displayColors: false,
+        callbacks: {
+          title: function(context) {
+            return `PSA Test - ${context[0].label}`;
+          },
+          label: function(context) {
+            return `PSA Level: ${context.parsed.y} ng/mL`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          color: '#6B7280',
+          font: {
+            size: 12,
+            weight: '500'
+          }
+        }
+      },
+      y: {
+        beginAtZero: false,
+        min: selectedPatient ? Math.min(...getPSAChartData(selectedPatient, psaChartFilter).psaValues) - 0.5 : 0,
+        max: selectedPatient ? Math.max(...getPSAChartData(selectedPatient, psaChartFilter).psaValues) + 0.5 : 20,
+        grid: {
+          color: 'rgba(107, 114, 128, 0.1)',
+          drawBorder: false,
+        },
+        ticks: {
+          color: '#6B7280',
+          font: {
+            size: 12,
+            weight: '500'
+          },
+          callback: function(value) {
+            return value.toFixed(1) + ' ng/mL';
+          }
+        }
+      },
+    },
+    interaction: {
+      intersect: false,
+      mode: 'index',
+    },
+  };
+
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Post-Op Follow-Up (DB4)</h1>
-            <p className="text-sm text-gray-600 mt-1">Enter histopathology results, margin status, and assess outcomes</p>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="bg-gradient-to-r from-green-50 to-gray-50 border border-green-200 rounded-xl p-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-semibold text-green-900">
-                  {sortedPatients.length} Post-Op Patients
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Search & Filter Post-Op Patients</h2>
-              <p className="text-sm text-gray-600 mt-1">Find patients for post-operative follow-up</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-gray-600">Live Search</span>
-            </div>
-          </div>
-        </div>
-        <div className="p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-              {/* Search Input */}
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by name, ID, phone, or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-              
-              <select
-                value={activeFilter}
-                onChange={(e) => setActiveFilter(e.target.value)}
-                className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-              >
-                <option value="all">All Patients</option>
-                <option value="high">High Risk</option>
-                <option value="medium">Medium Risk</option>
-                <option value="low">Low Risk</option>
-                <option value="discharge">Discharge Eligible</option>
-                <option value="mdt">MDT Referral</option>
-              </select>
-              
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-              >
-                <option value="surgeryDate">Sort by Surgery Date</option>
-                <option value="priority">Sort by Priority</option>
-                <option value="psa">Sort by PSA</option>
-                <option value="riskLevel">Sort by Risk Level</option>
-                <option value="name">Sort by Name</option>
-              </select>
-            </div>
-            
-            <div className="bg-gradient-to-r from-green-50 to-gray-50 border border-green-200 rounded-xl p-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-semibold text-green-900">
-                  {sortedPatients.filter(p => p.riskLevel === 'High').length} High Risk
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Post-Op Patients Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -362,10 +465,32 @@ const PostOpFollowUp = () => {
               <h2 className="text-xl font-semibold text-gray-900">Post-Op Follow-Up Queue</h2>
               <p className="text-sm text-gray-600 mt-1">Patients requiring post-operative assessment</p>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-gray-600">Live Queue</span>
-            </div>
+            <button className="flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              <span className="font-medium">Refresh Queue</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by name, ID, phone, or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
         
@@ -376,8 +501,7 @@ const PostOpFollowUp = () => {
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Surgery Details</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Type</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Risk Level</th>
+                  <th className="text-center py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Risk Level</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -409,13 +533,8 @@ const PostOpFollowUp = () => {
                       </div>
                     </td>
                     <td className="py-5 px-6">
-                      <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getTypeColor(patient.type)}`}>
-                        {patient.type}
-                      </span>
-                    </td>
-                    <td className="py-5 px-6">
-                      <div>
-                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getRiskColor(patient.riskLevel)}`}>
+                      <div className="flex justify-center">
+                        <span className={`inline-flex items-center justify-center text-center px-2 py-1 text-xs font-semibold rounded-full ${getRiskColor(patient.riskLevel)}`}>
                           {patient.riskLevel} Risk
                         </span>
                       </div>
@@ -423,25 +542,21 @@ const PostOpFollowUp = () => {
                     <td className="py-5 px-6">
                       <div className="flex items-center space-x-2">
                         <button 
-                          onClick={() => navigate(`/urologist/patient-details/${patient.id}`)}
+                          onClick={() => {
+                            sessionStorage.setItem('lastVisitedPage', 'post-op-follow-up');
+                            openPatientDetails(patient.id);
+                          }}
                           className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
                         >
                           <Eye className="h-3 w-3 mr-1" />
                           <span>View</span>
                         </button>
                         <button 
-                          onClick={() => navigate(`/urologist/psa-chart/${patient.id}`)}
+                          onClick={() => handlePSAChart(patient)}
                           className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
                         >
                           <Activity className="h-3 w-3 mr-1" />
                           <span>Chart</span>
-                        </button>
-                        <button 
-                          onClick={() => handleHistopathology(patient)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                        >
-                          <Microscope className="h-3 w-3 mr-1" />
-                          <span>Histopathology</span>
                         </button>
                       </div>
                     </td>
@@ -634,6 +749,269 @@ const PostOpFollowUp = () => {
                   className="px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
                 >
                   Save Results
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PSA Chart Modal */}
+      {showPSAChartModal && selectedPatient && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white max-w-6xl w-full max-h-[90vh] flex flex-col border border-gray-200">
+            {/* Modal Header */}
+            <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
+                    <Activity className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      PSA Chart - {selectedPatient.patientName}
+                    </h3>
+                    <p className="text-sm text-gray-600">PSA Level Trends and Analysis</p>
+                  </div>
+                </div>
+                <button
+                  onClick={closePSAChartModal}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50">
+              {/* Key Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-white border border-gray-200 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <Heart className="h-4 w-4 text-red-600" />
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Current PSA</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-2xl font-bold text-gray-900">{selectedPatient.psa}</p>
+                    <p className="text-sm text-gray-600">ng/mL</p>
+                    <div className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                      selectedPatient.psa > 10 ? 'bg-red-50 text-red-700 border border-red-200' :
+                      selectedPatient.psa > 4 ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                      'bg-green-50 text-green-700 border border-green-200'
+                    }`}>
+                      {selectedPatient.psa > 10 ? 'High Risk' : selectedPatient.psa > 4 ? 'Elevated' : 'Normal'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-gray-200 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <Activity className="h-4 w-4 text-blue-600" />
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">PSA Velocity</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-2xl font-bold text-gray-900">
+                      {calculatePSAVelocity(selectedPatient.psaHistory, selectedPatient.psaDates)}
+                    </p>
+                    <p className="text-sm text-gray-600">ng/mL/year</p>
+                    <div className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                      Rising
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-gray-200 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <Database className="h-4 w-4 text-gray-600" />
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Tests</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-2xl font-bold text-gray-900">{selectedPatient.psaHistory.length}</p>
+                    <p className="text-sm text-gray-600">Measurements</p>
+                    <div className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-50 text-gray-700 border border-gray-200">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Historical
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-gray-200 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <Calendar className="h-4 w-4 text-green-600" />
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Latest Test</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-lg font-bold text-gray-900">
+                      {new Date(selectedPatient.psaDates[selectedPatient.psaDates.length - 1]).toLocaleDateString('en-AU', { 
+                        day: 'numeric', 
+                        month: 'short' 
+                      })}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {new Date(selectedPatient.psaDates[selectedPatient.psaDates.length - 1]).getFullYear()}
+                    </p>
+                    <div className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Recent
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filter Controls */}
+              <div className="bg-white border border-gray-200 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <Filter className="h-4 w-4 text-gray-500" />
+                      <label className="text-sm font-medium text-gray-700">Time Period:</label>
+                    </div>
+                    <select
+                      value={psaChartFilter}
+                      onChange={(e) => setPsaChartFilter(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
+                    >
+                      <option value="3months">Last 3 Tests</option>
+                      <option value="6months">Last 6 Tests</option>
+                      <option value="1year">Last 8 Tests</option>
+                      <option value="all">All Tests</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <span className="text-sm text-gray-700">Normal (&lt;4)</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                      <span className="text-sm text-gray-700">Elevated (4-10)</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                      <span className="text-sm text-gray-700">High (&gt;10)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Line Chart */}
+                <div className="bg-white border border-gray-200 p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-2">
+                      <Activity className="h-4 w-4 text-blue-600" />
+                      <h4 className="text-lg font-semibold text-gray-900">PSA Trend</h4>
+                    </div>
+                  </div>
+                  <div className="h-64">
+                    <Line data={getPSAChartConfig(selectedPatient, psaChartFilter).lineChart} options={chartOptions} />
+                  </div>
+                </div>
+
+                {/* Bar Chart */}
+                <div className="bg-white border border-gray-200 p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-2">
+                      <Database className="h-4 w-4 text-green-600" />
+                      <h4 className="text-lg font-semibold text-gray-900">PSA Levels</h4>
+                    </div>
+                  </div>
+                  <div className="h-64">
+                    <Bar data={getPSAChartConfig(selectedPatient, psaChartFilter).barChart} options={chartOptions} />
+                  </div>
+                </div>
+              </div>
+
+              {/* PSA History Table */}
+              <div className="bg-white border border-gray-200 overflow-hidden">
+                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                  <div className="flex items-center space-x-2">
+                    <FileText className="h-4 w-4 text-gray-600" />
+                    <h4 className="text-lg font-semibold text-gray-900">PSA Test History</h4>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Date</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">PSA Level</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Status</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Change</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Trend</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {getPSAChartData(selectedPatient, psaChartFilter).psaValues.map((value, index) => {
+                        const date = selectedPatient.psaDates[index];
+                        const previousValue = index > 0 ? selectedPatient.psaHistory[index - 1] : null;
+                        const change = previousValue ? (value - previousValue).toFixed(2) : 'N/A';
+                        const changeDirection = change !== 'N/A' && parseFloat(change) > 0 ? '↗' : change !== 'N/A' && parseFloat(change) < 0 ? '↘' : '→';
+                        const isIncreasing = change !== 'N/A' && parseFloat(change) > 0;
+                        const isDecreasing = change !== 'N/A' && parseFloat(change) < 0;
+                        
+                        return (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="py-3 px-4">
+                              <span className="text-sm font-medium text-gray-900">
+                                {new Date(date).toLocaleDateString('en-AU')}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="text-sm font-semibold text-gray-900">{value} ng/mL</span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded ${
+                                value > 10 ? 'bg-red-50 text-red-700 border border-red-200' :
+                                value > 4 ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                                'bg-green-50 text-green-700 border border-green-200'
+                              }`}>
+                                {value > 10 ? 'High Risk' : value > 4 ? 'Elevated' : 'Normal'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              {change !== 'N/A' ? (
+                                <span className={`text-sm font-medium ${
+                                  isIncreasing ? 'text-red-600' : isDecreasing ? 'text-green-600' : 'text-gray-600'
+                                }`}>
+                                  {changeDirection} {Math.abs(parseFloat(change)).toFixed(2)}
+                                </span>
+                              ) : (
+                                <span className="text-sm text-gray-500">Baseline</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center space-x-1">
+                                {isIncreasing && <TrendingUp className="h-3 w-3 text-red-500" />}
+                                {isDecreasing && <TrendingDown className="h-3 w-3 text-green-500" />}
+                                {!isIncreasing && !isDecreasing && <Minus className="h-3 w-3 text-gray-400" />}
+                                <span className={`text-xs font-medium ${
+                                  isIncreasing ? 'text-red-600' : isDecreasing ? 'text-green-600' : 'text-gray-500'
+                                }`}>
+                                  {isIncreasing ? 'Rising' : isDecreasing ? 'Falling' : 'Stable'}
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-white border-t border-gray-200 px-6 py-4 flex-shrink-0">
+              <div className="flex items-center justify-end">
+                <button
+                  onClick={closePSAChartModal}
+                  className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium"
+                >
+                  Close
                 </button>
               </div>
             </div>

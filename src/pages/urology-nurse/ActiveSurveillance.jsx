@@ -5,25 +5,26 @@ import {
   Search, 
   Eye,
   Calendar,
-  TrendingUp,
   X,
   User,
   Phone,
   Mail,
   FileText,
-  BarChart3,
   Clock,
   ArrowRight,
   Plus,
   Download,
-  RefreshCw
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
+import BookAppointmentModalWithPatient from '../../components/modals/BookAppointmentModalWithPatient';
+import { usePatientDetails } from '../../contexts/PatientDetailsContext';
 
 const ActiveSurveillance = () => {
   const navigate = useNavigate();
+  const { openPatientDetails } = usePatientDetails();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('All Status');
-  const [showPSATrend, setShowPSATrend] = useState(null);
   const [isPSAModalOpen, setIsPSAModalOpen] = useState(false);
   const [selectedPatientForPSA, setSelectedPatientForPSA] = useState(null);
   const [psaForm, setPsaForm] = useState({
@@ -31,16 +32,8 @@ const ActiveSurveillance = () => {
     value: '',
     type: 'routine'
   });
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
-  const [selectedPatientForSchedule, setSelectedPatientForSchedule] = useState(null);
-  const [scheduleForm, setScheduleForm] = useState({
-    date: '',
-    time: '',
-    type: 'surveillance_review',
-    doctor: '',
-    notes: ''
-  });
+  const [isBookAppointmentModalOpen, setIsBookAppointmentModalOpen] = useState(false);
+  const [selectedPatientForAppointment, setSelectedPatientForAppointment] = useState(null);
 
   // Available doctors list
   const availableDoctors = [
@@ -53,7 +46,7 @@ const ActiveSurveillance = () => {
 
   // Prevent background scrolling when modals are open
   useEffect(() => {
-    if (isPSAModalOpen || showScheduleModal || showRescheduleModal || showPSATrend) {
+    if (isPSAModalOpen || isBookAppointmentModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -63,7 +56,7 @@ const ActiveSurveillance = () => {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isPSAModalOpen, showScheduleModal, showRescheduleModal, showPSATrend]);
+  }, [isPSAModalOpen, isBookAppointmentModalOpen]);
 
   // Mock active surveillance data
   const mockSurveillancePatients = [
@@ -192,11 +185,6 @@ const ActiveSurveillance = () => {
     }
   };
 
-  const getVelocityColor = (velocity) => {
-    if (velocity > 0.75) return 'text-red-600';
-    if (velocity > 0.5) return 'text-yellow-600';
-    return 'text-green-600';
-  };
 
   const filteredPatients = mockSurveillancePatients.filter(patient => {
     const searchMatch = searchTerm === '' || 
@@ -252,155 +240,33 @@ const ActiveSurveillance = () => {
   };
 
 
-  const handleScheduleReview = (patientId) => {
-    const patient = mockSurveillancePatients.find(p => p.id === patientId);
-    setSelectedPatientForSchedule(patient);
-    setShowScheduleModal(true);
+
+
+  const handleViewPatientDetails = (patientId) => {
+    openPatientDetails(patientId);
   };
 
-  const handleReschedule = (patientId) => {
-    const patient = mockSurveillancePatients.find(p => p.id === patientId);
-    setSelectedPatientForSchedule(patient);
-    
-    // Pre-populate form with existing appointment details
-    if (patient.appointmentScheduled) {
-      setScheduleForm({
-        date: patient.scheduledDate || '',
-        time: patient.scheduledTime || '',
-        type: 'surveillance_review',
-        doctor: patient.assignedDoctor || '',
-        notes: ''
-      });
-    }
-    
-    setShowRescheduleModal(true);
+  const handleBookAppointment = (patient) => {
+    setSelectedPatientForAppointment(patient);
+    setIsBookAppointmentModalOpen(true);
   };
 
-  const handleScheduleFormChange = (e) => {
-    const { name, value } = e.target;
-    setScheduleForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  const handleAppointmentBooked = (appointmentData) => {
+    console.log('Appointment booked:', appointmentData);
+    // Here you would typically update the patient's status in your state management
+    // For now, we'll just close the modal and show a success message
+    setIsBookAppointmentModalOpen(false);
+    setSelectedPatientForAppointment(null);
+    alert('Appointment booked successfully!');
   };
 
-  const handleScheduleSubmit = (e) => {
-    e.preventDefault();
-    // In a real app, this would save to the backend
-    console.log('Scheduling appointment for patient:', selectedPatientForSchedule?.id, scheduleForm);
-    
-    // Reset form and close modal
-    setScheduleForm({
-      date: '',
-      time: '',
-      type: 'surveillance_review',
-      doctor: '',
-      notes: ''
-    });
-    setSelectedPatientForSchedule(null);
-    setShowScheduleModal(false);
-  };
-
-  const handleRescheduleSubmit = (e) => {
-    e.preventDefault();
-    // In a real app, this would update the existing appointment
-    console.log('Rescheduling appointment for patient:', selectedPatientForSchedule?.id, scheduleForm);
-    
-    // Reset form and close modal
-    setScheduleForm({
-      date: '',
-      time: '',
-      type: 'surveillance_review',
-      doctor: '',
-      notes: ''
-    });
-    setSelectedPatientForSchedule(null);
-    setShowRescheduleModal(false);
-  };
-
-  const closeScheduleModal = () => {
-    setShowScheduleModal(false);
-    setSelectedPatientForSchedule(null);
-    setScheduleForm({
-      date: '',
-      time: '',
-      type: 'surveillance_review',
-      doctor: '',
-      notes: ''
-    });
-  };
-
-  const closeRescheduleModal = () => {
-    setShowRescheduleModal(false);
-    setSelectedPatientForSchedule(null);
-    setScheduleForm({
-      date: '',
-      time: '',
-      type: 'surveillance_review',
-      doctor: '',
-      notes: ''
-    });
+  const handleCloseAppointmentModal = () => {
+    setIsBookAppointmentModalOpen(false);
+    setSelectedPatientForAppointment(null);
   };
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Active Surveillance</h1>
-        <p className="text-gray-600 mt-1">Monitor patients under watchful waiting with PSA trend analysis</p>
-      </div>
-
-
-      {/* Search and Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Search & Filter Surveillance Patients</h2>
-              <p className="text-sm text-gray-600 mt-1">Find patients under active surveillance</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-gray-600">Live Search</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="px-6 py-4">
-          <nav className="flex space-x-2" aria-label="Tabs">
-            {['All Status', 'Escalated'].map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setActiveFilter(filter)}
-                className={`px-4 py-2 rounded-full font-medium text-sm transition-all duration-200 ${
-                  activeFilter === filter
-                    ? 'bg-gradient-to-r from-green-600 to-green-700 text-white'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  <span>{filter}</span>
-                  <span className={`py-0.5 px-2 rounded-full text-xs font-semibold transition-colors ${
-                    activeFilter === filter
-                      ? 'bg-white/20 text-white'
-                      : 'bg-gray-200 text-gray-700'
-                  }`}>
-                    {mockSurveillancePatients.filter(patient => {
-                       switch (filter) {
-                         case 'All Status': return true;
-                         case 'Escalated': return patient.status === 'Escalated';
-                         default: return true;
-                       }
-                     }).length}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </nav>
-        </div>
-
-      </div>
 
       {/* Surveillance Patients Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -446,8 +312,8 @@ const ActiveSurveillance = () => {
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Latest PSA</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">PSA Velocity</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Risk Category</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">View</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -462,9 +328,6 @@ const ActiveSurveillance = () => {
                               {patient.patientName.split(' ').map(n => n[0]).join('')}
                             </span>
                           </div>
-                          {patient.psaVelocity > 0.75 && (
-                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>
-                          )}
                         </div>
                         <div>
                           <div className="flex items-center space-x-2">
@@ -489,57 +352,47 @@ const ActiveSurveillance = () => {
                     <td className="py-5 px-6">
                       <div>
                         <p className="font-medium text-gray-900">{patient.lastPSA} ng/mL</p>
-                        <p className="text-sm text-gray-500">{patient.lastPSADate}</p>
-                        <button 
-                          onClick={() => setShowPSATrend(showPSATrend === patient.id ? null : patient.id)}
-                          className="text-xs text-blue-600 hover:text-blue-700 mt-1"
-                        >
-                          {showPSATrend === patient.id ? 'Hide Trend' : 'Show Trend'}
-                        </button>
                       </div>
-                    </td>
-                    <td className="py-5 px-6">
-                      <div className="flex items-center space-x-2">
-                        <TrendingUp className={`h-4 w-4 ${getVelocityColor(patient.psaVelocity)}`} />
-                        <span className={`font-medium ${getVelocityColor(patient.psaVelocity)}`}>
-                          {patient.psaVelocity} ng/mL/year
-                        </span>
-                      </div>
-                      {patient.psaVelocity > 0.75 && (
-                        <p className="text-xs text-red-600 mt-1">⚠️ Exceeds threshold</p>
-                      )}
                     </td>
                     <td className="py-5 px-6">
                       <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getRiskColor(patient.riskCategory)}`}>
                         {patient.riskCategory}
                       </span>
-                      <p className="text-xs text-gray-500 mt-1">Gleason: {patient.gleasonScore}</p>
+                    </td>
+                    <td className="py-5 px-6">
+                      <button 
+                        onClick={() => handleViewPatientDetails(patient.id)}
+                        className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        <span>View</span>
+                      </button>
                     </td>
                     <td className="py-5 px-6">
                       <div className="flex flex-col space-y-1">
                         <button 
                           onClick={() => handlePSAEntry(patient.id)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                          className="inline-flex items-center justify-center w-40 px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
                         >
                           <Plus className="h-3 w-3 mr-1" />
-                          <span>PSA Entry</span>
+                          <span>Add PSA</span>
                         </button>
                         
                         {!patient.appointmentScheduled ? (
                           <button 
-                            onClick={() => handleScheduleReview(patient.id)}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                            onClick={() => handleBookAppointment(patient)}
+                            className="inline-flex items-center justify-center w-40 px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 border border-purple-600 rounded-lg shadow-sm hover:from-purple-700 hover:to-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
                           >
                             <Calendar className="h-3 w-3 mr-1" />
-                            <span>Schedule Review</span>
+                            <span>Book Review</span>
                           </button>
                         ) : (
                           <button 
-                            onClick={() => handleReschedule(patient.id)}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                            onClick={() => handleBookAppointment(patient)}
+                            className="inline-flex items-center justify-center w-40 px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
                           >
                             <Clock className="h-3 w-3 mr-1" />
-                            <span>Reschedule</span>
+                            <span>Update Review</span>
                           </button>
                         )}
                       </div>
@@ -583,61 +436,6 @@ const ActiveSurveillance = () => {
         </div>
       </div>
 
-      {/* PSA Trend Modal */}
-      {showPSATrend && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">PSA Trend Analysis</h3>
-              <button
-                onClick={() => setShowPSATrend(null)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <BarChart3 className="h-8 w-8 text-blue-600" />
-                <div>
-                  <p className="font-medium text-gray-900">
-                    {mockSurveillancePatients.find(p => p.id === showPSATrend)?.patientName}
-                  </p>
-                  <p className="text-sm text-gray-500">PSA Velocity: {mockSurveillancePatients.find(p => p.id === showPSATrend)?.psaVelocity} ng/mL/year</p>
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-2">PSA History:</p>
-                <div className="space-y-2">
-                  {mockSurveillancePatients.find(p => p.id === showPSATrend)?.psaHistory.map((entry, index) => (
-                    <div key={index} className="flex justify-between items-center">
-                      <span className="text-sm text-gray-700">{entry.date}</span>
-                      <span className="font-medium text-gray-900">{entry.value} ng/mL</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowPSATrend(null)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={() => {
-                    setShowPSATrend(null);
-                    handlePSAEntry(showPSATrend);
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-700 rounded-lg hover:opacity-90"
-                >
-                  Add New PSA
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Add PSA Value Modal */}
       {isPSAModalOpen && selectedPatientForPSA && (
@@ -753,228 +551,15 @@ const ActiveSurveillance = () => {
         </div>
       )}
 
-      {/* Schedule Review Modal */}
-      {showScheduleModal && selectedPatientForSchedule && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Schedule Review</h2>
-                <p className="text-sm text-gray-600 mt-1">Patient: {selectedPatientForSchedule.patientName}</p>
-              </div>
-              <button
-                onClick={closeScheduleModal}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
 
-            <form onSubmit={handleScheduleSubmit} className="p-6 space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Appointment Date *
-                </label>
-                <input
-                  type="date"
-                  name="date"
-                  value={scheduleForm.date}
-                  onChange={handleScheduleFormChange}
-                  required
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                />
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Appointment Time *
-                </label>
-                <input
-                  type="time"
-                  name="time"
-                  value={scheduleForm.time}
-                  onChange={handleScheduleFormChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Appointment Type *
-                </label>
-                <select
-                  name="type"
-                  value={scheduleForm.type}
-                  onChange={handleScheduleFormChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                >
-                  <option value="surveillance_review">Surveillance Review</option>
-                  <option value="psa_followup">PSA Follow-up</option>
-                  <option value="mri_review">MRI Review</option>
-                  <option value="biopsy_discussion">Biopsy Discussion</option>
-                  <option value="general_consultation">General Consultation</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Assigned Doctor *
-                </label>
-                <select
-                  name="doctor"
-                  value={scheduleForm.doctor}
-                  onChange={handleScheduleFormChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                >
-                  <option value="">Select a doctor...</option>
-                  {availableDoctors.map((doctor) => (
-                    <option key={doctor} value={doctor}>
-                      {doctor}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Notes
-                </label>
-                <textarea
-                  name="notes"
-                  value={scheduleForm.notes}
-                  onChange={handleScheduleFormChange}
-                  rows={3}
-                  placeholder="Additional notes for the appointment..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                />
-              </div>
-
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={closeScheduleModal}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex items-center px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity"
-                >
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Schedule Appointment
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Reschedule Modal */}
-      {showRescheduleModal && selectedPatientForSchedule && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Reschedule Appointment</h2>
-                <p className="text-sm text-gray-600 mt-1">Patient: {selectedPatientForSchedule.patientName}</p>
-              </div>
-              <button
-                onClick={closeRescheduleModal}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <form onSubmit={handleRescheduleSubmit} className="p-6 space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  New Appointment Date *
-                </label>
-                <input
-                  type="date"
-                  name="date"
-                  value={scheduleForm.date}
-                  onChange={handleScheduleFormChange}
-                  required
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  New Appointment Time *
-                </label>
-                <input
-                  type="time"
-                  name="time"
-                  value={scheduleForm.time}
-                  onChange={handleScheduleFormChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Assigned Doctor *
-                </label>
-                <select
-                  name="doctor"
-                  value={scheduleForm.doctor}
-                  onChange={handleScheduleFormChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                >
-                  <option value="">Select a doctor...</option>
-                  {availableDoctors.map((doctor) => (
-                    <option key={doctor} value={doctor}>
-                      {doctor}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Reason for Reschedule
-                </label>
-                <textarea
-                  name="notes"
-                  value={scheduleForm.notes}
-                  onChange={handleScheduleFormChange}
-                  rows={3}
-                  placeholder="Please provide reason for rescheduling..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                />
-              </div>
-
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={closeRescheduleModal}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex items-center px-6 py-2 bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-lg hover:opacity-90 transition-opacity"
-                >
-                  <Clock className="h-4 w-4 mr-2" />
-                  Reschedule Appointment
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Book Appointment Modal */}
+      <BookAppointmentModalWithPatient
+        isOpen={isBookAppointmentModalOpen}
+        onClose={handleCloseAppointmentModal}
+        onAppointmentBooked={handleAppointmentBooked}
+        selectedPatientData={selectedPatientForAppointment}
+      />
     </div>
   );
 };

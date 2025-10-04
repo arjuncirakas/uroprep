@@ -17,13 +17,18 @@ import {
   Info,
   Phone
 } from 'lucide-react';
+import PatientDetailsModal from '../../components/modals/PatientDetailsModal';
+import NewReferralModal from '../../components/modals/NewReferralModal';
 
 const ReferralStatus = () => {
-  const [activeFilter, setActiveFilter] = useState('All');
+  const [activeFilter, setActiveFilter] = useState('Triage Pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showPatientModal, setShowPatientModal] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState(null);
+  const [showNewReferralModal, setShowNewReferralModal] = useState(false);
   const navigate = useNavigate();
 
   // Mock referral data - replace with actual API calls
@@ -34,7 +39,7 @@ const ReferralStatus = () => {
       patientName: 'John Smith',
       dob: '1965-03-15',
       referralDate: '2024-01-15',
-      status: 'Under Active Surveillance',
+      status: 'Active Surveillance',
       priority: 'Medium',
       currentDatabase: 'DB2',
       daysSinceReferral: 12,
@@ -48,7 +53,7 @@ const ReferralStatus = () => {
       patientName: 'Mary Johnson',
       dob: '1958-07-22',
       referralDate: '2024-01-10',
-      status: 'Post-Surgery Follow-Up',
+      status: 'Post-Op Follow-up',
       priority: 'High',
       currentDatabase: 'DB4',
       daysSinceReferral: 17,
@@ -62,7 +67,7 @@ const ReferralStatus = () => {
       patientName: 'Robert Brown',
       dob: '1970-11-08',
       referralDate: '2024-01-20',
-      status: 'In Urology OPD Queue',
+      status: 'OPD Management',
       priority: 'Routine',
       currentDatabase: 'Queue',
       daysSinceReferral: 7,
@@ -76,7 +81,7 @@ const ReferralStatus = () => {
       patientName: 'David Wilson',
       dob: '1962-05-14',
       referralDate: '2023-12-05',
-      status: 'Discharged to GP',
+      status: 'Discharged',
       priority: 'Low',
       currentDatabase: 'Discharged',
       daysSinceReferral: 52,
@@ -90,7 +95,7 @@ const ReferralStatus = () => {
       patientName: 'Sarah Davis',
       dob: '1968-09-12',
       referralDate: '2024-01-18',
-      status: 'Urology Consultation Completed',
+      status: 'OPD Management',
       priority: 'Medium',
       currentDatabase: 'DB1',
       daysSinceReferral: 9,
@@ -104,7 +109,7 @@ const ReferralStatus = () => {
       patientName: 'Michael Chen',
       dob: '1972-04-25',
       referralDate: '2024-01-12',
-      status: 'MDT Review Pending',
+      status: 'Surgical Pathway',
       priority: 'High',
       currentDatabase: 'DB3',
       daysSinceReferral: 15,
@@ -118,22 +123,86 @@ const ReferralStatus = () => {
       patientName: 'Emma Thompson',
       dob: '1955-11-30',
       referralDate: '2023-12-20',
-      status: 'Surgery Scheduled',
+      status: 'Surgical Pathway',
       priority: 'High',
       currentDatabase: 'DB4',
       daysSinceReferral: 38,
       nextAction: 'Pre-operative assessment',
       nextAppointment: '2024-02-28',
       latestPSA: 15.7
+    },
+    {
+      id: 'REF008',
+      upi: 'URP2024008',
+      patientName: 'James Wilson',
+      dob: '1963-08-15',
+      referralDate: '2024-01-05',
+      status: 'Active Surveillance',
+      priority: 'High',
+      currentDatabase: 'DB3',
+      daysSinceReferral: 22,
+      nextAction: 'PSA monitoring',
+      nextAppointment: '2024-02-12',
+      latestPSA: 25.3
+    },
+    {
+      id: 'REF009',
+      upi: 'URP2024009',
+      patientName: 'Lisa Anderson',
+      dob: '1971-12-03',
+      referralDate: '2024-01-08',
+      status: 'Post-Op Follow-up',
+      priority: 'Medium',
+      currentDatabase: 'DB2',
+      daysSinceReferral: 19,
+      nextAction: '6-month follow-up',
+      nextAppointment: '2024-02-15',
+      latestPSA: 18.7
+    },
+    {
+      id: 'REF010',
+      upi: 'URP2024010',
+      patientName: 'Thomas Miller',
+      dob: '1959-04-22',
+      referralDate: '2023-11-15',
+      status: 'Discharged',
+      priority: 'Low',
+      currentDatabase: 'Discharged',
+      daysSinceReferral: 68,
+      nextAction: 'Returned to GP care',
+      nextAppointment: null,
+      latestPSA: 2.1,
+      dischargeReason: 'PSA levels normalized, no further urology intervention required'
+    },
+    {
+      id: 'REF011',
+      upi: 'URP2024011',
+      patientName: 'Jennifer Taylor',
+      dob: '1967-09-18',
+      referralDate: '2023-10-20',
+      status: 'Discharged',
+      priority: 'Low',
+      currentDatabase: 'Discharged',
+      daysSinceReferral: 94,
+      nextAction: 'Annual monitoring',
+      nextAppointment: null,
+      latestPSA: 1.8,
+      dischargeReason: 'Patient completed treatment, returned to GP management'
     }
   ];
 
-  const filters = ['All', 'In Urology OPD Queue', 'Urology Consultation Completed', 'MDT Review Pending', 'Under Active Surveillance', 'Surgery Scheduled', 'Post-Surgery Follow-Up', 'Discharged to GP'];
+  const filters = ['Triage Pending', 'OPD Management', 'Active Surveillance', 'Surgical Pathway', 'Post-Op Follow-up', 'Discharged'];
 
   // Filter referrals by status and search query
   const filteredReferrals = mockReferrals.filter(ref => {
     // Status filter
-    const statusMatch = activeFilter === 'All' || ref.status === activeFilter;
+    let statusMatch;
+    if (activeFilter === 'Triage Pending') {
+      // Triage Pending includes referrals that need initial review (OPD Management, some Active Surveillance cases)
+      statusMatch = ref.status === 'OPD Management' || (ref.status === 'Active Surveillance' && ref.priority === 'High');
+    } else {
+      statusMatch = ref.status === activeFilter;
+    }
     
     // Search filter
     const searchMatch = searchQuery === '' || 
@@ -159,6 +228,18 @@ const ReferralStatus = () => {
   useEffect(() => {
     sessionStorage.removeItem('lastVisitedPage');
   }, []);
+
+  // Function to handle opening patient details modal
+  const handleViewPatientDetails = (upi) => {
+    setSelectedPatientId(upi);
+    setShowPatientModal(true);
+  };
+
+  // Function to handle closing patient details modal
+  const handleClosePatientModal = () => {
+    setShowPatientModal(false);
+    setSelectedPatientId(null);
+  };
 
   // Close dropdown when clicking outside and prevent background scrolling
   useEffect(() => {
@@ -190,13 +271,11 @@ const ReferralStatus = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'In Urology OPD Queue': return 'bg-amber-100 text-amber-800';
-      case 'Urology Consultation Completed': return 'bg-blue-100 text-blue-800';
-      case 'MDT Review Pending': return 'bg-purple-100 text-purple-800';
-      case 'Under Active Surveillance': return 'bg-cyan-100 text-cyan-800';
-      case 'Surgery Scheduled': return 'bg-red-100 text-red-800';
-      case 'Post-Surgery Follow-Up': return 'bg-green-100 text-green-800';
-      case 'Discharged to GP': return 'bg-gray-100 text-gray-800';
+      case 'OPD Management': return 'bg-amber-100 text-amber-800';
+      case 'Active Surveillance': return 'bg-cyan-100 text-cyan-800';
+      case 'Surgical Pathway': return 'bg-red-100 text-red-800';
+      case 'Post-Op Follow-up': return 'bg-green-100 text-green-800';
+      case 'Discharged': return 'bg-emerald-100 text-emerald-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -249,91 +328,83 @@ const ReferralStatus = () => {
         
         {/* Quick Action Buttons */}
         <div className="flex items-center space-x-3">
-          <button className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity">
+          <button 
+            onClick={() => setShowNewReferralModal(true)}
+            className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
+          >
             <FileText className="h-4 w-4 mr-2" />
             <span className="font-medium">New Referral</span>
           </button>
         </div>
       </div>
 
+      {/* Filter Tabs */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900">All Referrals ({mockReferrals.length})</h2>
+            <p className="text-sm text-gray-600">Track your latest patient referrals and their status</p>
+          </div>
+        </div>
+        
+        {/* Filter Tabs */}
+        <div className="px-6 py-4">
+          <div className="flex flex-wrap gap-2">
+            {filters.map((filter) => {
+              let count;
+              if (filter === 'Triage Pending') {
+                count = mockReferrals.filter(ref => 
+                  ref.status === 'OPD Management' || (ref.status === 'Active Surveillance' && ref.priority === 'High')
+                ).length;
+              } else {
+                count = mockReferrals.filter(ref => ref.status === filter).length;
+              }
+              
+              return (
+                <button
+                  key={filter}
+                  onClick={() => setActiveFilter(filter)}
+                  className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 ${
+                    activeFilter === filter
+                      ? 'bg-green-600 text-white'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                  }`}
+                >
+                  <span>{filter}</span>
+                  <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                    activeFilter === filter
+                      ? 'bg-white/20 text-white'
+                      : 'bg-gray-200 text-gray-700'
+                  }`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* Referrals List */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        {/* Header */}
+        {/* Search Results Header */}
         <div className="border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">
-                {activeFilter} Referrals ({filteredReferrals.length})
+              <h3 className="text-lg font-semibold text-gray-900">
+                {activeFilter} ({filteredReferrals.length})
                 {searchQuery && (
                   <span className="text-sm font-normal text-gray-600 ml-2">
                     - Search: "{searchQuery}"
                   </span>
                 )}
-              </h2>
+              </h3>
               <p className="text-sm text-gray-600 mt-1">
                 {searchQuery 
-                  ? `Found ${filteredReferrals.length} referral${filteredReferrals.length !== 1 ? 's' : ''} matching your search`
-                  : 'Track your latest patient referrals and their status'
+                  ? `Found ${filteredReferrals.length} result${filteredReferrals.length !== 1 ? 's' : ''} matching your search`
+                  : `Showing ${filteredReferrals.length} of ${mockReferrals.length} total`
                 }
               </p>
-            </div>
-            
-            {/* Filter Dropdown */}
-            <div className="relative dropdown-container">
-              <button
-                onClick={() => setShowDropdown(!showDropdown)}
-                className="relative inline-flex items-center px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 shadow-sm"
-              >
-                <Filter className="h-4 w-4 mr-2.5 text-gray-500" />
-                <span className="text-gray-900">{activeFilter}</span>
-                <ChevronDown className={`h-4 w-4 ml-2.5 text-gray-400 transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`} />
-              </button>
-              
-              {/* Dropdown Menu */}
-              {showDropdown && (
-                <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-2xl z-[9999] max-h-80 overflow-y-auto backdrop-blur-sm">
-                  <div className="py-2">
-                    <div className="px-3 py-2 border-b border-gray-100">
-                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Filter by Status</h3>
-                    </div>
-                    {filters.map((filter) => {
-                      const count = filter === 'All' ? mockReferrals.length : 
-                        mockReferrals.filter(ref => ref.status === filter).length;
-                    
-                      return (
-                        <button
-                          key={filter}
-                          onClick={() => {
-                            setActiveFilter(filter);
-                            setShowDropdown(false);
-                          }}
-                          className={`w-full flex items-center justify-between px-4 py-3 text-left transition-all duration-200 group ${
-                            activeFilter === filter 
-                              ? 'bg-green-50 text-green-900 border-l-4 border-green-500' 
-                              : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                          }`}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <div className={`w-2.5 h-2.5 rounded-full transition-colors duration-200 ${
-                              activeFilter === filter 
-                                ? 'bg-green-500' 
-                                : 'bg-gray-300 group-hover:bg-gray-400'
-                            }`}></div>
-                            <span className="font-medium text-sm">{filter}</span>
-                          </div>
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-colors duration-200 ${
-                            activeFilter === filter 
-                              ? 'bg-green-200 text-green-800' 
-                              : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'
-                          }`}>
-                            {count}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -389,6 +460,9 @@ const ReferralStatus = () => {
                         {referral.nextAppointment && (
                           <p className="text-xs text-gray-400 leading-tight">{formatDate(referral.nextAppointment)}</p>
                         )}
+                        {referral.status === 'Discharged' && referral.dischargeReason && (
+                          <p className="text-xs text-gray-400 leading-tight italic">{referral.dischargeReason}</p>
+                        )}
                       </div>
                     </td>
                     <td className="py-4 px-4 w-[160px] min-w-[160px]">
@@ -417,10 +491,7 @@ const ReferralStatus = () => {
                     <td className="py-4 px-4 w-[140px] min-w-[140px]">
                       <div className="flex items-center justify-start">
                         <button
-                          onClick={() => {
-                            sessionStorage.setItem('lastVisitedPage', 'referral-status');
-                            navigate(`/gp/patient-details/${referral.upi}`);
-                          }}
+                          onClick={() => handleViewPatientDetails(referral.upi)}
                           className="group relative inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
                         >
                           <Eye className="h-3 w-3 mr-1 text-white group-hover:text-white transition-colors" />
@@ -438,12 +509,12 @@ const ReferralStatus = () => {
                 <FileX className="h-12 w-12 text-gray-400" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                {searchQuery ? 'No referrals found' : 'No referrals available'}
+                {searchQuery ? 'No results found' : 'No entries available'}
               </h3>
               <p className="text-gray-500 mb-6 max-w-md mx-auto">
                 {searchQuery 
-                  ? `No referrals match your search for "${searchQuery}". Try adjusting your search terms or clearing the search.`
-                  : 'There are no referrals in this category at the moment. Check back later or try a different filter.'
+                  ? `No entries match your search for "${searchQuery}". Try adjusting your search terms or clearing the search.`
+                  : 'There are no entries in this category at the moment. Check back later or try a different filter.'
                 }
               </p>
               {searchQuery && (
@@ -464,7 +535,7 @@ const ReferralStatus = () => {
           <div className="px-6 py-4 border-t border-gray-200">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
-                Showing {startIndex + 1} to {Math.min(endIndex, filteredReferrals.length)} of {filteredReferrals.length} referrals
+                Showing {startIndex + 1} to {Math.min(endIndex, filteredReferrals.length)} of {filteredReferrals.length} entries
               </div>
               
               {/* Pagination */}
@@ -507,6 +578,20 @@ const ReferralStatus = () => {
           </div>
         )}
       </div>
+
+      {/* Patient Details Modal */}
+      <PatientDetailsModal 
+        isOpen={showPatientModal}
+        onClose={handleClosePatientModal}
+        patientId={selectedPatientId}
+        userRole="gp"
+      />
+
+      {/* New Referral Modal */}
+      <NewReferralModal 
+        isOpen={showNewReferralModal}
+        onClose={() => setShowNewReferralModal(false)}
+      />
 
     </div>
   );

@@ -26,6 +26,7 @@ import {
   FileText,
   Trash2
 } from 'lucide-react';
+import BookAppointmentModal from '../../components/modals/BookAppointmentModal';
 
 const Appointments = () => {
   const navigate = useNavigate();
@@ -33,7 +34,6 @@ const Appointments = () => {
   const { appointments } = useSelector(state => state.appointments);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [viewMode, setViewMode] = useState('calendar'); // calendar, list, week, month
-  const [showNewAppointment, setShowNewAppointment] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [activeFilter, setActiveFilter] = useState('Today');
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,6 +51,9 @@ const Appointments = () => {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState({});
+
+  // Book Appointment Modal state
+  const [showBookAppointmentModal, setShowBookAppointmentModal] = useState(false);
 
   const today = new Date();
   const currentWeek = getWeekDates(today);
@@ -608,15 +611,6 @@ const Appointments = () => {
     }
   };
 
-  const getTypeColor = (type) => {
-    switch (type) {
-      case 'Follow-up': return 'bg-blue-100 text-blue-800';
-      case 'OPD': return 'bg-purple-100 text-purple-800';
-      case 'Surgery': return 'bg-red-100 text-red-800';
-      case 'Surveillance': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-AU');
@@ -781,6 +775,21 @@ const Appointments = () => {
     setDraggedAppointment(null);
   };
 
+  // Book Appointment Modal handlers
+  const handleBookAppointment = () => {
+    setShowBookAppointmentModal(true);
+  };
+
+  const handleAppointmentBooked = (appointmentData) => {
+    console.log('New appointment booked:', appointmentData);
+    // Here you could update your local state or dispatch to Redux store
+    // For now, we'll just log it
+  };
+
+  const handleCloseBookAppointmentModal = () => {
+    setShowBookAppointmentModal(false);
+  };
+
 
 
   const renderFiltersAndControls = () => (
@@ -863,44 +872,16 @@ const Appointments = () => {
         </nav>
       </div>
 
-      {/* Search and Filters */}
+      {/* Book Appointment Button */}
       <div className="px-6 py-4 border-t border-gray-200">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by patient name, UPI, or appointment type..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-            <select className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400">
-              <option value="all">All Status</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="pending">Pending</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </div>
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => navigate('/urology-nurse/book-appointment')}
-              className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
-            >
-              <UserPlus className="h-4 w-4 mr-2" />
-              Book Appointment
-            </button>
-          </div>
+        <div className="flex justify-end">
+          <button
+            onClick={handleBookAppointment}
+            className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            Book Appointment
+          </button>
         </div>
       </div>
     </div>
@@ -1040,7 +1021,6 @@ const Appointments = () => {
               <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
               <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider w-[150px]">Appointment</th>
               <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Date & Time</th>
-              <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Type</th>
               <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Status</th>
               <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
             </tr>
@@ -1070,18 +1050,10 @@ const Appointments = () => {
                   <p className="font-medium text-gray-900">{appointment.title}</p>
                 </td>
                 <td className="py-5 px-6">
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{formatDate(appointment.date)}</p>
-                      <p className="text-sm text-gray-500">{appointment.time}</p>
-                    </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{formatDate(appointment.date)}</p>
+                    <p className="text-sm text-gray-500">{appointment.time}</p>
                   </div>
-                </td>
-                <td className="py-5 px-6">
-                  <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getTypeColor(appointment.type)}`}>
-                    {appointment.type}
-                  </span>
                 </td>
                 <td className="py-5 px-6">
                   <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(appointment.status)}`}>
@@ -1161,11 +1133,6 @@ const Appointments = () => {
         }
       `}</style>
       
-      {/* Page Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Appointments</h1>
-        <p className="text-gray-600 mt-1">Central calendar to manage schedules - OPD consultations, investigations, surgeries, follow-ups</p>
-      </div>
 
       {renderFiltersAndControls()}
       
@@ -1257,7 +1224,7 @@ const Appointments = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between py-2 border-b border-gray-100">
                     <span className="text-sm font-medium text-gray-600">Appointment Type:</span>
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(rescheduleData.appointment.type)}`}>
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
                       {rescheduleData.appointment.type}
                     </span>
                   </div>
@@ -1315,21 +1282,17 @@ const Appointments = () => {
 
       {/* Appointment Details Modal */}
       {showAppointmentModal && selectedAppointment && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden transform transition-all">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white max-w-4xl w-full max-h-[90vh] flex flex-col border border-gray-200">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-green-50 to-gray-50 px-6 py-4 border-b border-gray-200">
+            <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
-                      <span className="text-white font-semibold text-lg">
-                        {selectedAppointment.patientName.split(' ').map(n => n[0]).join('')}
-                      </span>
-                    </div>
+                  <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
+                    <Calendar className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900">Appointment Details</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">Appointment Details</h3>
                     <p className="text-sm text-gray-600">{selectedAppointment.patientName} - {selectedAppointment.upi}</p>
                   </div>
                 </div>
@@ -1337,7 +1300,7 @@ const Appointments = () => {
                   {!isEditing ? (
                     <button
                       onClick={handleEditAppointment}
-                      className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                      className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                     >
                       <Edit3 className="h-4 w-4 mr-2" />
                       Edit
@@ -1346,13 +1309,13 @@ const Appointments = () => {
                     <>
                       <button
                         onClick={handleCancelEdit}
-                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={handleSaveAppointment}
-                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                       >
                         <Save className="h-4 w-4 mr-2" />
                         Save
@@ -1361,7 +1324,7 @@ const Appointments = () => {
                   )}
                   <button
                     onClick={() => setShowAppointmentModal(false)}
-                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -1370,13 +1333,13 @@ const Appointments = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="px-6 py-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+            <div className="px-6 py-6 overflow-y-auto flex-1">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Patient Information */}
                 <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="bg-white border border-gray-200 rounded p-4">
                     <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <User className="h-5 w-5 mr-2 text-green-600" />
+                      <User className="h-4 w-4 mr-2 text-blue-600" />
                       Patient Information
                     </h4>
                     <div className="space-y-3">
@@ -1387,7 +1350,7 @@ const Appointments = () => {
                             type="text"
                             value={editFormData.patientName || ''}
                             onChange={(e) => handleInputChange('patientName', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
                         ) : (
                           <p className="text-sm text-gray-900">{selectedAppointment.patientName}</p>
@@ -1404,7 +1367,7 @@ const Appointments = () => {
                             type="number"
                             value={editFormData.age || ''}
                             onChange={(e) => handleInputChange('age', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
                         ) : (
                           <p className="text-sm text-gray-900">{selectedAppointment.age} years</p>
@@ -1417,7 +1380,7 @@ const Appointments = () => {
                             type="tel"
                             value={editFormData.phone || ''}
                             onChange={(e) => handleInputChange('phone', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
                         ) : (
                           <p className="text-sm text-gray-900 flex items-center">
@@ -1433,7 +1396,7 @@ const Appointments = () => {
                             type="email"
                             value={editFormData.email || ''}
                             onChange={(e) => handleInputChange('email', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
                         ) : (
                           <p className="text-sm text-gray-900 flex items-center">
@@ -1449,7 +1412,7 @@ const Appointments = () => {
                             value={editFormData.address || ''}
                             onChange={(e) => handleInputChange('address', e.target.value)}
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
                         ) : (
                           <p className="text-sm text-gray-900 flex items-start">
@@ -1464,9 +1427,9 @@ const Appointments = () => {
 
                 {/* Appointment Details */}
                 <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="bg-white border border-gray-200 rounded p-4">
                     <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <CalendarIcon className="h-5 w-5 mr-2 text-blue-600" />
+                      <CalendarIcon className="h-4 w-4 mr-2 text-blue-600" />
                       Appointment Details
                     </h4>
                     <div className="space-y-3">
@@ -1477,7 +1440,7 @@ const Appointments = () => {
                             type="text"
                             value={editFormData.title || ''}
                             onChange={(e) => handleInputChange('title', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
                         ) : (
                           <p className="text-sm text-gray-900">{selectedAppointment.title}</p>
@@ -1490,7 +1453,7 @@ const Appointments = () => {
                             value={editFormData.description || ''}
                             onChange={(e) => handleInputChange('description', e.target.value)}
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
                         ) : (
                           <p className="text-sm text-gray-900">{selectedAppointment.description}</p>
@@ -1504,7 +1467,7 @@ const Appointments = () => {
                               type="date"
                               value={editFormData.date || ''}
                               onChange={(e) => handleInputChange('date', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                           ) : (
                             <p className="text-sm text-gray-900 flex items-center">
@@ -1520,7 +1483,7 @@ const Appointments = () => {
                               type="time"
                               value={editFormData.time || ''}
                               onChange={(e) => handleInputChange('time', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                           ) : (
                             <p className="text-sm text-gray-900 flex items-center">
@@ -1537,7 +1500,7 @@ const Appointments = () => {
                             <select
                               value={editFormData.type || ''}
                               onChange={(e) => handleInputChange('type', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             >
                               <option value="OPD">OPD</option>
                               <option value="Follow-up">Follow-up</option>
@@ -1545,7 +1508,7 @@ const Appointments = () => {
                               <option value="Surveillance">Surveillance</option>
                             </select>
                           ) : (
-                            <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getTypeColor(selectedAppointment.type)}`}>
+                            <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
                               {selectedAppointment.type}
                             </span>
                           )}
@@ -1556,7 +1519,7 @@ const Appointments = () => {
                             <select
                               value={editFormData.status || ''}
                               onChange={(e) => handleInputChange('status', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             >
                               <option value="Confirmed">Confirmed</option>
                               <option value="Pending">Pending</option>
@@ -1578,7 +1541,7 @@ const Appointments = () => {
                               type="number"
                               value={editFormData.duration || ''}
                               onChange={(e) => handleInputChange('duration', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                           ) : (
                             <p className="text-sm text-gray-900">{selectedAppointment.duration} minutes</p>
@@ -1590,7 +1553,7 @@ const Appointments = () => {
                             <select
                               value={editFormData.priority || ''}
                               onChange={(e) => handleInputChange('priority', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             >
                               <option value="Normal">Normal</option>
                               <option value="High">High</option>
@@ -1609,7 +1572,7 @@ const Appointments = () => {
                             type="text"
                             value={editFormData.doctor || ''}
                             onChange={(e) => handleInputChange('doctor', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
                         ) : (
                           <p className="text-sm text-gray-900 flex items-center">
@@ -1625,7 +1588,7 @@ const Appointments = () => {
                             type="text"
                             value={editFormData.room || ''}
                             onChange={(e) => handleInputChange('room', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
                         ) : (
                           <p className="text-sm text-gray-900">{selectedAppointment.room}</p>
@@ -1646,7 +1609,7 @@ const Appointments = () => {
                           value={editFormData.notes || ''}
                           onChange={(e) => handleInputChange('notes', e.target.value)}
                           rows={4}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           placeholder="Add appointment notes..."
                         />
                       ) : (
@@ -1683,6 +1646,13 @@ const Appointments = () => {
           </div>
         </div>
       )}
+
+      {/* Book Appointment Modal */}
+      <BookAppointmentModal
+        isOpen={showBookAppointmentModal}
+        onClose={handleCloseBookAppointmentModal}
+        onAppointmentBooked={handleAppointmentBooked}
+      />
 
     </div>
   );

@@ -3,11 +3,15 @@ import { Outlet, useLocation } from 'react-router-dom';
 import UrologyNurseSidebar from '../components/layout/UrologyNurseSidebar';
 import Header from '../components/layout/Header';
 import { NavigationProvider } from '../contexts/NavigationContext';
+import PatientDetailsModal from '../components/modals/PatientDetailsModal';
+import { PatientDetailsProvider, usePatientDetails } from '../contexts/PatientDetailsContext';
 
-const UrologyNurseLayout = () => {
+// Component that uses the patient details context
+const UrologyNurseLayoutContent = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
+  const { showPatientDetailsModal, selectedPatientId, closePatientDetails } = usePatientDetails();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -63,8 +67,23 @@ const UrologyNurseLayout = () => {
             <Outlet />
           </main>
         </div>
+        
+        {/* Patient Details Modal */}
+        <PatientDetailsModal
+          isOpen={showPatientDetailsModal}
+          onClose={closePatientDetails}
+          patientId={selectedPatientId}
+        />
       </div>
     </NavigationProvider>
+  );
+};
+
+const UrologyNurseLayout = () => {
+  return (
+    <PatientDetailsProvider>
+      <UrologyNurseLayoutContent />
+    </PatientDetailsProvider>
   );
 };
 

@@ -118,11 +118,11 @@ const ReferralDetails = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button
-            onClick={() => navigate('/gp/discharge-summaries')}
+            onClick={() => navigate('/gp/referral-status')}
             className="flex items-center px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Discharge Summaries
+            Back to Referral Status
           </button>
         </div>
         <div className="flex items-center space-x-3">

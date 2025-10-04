@@ -18,13 +18,18 @@ import {
   ClipboardList,
   Shield,
   TrendingUp,
-  Download
+  Download,
+  Clock,
+  AlertCircle
 } from 'lucide-react';
+import BookAppointmentModalWithPatient from '../../components/modals/BookAppointmentModalWithPatient';
+import { usePatientDetails } from '../../contexts/PatientDetailsContext';
 
 const PostOpFollowUp = () => {
   const navigate = useNavigate();
+  const { openPatientDetails } = usePatientDetails();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All Status');
+  const [activeFilter, setActiveFilter] = useState('Recovery');
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [selectedPatientForSchedule, setSelectedPatientForSchedule] = useState(null);
@@ -35,6 +40,8 @@ const PostOpFollowUp = () => {
     doctor: '',
     notes: ''
   });
+  const [isBookAppointmentModalOpen, setIsBookAppointmentModalOpen] = useState(false);
+  const [selectedPatientForAppointment, setSelectedPatientForAppointment] = useState(null);
 
   // Available doctors list
   const availableDoctors = [
@@ -216,12 +223,185 @@ const PostOpFollowUp = () => {
       riskAssessment: 'Intermediate Risk',
       notes: 'Good recovery, monitoring PSA levels',
       dischargeReady: false
+    },
+    {
+      id: 'POSTOP005',
+      patientName: 'Christopher Lee',
+      upi: 'URP2024012',
+      age: 59,
+      gender: 'Male',
+      phone: '+61 416 789 012',
+      email: 'christopher.lee@email.com',
+      surgeryDate: '2024-01-28',
+      surgeryType: 'RALP',
+      surgeon: 'Dr. Emma Wilson',
+      status: 'Recovery',
+      followUpStatus: 'In Progress',
+      dischargeStatus: 'Pending',
+      lastPSA: 0.12,
+      lastPSADate: '2024-02-01',
+      nextFollowUp: '2024-02-28',
+      appointmentScheduled: true,
+      scheduledDate: '2024-02-28',
+      scheduledTime: '11:00',
+      assignedDoctor: 'Dr. Emma Wilson',
+      histopathology: {
+        gleasonScore: '4+3',
+        marginStatus: 'Negative',
+        stage: 'pT2c',
+        lymphNodes: 'Negative',
+        status: 'Complete'
+      },
+      complications: {
+        urinary: 'Mild incontinence',
+        sexual: 'Moderate ED',
+        bowel: 'None',
+        other: 'None'
+      },
+      recovery: {
+        catheterRemoved: '2024-02-02',
+        continence: 'Improving',
+        painLevel: 'Low',
+        mobility: 'Good'
+      },
+      riskAssessment: 'High Risk',
+      notes: 'Recovery progressing well, continence improving',
+      dischargeReady: false
+    },
+    {
+      id: 'POSTOP006',
+      patientName: 'Mark Johnson',
+      upi: 'URP2024013',
+      age: 67,
+      gender: 'Male',
+      phone: '+61 427 890 123',
+      email: 'mark.johnson@email.com',
+      surgeryDate: '2024-01-22',
+      surgeryType: 'RALP',
+      surgeon: 'Dr. James Brown',
+      status: 'Follow-up',
+      followUpStatus: 'Complete',
+      dischargeStatus: 'Ready',
+      lastPSA: 0.03,
+      lastPSADate: '2024-01-25',
+      nextFollowUp: '2024-04-22',
+      appointmentScheduled: true,
+      scheduledDate: '2024-04-22',
+      scheduledTime: '09:30',
+      assignedDoctor: 'Dr. James Brown',
+      histopathology: {
+        gleasonScore: '3+3',
+        marginStatus: 'Negative',
+        stage: 'pT2a',
+        lymphNodes: 'Negative',
+        status: 'Complete'
+      },
+      complications: {
+        urinary: 'None',
+        sexual: 'None',
+        bowel: 'None',
+        other: 'None'
+      },
+      recovery: {
+        catheterRemoved: '2024-01-25',
+        continence: 'Excellent',
+        painLevel: 'None',
+        mobility: 'Excellent'
+      },
+      riskAssessment: 'Low Risk',
+      notes: 'Excellent recovery, ready for discharge to GP care',
+      dischargeReady: true
+    },
+    {
+      id: 'POSTOP007',
+      patientName: 'Steven Garcia',
+      upi: 'URP2024014',
+      age: 54,
+      gender: 'Male',
+      phone: '+61 438 901 234',
+      email: 'steven.garcia@email.com',
+      surgeryDate: '2024-01-18',
+      surgeryType: 'RALP',
+      surgeon: 'Dr. Lisa Davis',
+      status: 'High Risk',
+      followUpStatus: 'In Progress',
+      dischargeStatus: 'MDT Review',
+      lastPSA: 0.4,
+      lastPSADate: '2024-01-20',
+      nextFollowUp: '2024-02-18',
+      appointmentScheduled: false,
+      histopathology: {
+        gleasonScore: '4+4',
+        marginStatus: 'Positive',
+        stage: 'pT3b',
+        lymphNodes: 'Negative',
+        status: 'Complete'
+      },
+      complications: {
+        urinary: 'Moderate incontinence',
+        sexual: 'Severe ED',
+        bowel: 'None',
+        other: 'None'
+      },
+      recovery: {
+        catheterRemoved: '2024-01-21',
+        continence: 'Poor',
+        painLevel: 'Moderate',
+        mobility: 'Fair'
+      },
+      riskAssessment: 'High Risk',
+      notes: 'Positive margins, elevated PSA, requires MDT review',
+      dischargeReady: false
+    },
+    {
+      id: 'POSTOP008',
+      patientName: 'Anthony Martinez',
+      upi: 'URP2024015',
+      age: 61,
+      gender: 'Male',
+      phone: '+61 449 012 345',
+      email: 'anthony.martinez@email.com',
+      surgeryDate: '2024-01-30',
+      surgeryType: 'RALP',
+      surgeon: 'Dr. Michael Chen',
+      status: 'Recovery',
+      followUpStatus: 'In Progress',
+      dischargeStatus: 'Pending',
+      lastPSA: 0.15,
+      lastPSADate: '2024-02-02',
+      nextFollowUp: '2024-02-28',
+      appointmentScheduled: true,
+      scheduledDate: '2024-02-28',
+      scheduledTime: '14:00',
+      assignedDoctor: 'Dr. Michael Chen',
+      histopathology: {
+        gleasonScore: '3+4',
+        marginStatus: 'Negative',
+        stage: 'pT2b',
+        lymphNodes: 'Negative',
+        status: 'Complete'
+      },
+      complications: {
+        urinary: 'None',
+        sexual: 'Mild ED',
+        bowel: 'None',
+        other: 'None'
+      },
+      recovery: {
+        catheterRemoved: '2024-02-03',
+        continence: 'Good',
+        painLevel: 'Low',
+        mobility: 'Good'
+      },
+      riskAssessment: 'Intermediate Risk',
+      notes: 'Good recovery, PSA levels within expected range',
+      dischargeReady: false
     }
   ];
 
   // Prevent background scrolling when modals are open
   useEffect(() => {
-    if (showScheduleModal || showRescheduleModal) {
+    if (showScheduleModal || showRescheduleModal || isBookAppointmentModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -231,7 +411,7 @@ const PostOpFollowUp = () => {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [showScheduleModal, showRescheduleModal]);
+  }, [showScheduleModal, showRescheduleModal, isBookAppointmentModalOpen]);
 
   const getRiskColor = (risk) => {
     switch (risk) {
@@ -258,11 +438,9 @@ const PostOpFollowUp = () => {
     
     // Status filter based on active tab
     const statusMatch = 
-      (activeFilter === 'All Status') ||
       (activeFilter === 'Recovery' && patient.status === 'Recovery') ||
       (activeFilter === 'Follow-up' && patient.status === 'Follow-up') ||
-      (activeFilter === 'High Risk' && patient.status === 'High Risk') ||
-      (activeFilter === 'Discharged' && patient.status === 'Discharged');
+      (activeFilter === 'High Risk' && patient.status === 'High Risk');
     
     return searchMatch && statusMatch;
   });
@@ -359,67 +537,31 @@ const PostOpFollowUp = () => {
     });
   };
 
+  const handleViewPatientDetails = (patientId) => {
+    openPatientDetails(patientId);
+  };
+
+  const handleBookAppointment = (patient) => {
+    setSelectedPatientForAppointment(patient);
+    setIsBookAppointmentModalOpen(true);
+  };
+
+  const handleAppointmentBooked = (appointmentData) => {
+    console.log('Appointment booked:', appointmentData);
+    // Here you would typically update the patient's status in your state management
+    // For now, we'll just close the modal and show a success message
+    setIsBookAppointmentModalOpen(false);
+    setSelectedPatientForAppointment(null);
+    alert('Appointment booked successfully!');
+  };
+
+  const handleCloseAppointmentModal = () => {
+    setIsBookAppointmentModalOpen(false);
+    setSelectedPatientForAppointment(null);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Post-Op Follow-Up</h1>
-        <p className="text-gray-600 mt-1">Manage recovery phase and post-operative care</p>
-      </div>
-
-
-      {/* Search and Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Search & Filter Post-Op Patients</h2>
-              <p className="text-sm text-gray-600 mt-1">Find patients in post-operative follow-up</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-gray-600">Live Search</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="px-6 py-4">
-          <nav className="flex space-x-2" aria-label="Tabs">
-            {['All Status', 'Recovery', 'Follow-up', 'High Risk', 'Discharged'].map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setActiveFilter(filter)}
-                className={`px-4 py-2 rounded-full font-medium text-sm transition-all duration-200 ${
-                  activeFilter === filter
-                    ? 'bg-gradient-to-r from-green-600 to-green-700 text-white'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  <span>{filter}</span>
-                  <span className={`py-0.5 px-2 rounded-full text-xs font-semibold transition-colors ${
-                    activeFilter === filter
-                      ? 'bg-white/20 text-white'
-                      : 'bg-gray-200 text-gray-700'
-                  }`}>
-                    {mockPostOpPatients.filter(patient => {
-                       switch (filter) {
-                         case 'All Status': return true;
-                         case 'Recovery': return patient.status === 'Recovery';
-                         case 'Follow-up': return patient.status === 'Follow-up';
-                         case 'High Risk': return patient.status === 'High Risk';
-                         case 'Discharged': return patient.status === 'Discharged';
-                         default: return true;
-                       }
-                     }).length}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </nav>
-        </div>
-      </div>
 
       {/* Post-Op Patients Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -465,8 +607,8 @@ const PostOpFollowUp = () => {
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Surgery Details</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Histopathology</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Latest PSA</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">View</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -500,46 +642,37 @@ const PostOpFollowUp = () => {
                       </div>
                     </td>
                     <td className="py-5 px-6">
-                      <div className="space-y-1">
-                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getMarginColor(patient.histopathology.marginStatus)}`}>
-                          {patient.histopathology.marginStatus}
-                        </span>
-                        <p className="text-xs text-gray-600">Gleason: {patient.histopathology.gleasonScore}</p>
-                        <p className="text-xs text-gray-600">Stage: {patient.histopathology.stage}</p>
-                      </div>
-                    </td>
-                    <td className="py-5 px-6">
                       <div>
                         <p className="font-medium text-gray-900">{patient.lastPSA} ng/mL</p>
-                        <p className="text-sm text-gray-500">{patient.lastPSADate}</p>
                         <p className="text-xs text-gray-400">Next: {patient.nextFollowUp}</p>
                       </div>
                     </td>
                     <td className="py-5 px-6">
+                      <button 
+                        onClick={() => handleViewPatientDetails(patient.id)}
+                        className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        <span>View</span>
+                      </button>
+                    </td>
+                    <td className="py-5 px-6">
                       <div className="flex flex-col space-y-1">
-                        <button 
-                          onClick={() => navigate(`/urology-nurse/patient-details/${patient.id}`)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-                        >
-                          <Eye className="h-3 w-3 mr-1" />
-                          <span>View</span>
-                        </button>
-                        
                         {!patient.appointmentScheduled ? (
                           <button 
-                            onClick={() => handleScheduleFollowUp(patient.id)}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                            onClick={() => handleBookAppointment(patient)}
+                            className="inline-flex items-center justify-center w-40 px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
                           >
                             <Calendar className="h-3 w-3 mr-1" />
-                            <span>Schedule Follow-up</span>
+                            <span>Book Follow-up</span>
                           </button>
                         ) : (
                           <button 
-                            onClick={() => handleReschedule(patient.id)}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                            onClick={() => handleBookAppointment(patient)}
+                            className="inline-flex items-center justify-center w-40 px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
                           >
-                            <Calendar className="h-3 w-3 mr-1" />
-                            <span>Reschedule</span>
+                            <Clock className="h-3 w-3 mr-1" />
+                            <span>Update Follow-up</span>
                           </button>
                         )}
                       </div>
@@ -563,7 +696,7 @@ const PostOpFollowUp = () => {
                 <button
                   onClick={() => {
                     setSearchTerm('');
-                    setActiveFilter('All Status');
+                    setActiveFilter('Recovery');
                   }}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                 >
@@ -806,6 +939,15 @@ const PostOpFollowUp = () => {
           </div>
         </div>
       )}
+
+
+      {/* Book Appointment Modal */}
+      <BookAppointmentModalWithPatient
+        isOpen={isBookAppointmentModalOpen}
+        onClose={handleCloseAppointmentModal}
+        onAppointmentBooked={handleAppointmentBooked}
+        selectedPatientData={selectedPatientForAppointment}
+      />
     </div>
   );
 };
