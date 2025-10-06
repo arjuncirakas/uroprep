@@ -1,25 +1,21 @@
-import React from 'react';
-import { Bell, User, LogOut, Settings, Menu } from 'lucide-react';
+import React, { useState } from 'react';
+import { Bell, User, LogOut, Menu } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 import { logout } from '../../store/slices/authSlice';
 import NotificationBell from '../NotificationBell';
+import ProfileModal from '../modals/ProfileModal';
 
 const Header = ({ onToggleSidebar, isCollapsed }) => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { user, role } = useSelector((state) => state.auth);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const handleLogout = () => {
     dispatch(logout());
   };
 
   const handleProfileClick = () => {
-    // Navigate to profile page based on user role
-    if (role === 'gp') {
-      navigate('/gp/profile');
-    }
-    // Add other role profile routes as needed
+    setIsProfileModalOpen(true);
   };
 
   const getRoleDisplayName = (role) => {
@@ -81,6 +77,12 @@ const Header = ({ onToggleSidebar, isCollapsed }) => {
           </div>
         </div>
       </div>
+      
+      {/* Profile Modal */}
+      <ProfileModal 
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
     </header>
   );
 };

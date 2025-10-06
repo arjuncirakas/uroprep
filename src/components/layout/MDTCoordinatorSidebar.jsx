@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { createPortal } from 'react-dom';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -13,9 +15,12 @@ import {
   ChevronRight,
   X
 } from 'lucide-react';
+import ProfileModal from '../modals/ProfileModal';
 
 const MDTCoordinatorSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
   const location = useLocation();
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const { user, role } = useSelector((state) => state.auth);
   
   const navigationItems = [
     { path: '/mdt-coordinator/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -25,9 +30,10 @@ const MDTCoordinatorSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse 
   ];
 
   return (
-    <aside className={`${isCollapsed ? 'w-16' : 'w-[280px]'} bg-white text-gray-700 h-screen fixed left-0 top-0 z-10 border-r border-gray-200 transition-all duration-300 ease-in-out ${
-      isOpen ? 'translate-x-0' : '-translate-x-full'
-    } sm:translate-x-0`}>
+    <>
+      <aside className={`${isCollapsed ? 'w-16' : 'w-[280px]'} bg-white text-gray-700 h-screen fixed left-0 top-0 z-10 border-r border-gray-200 transition-all duration-300 ease-in-out ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      } sm:translate-x-0`}>
       {/* Header */}
       <div className={`${isCollapsed ? 'px-3 py-6' : 'p-6'} `}>
         <div className="flex items-center justify-between">
@@ -93,30 +99,47 @@ const MDTCoordinatorSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse 
       {/* Profile Info Card */}
       {!isCollapsed && (
         <div className="absolute bottom-4 left-4 right-4">
-          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+          <button 
+            onClick={() => setIsProfileModalOpen(true)}
+            className="w-full bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02]"
+          >
             <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-[0.5rem] flex items-center justify-center">
-                  <span className="text-white font-semibold text-sm">MD</span>
-                </div>
-              <div className="flex-1">
-                <h4 className="font-semibold text-sm text-gray-800">Dr. Michael Brown</h4>
-                <p className="text-xs text-gray-500">MDT Coordinator</p>
+              <div className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-[0.5rem] flex items-center justify-center">
+                <span className="text-white font-semibold text-sm">MD</span>
+              </div>
+              <div className="flex-1 text-left">
+                <h4 className="font-semibold text-sm text-gray-800">{user?.name || 'User Name'}</h4>
+                <p className="text-xs text-gray-500">{user?.email || 'user@example.com'}</p>
               </div>
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             </div>
-          </div>
+          </button>
         </div>
       )}
       
       {/* Collapsed Profile Icon */}
       {isCollapsed && (
         <div className="absolute bottom-4 left-2 right-2">
-          <div className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-[0.5rem] flex items-center justify-center mx-auto">
+          <button 
+            onClick={() => setIsProfileModalOpen(true)}
+            className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-[0.5rem] flex items-center justify-center mx-auto hover:scale-110 transition-transform duration-200"
+          >
             <span className="text-white font-semibold text-sm">MD</span>
-          </div>
+          </button>
         </div>
       )}
+
     </aside>
+
+    {/* Profile Modal - Rendered using Portal to appear outside sidebar DOM tree */}
+    {isProfileModalOpen && createPortal(
+      <ProfileModal 
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />,
+      document.body
+    )}
+  </>
   );
 };
 
