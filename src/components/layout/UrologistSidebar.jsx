@@ -24,13 +24,9 @@ const UrologistSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) =>
   const { user, role } = useSelector((state) => state.auth);
   
   const navigationItems = [
-    { path: '/urologist/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    // { path: '/urologist/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/urologist/patient-management', label: 'Patient Management', icon: Users },
-    { path: '/urologist/opd-consultations', label: 'OPD Consultations', icon: ClipboardList },
-    { path: '/urologist/active-surveillance', label: 'Active Surveillance', icon: Activity },
     { path: '/urologist/mdt-cases', label: 'MDT Cases', icon: FileText },
-    { path: '/urologist/surgical-pathway', label: 'Surgical Pathway', icon: Stethoscope },
-    { path: '/urologist/post-op-follow-up', label: 'Post-Op Follow-Up', icon: Heart },
     // { path: '/urologist/referrals-communication', label: 'Referrals & Communication', icon: Mail }, // TODO: Add this feature later
   ];
 
@@ -85,12 +81,6 @@ const UrologistSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) =>
               // Special case: Patient Management should be active for patient-related routes
               if (item.path === '/urologist/patient-management' && 
                   location.pathname === '/urologist/add-patient') {
-                isActive = true;
-              }
-              
-              // Special case: OPD Consultations should be active for PSA chart routes
-              if (item.path === '/urologist/opd-consultations' && 
-                  location.pathname.startsWith('/urologist/psa-chart/')) {
                 isActive = true;
               }
               

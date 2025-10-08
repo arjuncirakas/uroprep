@@ -13,20 +13,24 @@ export const usePatientDetails = () => {
 export const PatientDetailsProvider = ({ children }) => {
   const [showPatientDetailsModal, setShowPatientDetailsModal] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState(null);
+  const [userRole, setUserRole] = useState('nurse');
 
-  const openPatientDetails = (patientId) => {
+  const openPatientDetails = (patientId, role = 'nurse') => {
     setSelectedPatientId(patientId);
+    setUserRole(role);
     setShowPatientDetailsModal(true);
   };
 
   const closePatientDetails = () => {
     setShowPatientDetailsModal(false);
     setSelectedPatientId(null);
+    setUserRole('nurse');
   };
 
   const value = {
     showPatientDetailsModal,
     selectedPatientId,
+    userRole,
     openPatientDetails,
     closePatientDetails
   };

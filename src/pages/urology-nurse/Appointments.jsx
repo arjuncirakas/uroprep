@@ -26,16 +26,15 @@ import {
   FileText,
   Trash2
 } from 'lucide-react';
-import BookAppointmentModal from '../../components/modals/BookAppointmentModal';
 
 const Appointments = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { appointments } = useSelector(state => state.appointments);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [viewMode, setViewMode] = useState('calendar'); // calendar, list, week, month
+  const [viewMode, setViewMode] = useState('calendar'); // week, calendar
   const [selectedFilter, setSelectedFilter] = useState('all');
-  const [activeFilter, setActiveFilter] = useState('Today');
+  const [activeFilter, setActiveFilter] = useState('All Appointments');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
@@ -52,8 +51,6 @@ const Appointments = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState({});
 
-  // Book Appointment Modal state
-  const [showBookAppointmentModal, setShowBookAppointmentModal] = useState(false);
 
   const today = new Date();
   const currentWeek = getWeekDates(today);
@@ -630,12 +627,11 @@ const Appointments = () => {
 
   // Filter appointments based on active filter and search term
   const filteredAppointments = localAppointments.filter(appointment => {
-    // Status filter
+    // Type filter
     const filterMatch = 
-      (activeFilter === 'Today' && appointment.date === selectedDate) ||
-      (activeFilter === 'Follow-ups' && (appointment.type === 'Follow-up' || appointment.type === 'Surveillance') && appointment.date === selectedDate) ||
-      (activeFilter === 'OPD Consultations' && appointment.type === 'OPD' && appointment.date === selectedDate) ||
-      (activeFilter === 'Surgeries' && appointment.type === 'Surgery' && appointment.date === selectedDate);
+      (activeFilter === 'All Appointments') ||
+      (activeFilter === 'Appointment for Investigation' && (appointment.type === 'OPD' || appointment.type === 'Surgery')) ||
+      (activeFilter === 'Appointment for Urologist' && (appointment.type === 'Follow-up' || appointment.type === 'Surveillance'));
     
     // Search filter
     const searchMatch = searchTerm === '' || 
@@ -775,20 +771,6 @@ const Appointments = () => {
     setDraggedAppointment(null);
   };
 
-  // Book Appointment Modal handlers
-  const handleBookAppointment = () => {
-    setShowBookAppointmentModal(true);
-  };
-
-  const handleAppointmentBooked = (appointmentData) => {
-    console.log('New appointment booked:', appointmentData);
-    // Here you could update your local state or dispatch to Redux store
-    // For now, we'll just log it
-  };
-
-  const handleCloseBookAppointmentModal = () => {
-    setShowBookAppointmentModal(false);
-  };
 
 
 
@@ -801,37 +783,14 @@ const Appointments = () => {
             <h2 className="text-xl font-semibold text-gray-900">Appointments Management</h2>
             <p className="text-sm text-gray-600 mt-1">Central calendar to manage schedules - OPD consultations, investigations, surgeries, follow-ups</p>
           </div>
-          <div className="flex items-center space-x-3">
-            {/* View Mode Toggle */}
-            <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('calendar')}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === 'calendar' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'
-                }`}
-                title="Calendar View"
-              >
-                <Grid3X3 className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === 'list' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'
-                }`}
-                title="List View"
-              >
-                <List className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4 text-gray-500" />
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-            </div>
+          <div className="flex items-center space-x-2">
+            <Calendar className="h-4 w-4 text-gray-500" />
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
           </div>
         </div>
       </div>
@@ -839,7 +798,7 @@ const Appointments = () => {
       {/* Filter Tabs */}
       <div className="px-6 py-4">
         <nav className="flex space-x-2" aria-label="Tabs">
-          {['Today', 'OPD Consultations', 'Surgeries', 'Follow-ups'].map((filter) => (
+          {['All Appointments', 'Appointment for Investigation', 'Appointment for Urologist'].map((filter) => (
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
@@ -858,10 +817,9 @@ const Appointments = () => {
                 }`}>
                   {localAppointments.filter(appointment => {
                      switch (filter) {
-                       case 'Today': return appointment.date === selectedDate;
-                       case 'OPD Consultations': return appointment.type === 'OPD' && appointment.date === selectedDate;
-                       case 'Surgeries': return appointment.type === 'Surgery' && appointment.date === selectedDate;
-                       case 'Follow-ups': return (appointment.type === 'Follow-up' || appointment.type === 'Surveillance') && appointment.date === selectedDate;
+                       case 'All Appointments': return true;
+                       case 'Appointment for Investigation': return (appointment.type === 'OPD' || appointment.type === 'Surgery');
+                       case 'Appointment for Urologist': return (appointment.type === 'Follow-up' || appointment.type === 'Surveillance');
                        default: return true;
                      }
                    }).length}
@@ -872,20 +830,152 @@ const Appointments = () => {
         </nav>
       </div>
 
-      {/* Book Appointment Button */}
-      <div className="px-6 py-4 border-t border-gray-200">
-        <div className="flex justify-end">
-          <button
-            onClick={handleBookAppointment}
-            className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
-          >
-            <UserPlus className="h-4 w-4 mr-2" />
-            Book Appointment
-          </button>
-        </div>
-      </div>
     </div>
   );
+
+  const renderWeekView = () => {
+    const weekDates = getWeekDates(new Date(selectedDate));
+    
+    const getAppointmentsForDate = (date) => {
+      const dateStr = date.toISOString().split('T')[0];
+      return filteredAppointments.filter(apt => apt.date === dateStr);
+    };
+    
+    return (
+      <div className="p-6">
+        {/* Week Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => {
+                const newDate = new Date(selectedDate);
+                newDate.setDate(newDate.getDate() - 7);
+                setSelectedDate(newDate.toISOString().split('T')[0]);
+              }}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <h3 className="text-xl font-semibold text-gray-900">
+              {weekDates[0].toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} - {weekDates[6].toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </h3>
+            <button
+              onClick={() => {
+                const newDate = new Date(selectedDate);
+                newDate.setDate(newDate.getDate() + 7);
+                setSelectedDate(newDate.toISOString().split('T')[0]);
+              }}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+          {/* View Mode Tabs */}
+          <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('week')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                viewMode === 'week' 
+                  ? 'bg-gradient-to-r from-green-800 to-black text-white shadow-md' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+              }`}
+              title="Week View"
+            >
+              Week
+            </button>
+            <button
+              onClick={() => setViewMode('calendar')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                viewMode === 'calendar' 
+                  ? 'bg-gradient-to-r from-green-800 to-black text-white shadow-md' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+              }`}
+              title="Month View"
+            >
+              Month
+            </button>
+          </div>
+        </div>
+
+        {/* Color Legend */}
+        <div className="mb-4 flex items-center justify-center space-x-6">
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-blue-500 rounded"></div>
+            <span className="text-sm font-medium text-gray-700">Appointment for Investigation</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-green-500 rounded"></div>
+            <span className="text-sm font-medium text-gray-700">Appointment for Urologist</span>
+          </div>
+        </div>
+
+        {/* Week Grid */}
+        <div className="grid grid-cols-7 gap-1">
+          {/* Day Headers */}
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+            <div key={day} className="p-3 text-center text-sm font-medium text-gray-500 bg-gray-50 rounded-lg">
+              {day}
+            </div>
+          ))}
+          
+          {/* Week Days */}
+          {weekDates.map((day, index) => {
+            const isToday = day.toDateString() === new Date().toDateString();
+            const dayAppointments = getAppointmentsForDate(day);
+            const isDragOver = dragOverDate && dragOverDate.toDateString() === day.toDateString();
+            
+            return (
+              <div
+                key={index}
+                className={`min-h-[200px] max-h-[400px] p-2 border border-gray-200 rounded-lg transition-all duration-200 flex flex-col ${
+                  isToday ? 'ring-2 ring-green-500 bg-green-50' : 'bg-white'
+                } ${
+                  isDragOver ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-400' : ''
+                }`}
+                onDragOver={(e) => handleDragOver(e, day)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, day)}
+              >
+                <div className={`text-sm font-medium mb-2 flex-shrink-0 ${
+                  isToday ? 'text-green-600' : 'text-gray-900'
+                }`}>
+                  {day.getDate()}
+                </div>
+                <div className="flex-1 overflow-y-auto space-y-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                  {dayAppointments.map(appointment => (
+                    <div
+                      key={appointment.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, appointment)}
+                      onDragEnd={handleDragEnd}
+                      onClick={() => handleAppointmentSelect(appointment)}
+                      className={`text-xs p-1 rounded cursor-move transition-all duration-200 flex-shrink-0 ${
+                        (appointment.type === 'OPD' || appointment.type === 'Surgery') ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' :
+                        (appointment.type === 'Follow-up' || appointment.type === 'Surveillance') ? 'bg-green-100 text-green-800 hover:bg-green-200' :
+                        'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                      } hover:shadow-md hover:scale-105`}
+                      title="Drag to reschedule"
+                    >
+                      <div className="font-medium flex items-center justify-between">
+                        <span>{appointment.time}</span>
+                        <span className="text-xs opacity-60">⋮⋮</span>
+                      </div>
+                      <div className="truncate">{appointment.patientName}</div>
+                    </div>
+                  ))}
+                  {dayAppointments.length === 0 && (
+                    <div className="text-xs text-gray-400 text-center py-2">
+                      No appointments
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   const renderCalendarView = () => {
     const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
@@ -903,7 +993,7 @@ const Appointments = () => {
     
     const getAppointmentsForDate = (date) => {
       const dateStr = date.toISOString().split('T')[0];
-      return localAppointments.filter(apt => apt.date === dateStr);
+      return filteredAppointments.filter(apt => apt.date === dateStr);
     };
     
     const navigateMonth = (direction) => {
@@ -933,14 +1023,45 @@ const Appointments = () => {
               <ChevronRight className="h-5 w-5" />
             </button>
           </div>
-          <button
-            onClick={() => setCurrentMonth(new Date())}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
-            Today
-          </button>
+          {/* View Mode Tabs */}
+          <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('week')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                viewMode === 'week' 
+                  ? 'bg-gradient-to-r from-green-800 to-black text-white shadow-md' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+              }`}
+              title="Week View"
+            >
+              Week
+            </button>
+            <button
+              onClick={() => setViewMode('calendar')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                viewMode === 'calendar' 
+                  ? 'bg-gradient-to-r from-green-800 to-black text-white shadow-md' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+              }`}
+              title="Month View"
+            >
+              Month
+            </button>
+          </div>
         </div>
         
+        {/* Color Legend */}
+        <div className="mb-4 flex items-center justify-center space-x-6">
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-blue-500 rounded"></div>
+            <span className="text-sm font-medium text-gray-700">Appointment for Investigation</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-green-500 rounded"></div>
+            <span className="text-sm font-medium text-gray-700">Appointment for Urologist</span>
+          </div>
+        </div>
+
         {/* Calendar Grid */}
         <div className="grid grid-cols-7 gap-1">
           {/* Day Headers */}
@@ -983,10 +1104,8 @@ const Appointments = () => {
                       onDragEnd={handleDragEnd}
                       onClick={() => handleAppointmentSelect(appointment)}
                       className={`text-xs p-1 rounded cursor-move transition-all duration-200 flex-shrink-0 ${
-                        appointment.type === 'OPD' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' :
-                        appointment.type === 'Surgery' ? 'bg-red-100 text-red-800 hover:bg-red-200' :
-                        appointment.type === 'Follow-up' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
-                        appointment.type === 'Surveillance' ? 'bg-purple-100 text-purple-800 hover:bg-purple-200' :
+                        (appointment.type === 'OPD' || appointment.type === 'Surgery') ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' :
+                        (appointment.type === 'Follow-up' || appointment.type === 'Surveillance') ? 'bg-green-100 text-green-800 hover:bg-green-200' :
                         'bg-gray-100 text-gray-800 hover:bg-gray-200'
                       } hover:shadow-md hover:scale-105`}
                       title="Drag to reschedule"
@@ -1012,102 +1131,6 @@ const Appointments = () => {
     );
   };
 
-  const renderAppointmentsList = () => (
-    <div className="overflow-x-auto">
-      {filteredAppointments.length > 0 ? (
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
-              <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider w-[150px]">Appointment</th>
-              <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Date & Time</th>
-              <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Status</th>
-              <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {filteredAppointments.map((appointment, index) => (
-              <tr key={appointment.id} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
-                <td className="py-5 px-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="relative">
-                      <div className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center shadow-sm">
-                        <span className="text-white font-semibold text-sm">
-                          {appointment.patientName.split(' ').map(n => n[0]).join('')}
-                        </span>
-                      </div>
-                      {appointment.priority === 'High' && (
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">{appointment.patientName}</p>
-                      <p className="text-sm text-gray-500">UPI: {appointment.upi}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="py-5 px-6">
-                  <p className="font-medium text-gray-900">{appointment.title}</p>
-                </td>
-                <td className="py-5 px-6">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{formatDate(appointment.date)}</p>
-                    <p className="text-sm text-gray-500">{appointment.time}</p>
-                  </div>
-                </td>
-                <td className="py-5 px-6">
-                  <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(appointment.status)}`}>
-                    {appointment.status}
-                  </span>
-                </td>
-                <td className="py-5 px-6">
-                  <div className="flex items-center space-x-2">
-                    <button 
-                      onClick={() => handleAppointmentSelect(appointment)}
-                      className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      <span>View Details</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <div className="text-center py-16">
-          <div className="mx-auto w-32 h-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-6 shadow-inner">
-            <Calendar className="h-12 w-12 text-gray-400" />
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-3">
-            No appointments found
-          </h3>
-          <p className="text-gray-500 mb-6 max-w-md mx-auto">
-            {activeFilter === 'Today' 
-              ? `No appointments scheduled for ${formatDate(selectedDate)}.`
-              : `No ${activeFilter.toLowerCase()} appointments scheduled for ${formatDate(selectedDate)}.`
-            }
-          </p>
-          <div className="flex items-center justify-center space-x-4">
-            <button
-              onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-            >
-              <Calendar className="h-4 w-4 mr-2" />
-              Go to Today
-            </button>
-            <button
-              onClick={() => setActiveFilter('Today')}
-              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
-            >
-              View All Today
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
 
 
   return (
@@ -1138,49 +1161,7 @@ const Appointments = () => {
       
       {/* Appointments Container */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        {viewMode === 'list' && (
-          <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Appointments List</h2>
-                <p className="text-sm text-gray-600 mt-1">All scheduled appointments and consultations</p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-gray-600">Live Data</span>
-              </div>
-            </div>
-          </div>
-        )}
-        {viewMode === 'calendar' ? renderCalendarView() : renderAppointmentsList()}
-        
-        {/* Pagination - Only show for list view */}
-        {viewMode === 'list' && (
-          <div className="px-6 py-4 border-t border-gray-200">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                <span>Showing {filteredAppointments.length} of {localAppointments.length} appointments</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                  Previous
-                </button>
-                <button className="px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-transparent rounded-lg">
-                  1
-                </button>
-                <button className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                  2
-                </button>
-                <button className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                  3
-                </button>
-                <button className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                  Next
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {viewMode === 'week' ? renderWeekView() : renderCalendarView()}
       </div>
 
       {/* Reschedule Confirmation Modal */}
@@ -1647,12 +1628,6 @@ const Appointments = () => {
         </div>
       )}
 
-      {/* Book Appointment Modal */}
-      <BookAppointmentModal
-        isOpen={showBookAppointmentModal}
-        onClose={handleCloseBookAppointmentModal}
-        onAppointmentBooked={handleAppointmentBooked}
-      />
 
     </div>
   );

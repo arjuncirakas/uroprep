@@ -253,7 +253,7 @@ const GPDashboard = () => {
       </div>
       
       {/* Quick Action Buttons */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-end mb-6">
         <div className="flex items-center space-x-3">
           <Link 
             to="/gp/referral-status"
@@ -262,14 +262,14 @@ const GPDashboard = () => {
             <Users className="h-4 w-4 mr-2 text-blue-600" />
             <span className="font-medium">My Referrals</span>
           </Link>
+          <button 
+            onClick={() => setShowNewReferralModal(true)}
+            className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            <span className="font-medium">New Referral</span>
+          </button>
         </div>
-        <button 
-          onClick={() => setShowNewReferralModal(true)}
-          className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
-        >
-          <FileText className="h-4 w-4 mr-2" />
-          <span className="font-medium">New Referral</span>
-        </button>
       </div>
 
       {/* Summary Cards - Exact match to nurse dashboard style */}

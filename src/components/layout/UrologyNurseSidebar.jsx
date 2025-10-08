@@ -27,11 +27,11 @@ const UrologyNurseSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse })
   const { user, role } = useSelector((state) => state.auth);
   
   const navigation = [
-    { name: 'Dashboard', href: '/urology-nurse/dashboard', icon: LayoutDashboard },
-    { name: 'Patients', href: '/urology-nurse/patients', icon: Users },
+    // { name: 'Dashboard', href: '/urology-nurse/dashboard', icon: LayoutDashboard },
     { name: 'Referral Triage', href: '/urology-nurse/triage', icon: AlertTriangle },
-    { name: 'Appointments', href: '/urology-nurse/appointments', icon: Calendar },
     { name: 'OPD Management', href: '/urology-nurse/opd-management', icon: Database },
+    { name: 'Patient Management', href: '/urology-nurse/patients', icon: Users },
+    { name: 'Appointments', href: '/urology-nurse/appointments', icon: Calendar },
     { name: 'Active Surveillance', href: '/urology-nurse/active-surveillance', icon: Activity },
     { name: 'Surgical Pathway', href: '/urology-nurse/surgical-pathway', icon: Stethoscope },
     { name: 'Post-Op Follow-up', href: '/urology-nurse/postop-followup', icon: ClipboardList },
@@ -79,7 +79,7 @@ const UrologyNurseSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse })
       <div className={`${isCollapsed ? 'px-2' : 'px-6'} py-4`}>
         <nav>
           <ul className="space-y-1">
-            {navigation.map((item) => {
+            {navigation.map((item, index) => {
               const Icon = item.icon;
               
               // Use NavigationContext to determine active state
@@ -119,20 +119,34 @@ const UrologyNurseSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse })
               }
               
               return (
-                <li key={item.name}>
-                  <NavLink
-                    to={item.href}
-                    className={`flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out ${
-                      isActive
-                        ? 'bg-gradient-to-r from-green-800 to-black text-white shadow-md transform scale-[1.02]'
-                        : 'text-gray-700 hover:bg-gray-100 hover:transform hover:scale-[1.01]'
-                    }`}
-                    title={isCollapsed ? item.name : ''}
-                  >
-                    <Icon className={`h-5 w-5 ${isCollapsed ? '' : 'mr-3'} transition-colors duration-300 ease-in-out ${isActive ? 'text-white' : 'text-gray-600'}`} />
-                    {!isCollapsed && <span className="transition-colors duration-300 ease-in-out">{item.name}</span>}
-                  </NavLink>
-                </li>
+                <React.Fragment key={item.name}>
+                  {/* Add separator after Active Surveillance (index 4) */}
+                  {index === 4 && (
+                    <li key="separator" className={`${isCollapsed ? 'mx-2' : 'mx-3'} my-5`}>
+                      <div className="flex items-center">
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                        <div className="mx-3">
+                          <div className="h-1 w-8 bg-gradient-to-r from-green-400 to-green-600 rounded-full shadow-sm border border-green-300"></div>
+                        </div>
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                      </div>
+                    </li>
+                  )}
+                  <li>
+                    <NavLink
+                      to={item.href}
+                      className={`flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out ${
+                        isActive
+                          ? 'bg-gradient-to-r from-green-800 to-black text-white shadow-md transform scale-[1.02]'
+                          : 'text-gray-700 hover:bg-gray-100 hover:transform hover:scale-[1.01]'
+                      }`}
+                      title={isCollapsed ? item.name : ''}
+                    >
+                      <Icon className={`h-5 w-5 ${isCollapsed ? '' : 'mr-3'} transition-colors duration-300 ease-in-out ${isActive ? 'text-white' : 'text-gray-600'}`} />
+                      {!isCollapsed && <span className="transition-colors duration-300 ease-in-out">{item.name}</span>}
+                    </NavLink>
+                  </li>
+                </React.Fragment>
               );
             })}
           </ul>

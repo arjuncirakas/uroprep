@@ -13,7 +13,6 @@ import {
   Activity,
   ArrowRight,
   Plus,
-  RefreshCw,
   UserCheck,
   ClipboardList,
   Shield,
@@ -571,10 +570,6 @@ const PostOpFollowUp = () => {
               <h2 className="text-xl font-semibold text-gray-900">Post-Op Follow-Up</h2>
               <p className="text-sm text-gray-600 mt-1">Manage recovery and discharge planning</p>
             </div>
-            <button className="flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              <span className="font-medium">Refresh Queue</span>
-            </button>
           </div>
         </div>
 

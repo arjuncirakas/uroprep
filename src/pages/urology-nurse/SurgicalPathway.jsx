@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Stethoscope, 
@@ -7,7 +7,6 @@ import {
   Calendar,
   AlertTriangle,
   X,
-  User,
   Phone,
   Mail,
   FileText,
@@ -15,7 +14,6 @@ import {
   Activity,
   ArrowRight,
   Plus,
-  RefreshCw,
   ClipboardList,
   Shield,
   Clock
@@ -28,10 +26,6 @@ const SurgicalPathway = () => {
   const { openPatientDetails } = usePatientDetails();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('Scheduled');
-  const [selectedDoctor, setSelectedDoctor] = useState('All Doctors');
-  const [doctorSearchTerm, setDoctorSearchTerm] = useState('');
-  const [isDoctorDropdownOpen, setIsDoctorDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [selectedPatientForSchedule, setSelectedPatientForSchedule] = useState(null);
@@ -64,7 +58,7 @@ const SurgicalPathway = () => {
       preOpStatus: 'In Progress',
       postOpStatus: 'Pending',
       lastPSA: 4.8,
-      riskCategory: 'Intermediate Risk',
+      riskCategory: 'Normal',
       notes: 'Pre-operative assessment completed',
       preOpChecklist: {
         ecg: true,
@@ -169,7 +163,7 @@ const SurgicalPathway = () => {
       preOpStatus: 'Complete',
       postOpStatus: 'In Progress',
       lastPSA: 0.02,
-      riskCategory: 'Intermediate Risk',
+      riskCategory: 'Normal',
       notes: 'Post-operative recovery progressing well',
       preOpChecklist: {
         ecg: true,
@@ -274,7 +268,7 @@ const SurgicalPathway = () => {
       preOpStatus: 'Complete',
       postOpStatus: 'Complete',
       lastPSA: 0.05,
-      riskCategory: 'Intermediate Risk',
+      riskCategory: 'Normal',
       notes: 'Surgery completed successfully, patient ready for discharge',
       preOpChecklist: {
         ecg: true,
@@ -329,20 +323,6 @@ const SurgicalPathway = () => {
     }
   ];
 
-  // Click outside to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDoctorDropdownOpen(false);
-        setDoctorSearchTerm('');
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   // Prevent background scrolling when modals are open
   useEffect(() => {
@@ -358,14 +338,6 @@ const SurgicalPathway = () => {
     };
   }, [showScheduleModal, showRescheduleModal, isBookAppointmentModalOpen]);
 
-  // Available doctors list
-  const availableDoctors = [
-    'Dr. Michael Chen',
-    'Dr. Sarah Wilson',
-    'Dr. Emma Wilson',
-    'Dr. James Brown',
-    'Dr. Lisa Davis'
-  ];
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -382,7 +354,7 @@ const SurgicalPathway = () => {
   const getRiskColor = (risk) => {
     switch (risk) {
       case 'Low Risk': return 'bg-green-100 text-green-800';
-      case 'Intermediate Risk': return 'bg-yellow-100 text-yellow-800';
+      case 'Normal': return 'bg-green-100 text-green-800';
       case 'High Risk': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -401,12 +373,7 @@ const SurgicalPathway = () => {
       (activeFilter === 'In Surgery' && patient.status === 'In Surgery') ||
       (activeFilter === 'Post-Op' && patient.status === 'Post-Op');
     
-    // Doctor filter
-    const doctorMatch = 
-      (selectedDoctor === 'All Doctors') ||
-      (selectedDoctor === patient.assignedSurgeon);
-    
-    return searchMatch && statusMatch && doctorMatch;
+    return searchMatch && statusMatch;
   });
 
 
@@ -542,98 +509,28 @@ const SurgicalPathway = () => {
               <h2 className="text-xl font-semibold text-gray-900">Surgical Pathway</h2>
               <p className="text-sm text-gray-600 mt-1">Manage pre-operative, surgical, and post-operative phases</p>
             </div>
-            <button className="flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              <span className="font-medium">Refresh Queue</span>
-            </button>
           </div>
         </div>
 
-        {/* Search Bar and Doctor Dropdown */}
+        {/* Search Bar */}
         <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by patient name, UPI, or surgeon..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Doctor Dropdown */}
-            <div className="relative" ref={dropdownRef}>
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by patient name, UPI, or surgeon..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
+            />
+            {searchTerm && (
               <button
-                onClick={() => setIsDoctorDropdownOpen(!isDoctorDropdownOpen)}
-                className="flex items-center px-4 py-3 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <User className="h-4 w-4 mr-2" />
-                <span>{selectedDoctor}</span>
-                <svg className="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                <X className="h-4 w-4" />
               </button>
-
-              {isDoctorDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                  <div className="p-3 border-b border-gray-200">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Search doctors..."
-                        value={doctorSearchTerm}
-                        onChange={(e) => setDoctorSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      />
-                    </div>
-                  </div>
-                  <div className="max-h-48 overflow-y-auto">
-                    <button
-                      onClick={() => {
-                        setSelectedDoctor('All Doctors');
-                        setIsDoctorDropdownOpen(false);
-                        setDoctorSearchTerm('');
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
-                        selectedDoctor === 'All Doctors' ? 'bg-green-50 text-green-700' : 'text-gray-700'
-                      }`}
-                    >
-                      All Doctors
-                    </button>
-                    {availableDoctors
-                      .filter(doctor => 
-                        doctor.toLowerCase().includes(doctorSearchTerm.toLowerCase())
-                      )
-                      .map((doctor) => (
-                        <button
-                          key={doctor}
-                          onClick={() => {
-                            setSelectedDoctor(doctor);
-                            setIsDoctorDropdownOpen(false);
-                            setDoctorSearchTerm('');
-                          }}
-                          className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
-                            selectedDoctor === doctor ? 'bg-green-50 text-green-700' : 'text-gray-700'
-                          }`}
-                        >
-                          {doctor}
-                        </button>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
 
@@ -730,7 +627,6 @@ const SurgicalPathway = () => {
                   onClick={() => {
                     setSearchTerm('');
                     setActiveFilter('Scheduled');
-                    setSelectedDoctor('All Doctors');
                   }}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                 >
@@ -820,20 +716,15 @@ const SurgicalPathway = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Assigned Surgeon *
                 </label>
-                <select
+                <input
+                  type="text"
                   name="doctor"
                   value={scheduleForm.doctor}
                   onChange={handleScheduleFormChange}
                   required
+                  placeholder="Enter surgeon name..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                >
-                  <option value="">Select a surgeon...</option>
-                  {availableDoctors.map((doctor) => (
-                    <option key={doctor} value={doctor}>
-                      {doctor}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
 
               <div>
@@ -922,20 +813,15 @@ const SurgicalPathway = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Assigned Surgeon *
                 </label>
-                <select
+                <input
+                  type="text"
                   name="doctor"
                   value={scheduleForm.doctor}
                   onChange={handleScheduleFormChange}
                   required
+                  placeholder="Enter surgeon name..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                >
-                  <option value="">Select a surgeon...</option>
-                  {availableDoctors.map((doctor) => (
-                    <option key={doctor} value={doctor}>
-                      {doctor}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
 
               <div>

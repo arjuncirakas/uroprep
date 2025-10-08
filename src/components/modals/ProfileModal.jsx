@@ -247,42 +247,42 @@ const ProfileModal = ({ isOpen, onClose }) => {
   const roleColor = getRoleColor(role);
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden border border-gray-200">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-gray-200">
         {/* Modal Header */}
-        <div className="bg-gradient-to-r from-slate-50 via-blue-50 to-indigo-50 border-b border-gray-200/60 px-8 py-6">
+        <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className={`p-3 bg-gradient-to-br ${roleColor} rounded-xl`}>
-                <RoleIcon className="h-6 w-6 text-white" />
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
+                <RoleIcon className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 tracking-tight">
+                <h3 className="text-lg font-semibold text-gray-900">
                   Professional Profile
                 </h3>
-                <p className="text-sm text-gray-600 font-medium mt-1">View and manage your professional information</p>
+                <p className="text-xs text-gray-600 mt-1">View and manage your professional information</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               {!isEditing ? (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="flex items-center px-4 py-2.5 text-blue-700 hover:text-blue-800 hover:bg-blue-50 rounded-xl transition-all duration-200 font-medium border border-blue-200 hover:border-blue-300"
+                  className="flex items-center px-3 py-2 text-green-700 hover:text-green-800 hover:bg-green-50 rounded-lg transition-all duration-200 text-sm font-medium border border-green-200 hover:border-green-300"
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Profile
                 </button>
               ) : (
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
                   <button
                     onClick={handleCancel}
-                    className="flex items-center px-4 py-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-all duration-200 font-medium border border-gray-200 hover:border-gray-300"
+                    className="flex items-center px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200 text-sm font-medium border border-gray-200 hover:border-gray-300"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSave}
-                    className="flex items-center px-4 py-2.5 text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl transition-all duration-200 font-medium"
+                    className="flex items-center px-3 py-2 text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-lg transition-all duration-200 text-sm font-medium"
                   >
                     <Save className="h-4 w-4 mr-2" />
                     Save Changes
@@ -291,7 +291,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
               )}
               <button
                 onClick={onClose}
-                className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:scale-105"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -300,109 +300,104 @@ const ProfileModal = ({ isOpen, onClose }) => {
         </div>
 
         {/* Modal Content */}
-        <div className="overflow-y-auto max-h-[calc(95vh-200px)] px-8 py-6">
+        <div className="overflow-y-auto max-h-[calc(90vh-140px)] px-6 py-4">
           {/* Profile Header */}
-          <div className="bg-gradient-to-br from-white via-slate-50 to-blue-50 rounded-2xl p-8 border border-gray-200/60 mb-8">
-            <div className="flex items-center space-x-6">
-              <div className={`h-24 w-24 bg-gradient-to-br ${roleColor} rounded-2xl flex items-center justify-center relative`}>
-                <User className="h-12 w-12 text-white" />
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
-                  <CheckCircle className="h-3 w-3 text-white" />
+          <div className="bg-gradient-to-r from-green-50 to-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
+                  <span className="text-white font-semibold text-sm">
+                    {editedProfile.name?.split(' ').map(n => n[0]).join('') || 'U'}
+                  </span>
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editedProfile.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        className="bg-transparent border-b border-gray-300 focus:border-green-500 focus:outline-none text-lg font-semibold"
+                      />
+                    ) : (
+                      editedProfile.name || 'User Name'
+                    )}
+                  </h2>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${roleColor} text-white`}>
+                      {getRoleDisplayName(role)}
+                    </span>
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Active
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="flex-1">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editedProfile.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      className="bg-transparent border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none w-full"
-                    />
-                  ) : (
-                    editedProfile.name || 'User Name'
-                  )}
-                </h2>
-                <div className="flex items-center space-x-3 mb-3">
-                  <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-gradient-to-r ${roleColor} text-white`}>
-                    <RoleIcon className="h-4 w-4 mr-2" />
-                    {getRoleDisplayName(role)}
-                  </span>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Active Status
-                  </span>
+              <div className="text-right text-sm text-gray-600">
+                <div className="flex items-center">
+                  <Mail className="h-4 w-4 mr-1 text-gray-500" />
+                  <span>{editedProfile.email}</span>
                 </div>
-                <div className="flex items-center space-x-6 text-sm text-gray-600">
-                  <div className="flex items-center">
-                    <Mail className="h-4 w-4 mr-2 text-gray-500" />
-                    <span className="font-medium">{editedProfile.email}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Phone className="h-4 w-4 mr-2 text-gray-500" />
-                    <span className="font-medium">{editedProfile.phone}</span>
-                  </div>
+                <div className="flex items-center mt-1">
+                  <Phone className="h-4 w-4 mr-1 text-gray-500" />
+                  <span>{editedProfile.phone}</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Profile Information */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
             {/* Personal Information */}
-            <div className="bg-white rounded-2xl border border-gray-200/60 p-6">
-              <div className="flex items-center mb-6">
-                <div className="p-2 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-lg mr-3">
-                  <User className="h-5 w-5 text-blue-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900">Personal Information</h3>
-              </div>
-              <div className="space-y-5">
+            <div className="border border-gray-200 rounded-lg p-4">
+              <h3 className="text-base font-semibold text-gray-900 mb-4">Personal Information</h3>
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">Email Address</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">Email Address</label>
                   {isEditing ? (
                     <input
                       type="email"
                       value={editedProfile.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
                     />
                   ) : (
-                    <div className="flex items-center text-gray-900 bg-gray-50 rounded-xl p-3 border border-gray-200">
-                      <Mail className="h-5 w-5 mr-3 text-blue-600" />
-                      <span className="font-medium">{editedProfile.email || 'Not provided'}</span>
+                    <div className="flex items-center text-gray-900 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      <Mail className="h-4 w-4 mr-2 text-green-600" />
+                      <span className="text-sm">{editedProfile.email || 'Not provided'}</span>
                     </div>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">Phone Number</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">Phone Number</label>
                   {isEditing ? (
                     <input
                       type="tel"
                       value={editedProfile.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
                     />
                   ) : (
-                    <div className="flex items-center text-gray-900 bg-gray-50 rounded-xl p-3 border border-gray-200">
-                      <Phone className="h-5 w-5 mr-3 text-blue-600" />
-                      <span className="font-medium">{editedProfile.phone || 'Not provided'}</span>
+                    <div className="flex items-center text-gray-900 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      <Phone className="h-4 w-4 mr-2 text-green-600" />
+                      <span className="text-sm">{editedProfile.phone || 'Not provided'}</span>
                     </div>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">Address</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">Address</label>
                   {isEditing ? (
                     <textarea
                       value={editedProfile.address}
                       onChange={(e) => handleInputChange('address', e.target.value)}
                       rows={3}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white resize-none"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm resize-none"
                     />
                   ) : (
-                    <div className="flex items-start text-gray-900 bg-gray-50 rounded-xl p-3 border border-gray-200">
-                      <MapPin className="h-5 w-5 mr-3 text-blue-600 mt-0.5" />
-                      <span className="font-medium">{editedProfile.address || 'Not provided'}</span>
+                    <div className="flex items-start text-gray-900 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      <MapPin className="h-4 w-4 mr-2 text-green-600 mt-0.5" />
+                      <span className="text-sm">{editedProfile.address || 'Not provided'}</span>
                     </div>
                   )}
                 </div>
@@ -410,29 +405,24 @@ const ProfileModal = ({ isOpen, onClose }) => {
             </div>
 
             {/* Professional Information */}
-            <div className="bg-white rounded-2xl border border-gray-200/60 p-6">
-              <div className="flex items-center mb-6">
-                <div className="p-2 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg mr-3">
-                  <Award className="h-5 w-5 text-purple-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900">
-                  {isGP() ? 'Practice Information' : 'Professional Information'}
-                </h3>
-              </div>
-              <div className="space-y-5">
+            <div className="border border-gray-200 rounded-lg p-4">
+              <h3 className="text-base font-semibold text-gray-900 mb-4">
+                {isGP() ? 'Practice Information' : 'Professional Information'}
+              </h3>
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">Employee ID</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">Employee ID</label>
                   {isEditing ? (
                     <input
                       type="text"
                       value={editedProfile.employeeId}
                       onChange={(e) => handleInputChange('employeeId', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
                     />
                   ) : (
-                    <div className="flex items-center text-gray-900 bg-gray-50 rounded-xl p-3 border border-gray-200">
-                      <Key className="h-5 w-5 mr-3 text-purple-600" />
-                      <span className="font-medium">{editedProfile.employeeId || 'Not provided'}</span>
+                    <div className="flex items-center text-gray-900 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      <Key className="h-4 w-4 mr-2 text-green-600" />
+                      <span className="text-sm">{editedProfile.employeeId || 'Not provided'}</span>
                     </div>
                   )}
                 </div>
@@ -674,28 +664,23 @@ const ProfileModal = ({ isOpen, onClose }) => {
           </div>
 
           {/* Qualifications */}
-          <div className="bg-white rounded-2xl border border-gray-200/60 p-6 mb-8">
-            <div className="flex items-center mb-6">
-              <div className="p-2 bg-gradient-to-r from-emerald-100 to-teal-100 rounded-lg mr-3">
-                <GraduationCap className="h-5 w-5 text-emerald-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900">Qualifications & Experience</h3>
-            </div>
+          <div className="border border-gray-200 rounded-lg p-4 mb-6">
+            <h3 className="text-base font-semibold text-gray-900 mb-4">Qualifications & Experience</h3>
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-2">Professional Qualifications</label>
+              <label className="block text-sm font-medium text-gray-600 mb-2">Professional Qualifications</label>
               {isEditing ? (
                 <textarea
                   value={editedProfile.qualifications}
                   onChange={(e) => handleInputChange('qualifications', e.target.value)}
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white resize-none"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm resize-none"
                   placeholder="e.g., MBBS, MD, FRCS, MRCGP, etc."
                 />
               ) : (
-                <div className="text-gray-900 bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <div className="text-gray-900 bg-gray-50 rounded-lg p-3 border border-gray-200">
                   <div className="flex items-start">
-                    <GraduationCap className="h-5 w-5 mr-3 text-emerald-600 mt-0.5" />
-                    <span className="font-medium leading-relaxed">{editedProfile.qualifications || 'No qualifications listed'}</span>
+                    <GraduationCap className="h-4 w-4 mr-2 text-green-600 mt-0.5" />
+                    <span className="text-sm">{editedProfile.qualifications || 'No qualifications listed'}</span>
                   </div>
                 </div>
               )}
@@ -703,28 +688,23 @@ const ProfileModal = ({ isOpen, onClose }) => {
           </div>
 
           {/* Emergency Contact */}
-          <div className="bg-white rounded-2xl border border-gray-200/60 p-6 mb-8">
-            <div className="flex items-center mb-6">
-              <div className="p-2 bg-gradient-to-r from-red-100 to-pink-100 rounded-lg mr-3">
-                <Phone className="h-5 w-5 text-red-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900">Emergency Contact</h3>
-            </div>
+          <div className="border border-gray-200 rounded-lg p-4 mb-6">
+            <h3 className="text-base font-semibold text-gray-900 mb-4">Emergency Contact</h3>
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-2">Emergency Contact Information</label>
+              <label className="block text-sm font-medium text-gray-600 mb-2">Emergency Contact Information</label>
               {isEditing ? (
                 <input
                   type="text"
                   value={editedProfile.emergencyContact}
                   onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
                   placeholder="Name and phone number"
                 />
               ) : (
-                <div className="text-gray-900 bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <div className="text-gray-900 bg-gray-50 rounded-lg p-3 border border-gray-200">
                   <div className="flex items-start">
-                    <Phone className="h-5 w-5 mr-3 text-red-600 mt-0.5" />
-                    <span className="font-medium">{editedProfile.emergencyContact || 'Not provided'}</span>
+                    <Phone className="h-4 w-4 mr-2 text-green-600 mt-0.5" />
+                    <span className="text-sm">{editedProfile.emergencyContact || 'Not provided'}</span>
                   </div>
                 </div>
               )}
@@ -733,10 +713,10 @@ const ProfileModal = ({ isOpen, onClose }) => {
         </div>
 
         {/* Modal Footer */}
-        <div className="bg-gradient-to-r from-slate-50 to-gray-50 border-t border-gray-200/60 px-8 py-6 flex justify-end">
+        <div className="bg-white border-t border-gray-200 px-6 py-4 flex justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-3 text-gray-700 hover:text-gray-900 hover:bg-white rounded-xl transition-all duration-200 font-medium border border-gray-200 hover:border-gray-300"
+            className="px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200 text-sm font-medium border border-gray-200 hover:border-gray-300"
           >
             Close
           </button>

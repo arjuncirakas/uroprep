@@ -80,7 +80,7 @@ const ActiveSurveillance = () => {
       lastMRI: '2023-10-15',
       lastBiopsy: '2023-08-20',
       gleasonScore: '3+3',
-      riskCategory: 'Low Risk',
+      riskCategory: 'Low',
       notes: 'Stable PSA, continue surveillance',
       psaHistory: [
         { date: '2023-01-15', value: 4.8 },
@@ -110,7 +110,7 @@ const ActiveSurveillance = () => {
       lastMRI: '2023-11-20',
       lastBiopsy: '2023-09-10',
       gleasonScore: '3+4',
-      riskCategory: 'Intermediate Risk',
+      riskCategory: 'High',
       notes: 'PSA velocity concern, review protocol',
       psaHistory: [
         { date: '2023-01-09', value: 3.8 },
@@ -137,7 +137,7 @@ const ActiveSurveillance = () => {
       lastMRI: '2023-12-15',
       lastBiopsy: '2023-10-05',
       gleasonScore: '3+4',
-      riskCategory: 'Intermediate Risk',
+      riskCategory: 'High',
       notes: 'PSA velocity >0.75 ng/mL/year - MDT review required',
       psaHistory: [
         { date: '2023-01-03', value: 3.2 },
@@ -164,7 +164,7 @@ const ActiveSurveillance = () => {
       lastMRI: '2023-09-10',
       lastBiopsy: '2023-07-15',
       gleasonScore: '3+3',
-      riskCategory: 'Low Risk',
+      riskCategory: 'Low',
       notes: 'Excellent compliance, stable parameters',
       psaHistory: [
         { date: '2023-03-20', value: 3.6 },
@@ -178,9 +178,8 @@ const ActiveSurveillance = () => {
 
   const getRiskColor = (risk) => {
     switch (risk) {
-      case 'Low Risk': return 'bg-green-100 text-green-800';
-      case 'Intermediate Risk': return 'bg-yellow-100 text-yellow-800';
-      case 'High Risk': return 'bg-red-100 text-red-800';
+      case 'Low': return 'bg-green-100 text-green-800';
+      case 'High': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -271,15 +270,9 @@ const ActiveSurveillance = () => {
       {/* Surveillance Patients Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">Active Surveillance Patients</h2>
-              <p className="text-sm text-gray-600 mt-1">Monitor PSA trends and compliance</p>
-            </div>
-            <button className="flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              <span className="font-medium">Refresh Queue</span>
-            </button>
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Active Surveillance Patients</h2>
+            <p className="text-sm text-gray-600 mt-1">Monitor PSA trends and compliance</p>
           </div>
         </div>
 
@@ -312,7 +305,6 @@ const ActiveSurveillance = () => {
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Latest PSA</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Risk Category</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">View</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
                 </tr>
@@ -355,11 +347,6 @@ const ActiveSurveillance = () => {
                       </div>
                     </td>
                     <td className="py-5 px-6">
-                      <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getRiskColor(patient.riskCategory)}`}>
-                        {patient.riskCategory}
-                      </span>
-                    </td>
-                    <td className="py-5 px-6">
                       <button 
                         onClick={() => handleViewPatientDetails(patient.id)}
                         className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
@@ -369,10 +356,10 @@ const ActiveSurveillance = () => {
                       </button>
                     </td>
                     <td className="py-5 px-6">
-                      <div className="flex flex-col space-y-1">
+                      <div className="flex space-x-2">
                         <button 
                           onClick={() => handlePSAEntry(patient.id)}
-                          className="inline-flex items-center justify-center w-40 px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
                         >
                           <Plus className="h-3 w-3 mr-1" />
                           <span>Add PSA</span>
@@ -381,7 +368,7 @@ const ActiveSurveillance = () => {
                         {!patient.appointmentScheduled ? (
                           <button 
                             onClick={() => handleBookAppointment(patient)}
-                            className="inline-flex items-center justify-center w-40 px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 border border-purple-600 rounded-lg shadow-sm hover:from-purple-700 hover:to-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 border border-purple-600 rounded-lg shadow-sm hover:from-purple-700 hover:to-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
                           >
                             <Calendar className="h-3 w-3 mr-1" />
                             <span>Book Review</span>
@@ -389,7 +376,7 @@ const ActiveSurveillance = () => {
                         ) : (
                           <button 
                             onClick={() => handleBookAppointment(patient)}
-                            className="inline-flex items-center justify-center w-40 px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
                           >
                             <Clock className="h-3 w-3 mr-1" />
                             <span>Update Review</span>

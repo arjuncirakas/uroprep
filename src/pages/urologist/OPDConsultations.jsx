@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import ClinicalFindingsModal from '../../components/modals/ClinicalFindingsModal';
-import PatientDetailsModal from '../../components/modals/PatientDetailsModal';
+import { usePatientDetails } from '../../contexts/PatientDetailsContext';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -61,14 +61,13 @@ const OPDConsultations = () => {
   const dispatch = useDispatch();
   const { db1 } = useSelector(state => state.databases);
   const { referrals } = useSelector(state => state.referrals);
+  const { openPatientDetails } = usePatientDetails();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [showClinicalDecisionModal, setShowClinicalDecisionModal] = useState(false);
   const [showClinicalFindingsModal, setShowClinicalFindingsModal] = useState(false);
   const [showPSAChartModal, setShowPSAChartModal] = useState(false);
-  const [showPatientDetailsModal, setShowPatientDetailsModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [selectedPatientForDetails, setSelectedPatientForDetails] = useState(null);
   const [sortBy, setSortBy] = useState('priority');
   const [psaChartFilter, setPsaChartFilter] = useState('6months');
   const [selectedDecision, setSelectedDecision] = useState(null);
@@ -324,13 +323,7 @@ const OPDConsultations = () => {
   };
 
   const handleViewPatientDetails = (patient) => {
-    setSelectedPatientForDetails(patient);
-    setShowPatientDetailsModal(true);
-  };
-
-  const handleClosePatientDetailsModal = () => {
-    setShowPatientDetailsModal(false);
-    setSelectedPatientForDetails(null);
+    openPatientDetails(patient.id);
   };
 
   const getStatusColor = (status) => {
@@ -899,13 +892,6 @@ const OPDConsultations = () => {
         isOpen={showClinicalFindingsModal}
       />
 
-      {/* Patient Details Modal */}
-      <PatientDetailsModal
-        isOpen={showPatientDetailsModal}
-        onClose={handleClosePatientDetailsModal}
-        patientId={selectedPatientForDetails?.id}
-        userRole="urologist"
-      />
 
       {/* PSA Chart Modal */}
       {showPSAChartModal && selectedPatient && (

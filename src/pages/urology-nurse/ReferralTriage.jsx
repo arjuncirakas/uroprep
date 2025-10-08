@@ -40,23 +40,38 @@ const ReferralTriage = () => {
   
   const [selectedReferral, setSelectedReferral] = useState(null);
   const [triageStatus, setTriageStatus] = useState('');
-  const [activeTab, setActiveTab] = useState('pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [showPatientModal, setShowPatientModal] = useState(false);
-  const [showTriageAcceptModal, setShowTriageAcceptModal] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showDateTimeModal, setShowDateTimeModal] = useState(false);
   const [showScheduleSuccessModal, setShowScheduleSuccessModal] = useState(false);
   const [showOPDModal, setShowOPDModal] = useState(false);
   const [showOPDSuccessModal, setShowOPDSuccessModal] = useState(false);
+  const [showMoveToOPDSuccessModal, setShowMoveToOPDSuccessModal] = useState(false);
+  const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
+  const [showSaveFailureModal, setShowSaveFailureModal] = useState(false);
+  const [clinicalData, setClinicalData] = useState({
+    currentPSA: '',
+    psaDate: new Date().toISOString().split('T')[0],
+    clinicalNotes: '',
+    symptoms: '',
+    familyHistory: '',
+    medications: '',
+    allergies: '',
+    vitalSigns: {
+      bloodPressure: '',
+      heartRate: '',
+      temperature: '',
+      weight: ''
+    }
+  });
+  const [documents, setDocuments] = useState([]);
   const [selectedProcedure, setSelectedProcedure] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedOPDDate, setSelectedOPDDate] = useState('');
   const [selectedOPDTime, setSelectedOPDTime] = useState('');
   const [selectedDoctor, setSelectedDoctor] = useState('');
-  const [modalActiveTab, setModalActiveTab] = useState('overview');
 
   // Enhanced dummy data with PSA criteria
   const enhancedReferrals = [
@@ -273,49 +288,49 @@ const ReferralTriage = () => {
     }
   };
 
-  const getProcedureStatusColor = (status) => {
-    switch (status) {
-      case 'pending': return 'bg-gray-100 text-gray-800';
-      case 'scheduled': return 'bg-blue-100 text-blue-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
 
   const handleViewPatient = (referral) => {
     setSelectedReferral(referral);
     setShowPatientModal(true);
-    setModalActiveTab('overview');
   };
 
   const closePatientModal = () => {
     setShowPatientModal(false);
     setSelectedReferral(null);
+    setDocuments([]);
   };
 
-  const handleTriageAccept = () => {
-    setShowTriageAcceptModal(true);
+  // Document handling functions
+  const addDocument = () => {
+    const newDocument = {
+      id: Date.now(),
+      title: '',
+      file: null,
+      fileName: ''
+    };
+    setDocuments([...documents, newDocument]);
   };
 
-  const confirmTriageAccept = () => {
-    // Handle the actual triage acceptance logic here
-    console.log('Triage accepted for patient:', selectedReferral?.patientName);
-    // You could dispatch an action to update the referral status
-    // dispatch(updateReferral({ id: selectedReferral?.id, status: 'triaged' }));
-    setShowTriageAcceptModal(false);
-    setShowSuccessModal(true);
+  const removeDocument = (documentId) => {
+    setDocuments(documents.filter(doc => doc.id !== documentId));
   };
 
-  const closeSuccessModal = () => {
-    setShowSuccessModal(false);
-    setShowPatientModal(false);
-    setSelectedReferral(null);
+  const updateDocumentTitle = (documentId, title) => {
+    setDocuments(documents.map(doc => 
+      doc.id === documentId ? { ...doc, title } : doc
+    ));
   };
 
-  const cancelTriageAccept = () => {
-    setShowTriageAcceptModal(false);
+  const handleFileUpload = (documentId, event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setDocuments(documents.map(doc => 
+        doc.id === documentId ? { ...doc, file, fileName: file.name } : doc
+      ));
+    }
   };
+
 
   // Procedure scheduling functions
   const handleScheduleProcedure = () => {
@@ -423,17 +438,14 @@ const ReferralTriage = () => {
 
 
   const filteredReferrals = enhancedReferrals.filter(referral => {
-    // Status filter based on active tab
-    const statusMatch = activeTab === 'pending' ? referral.status === 'pending' : referral.status === 'triaged';
-    
-    // Search filter
+    // Search filter only
     const searchMatch = searchTerm === '' || 
       referral.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       referral.referringGP.toLowerCase().includes(searchTerm.toLowerCase()) ||
       referral.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
       referral.practice.toLowerCase().includes(searchTerm.toLowerCase());
     
-    return statusMatch && searchMatch;
+    return searchMatch;
   });
 
   return (
@@ -451,45 +463,6 @@ const ReferralTriage = () => {
           </div>
         </div>
         
-        {/* Tab Switcher */}
-        <div className="px-6 py-4 bg-white border-b border-gray-200">
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setActiveTab('pending')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                activeTab === 'pending'
-                  ? 'bg-green-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              Pending
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                activeTab === 'pending'
-                  ? 'bg-green-400 text-white'
-                  : 'bg-gray-200 text-gray-600'
-              }`}>
-                {enhancedReferrals.filter(r => r.status === 'pending').length}
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveTab('triaged')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                activeTab === 'triaged'
-                  ? 'bg-green-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              Triaged
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                activeTab === 'triaged'
-                  ? 'bg-green-400 text-white'
-                  : 'bg-gray-200 text-gray-600'
-              }`}>
-                {enhancedReferrals.filter(r => r.status === 'triaged').length}
-              </span>
-            </button>
-          </div>
-        </div>
         
         {/* Search */}
         <div className="px-6 py-4 border-t border-gray-200">
@@ -525,8 +498,6 @@ const ReferralTriage = () => {
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Referring GP</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Status</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Procedure Status</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -535,15 +506,10 @@ const ReferralTriage = () => {
                   <tr key={referral.id} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
                     <td className="py-5 px-6">
                       <div className="flex items-center space-x-4">
-                        <div className="relative">
-                          <div className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center shadow-sm">
-                            <span className="text-white font-semibold text-sm">
-                              {referral.patientName.split(' ').map(n => n[0]).join('')}
-                            </span>
-                          </div>
-                          {referral.priority === 'urgent' && (
-                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
-                          )}
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center shadow-sm">
+                          <span className="text-white font-semibold text-sm">
+                            {referral.patientName.split(' ').map(n => n[0]).join('')}
+                          </span>
                         </div>
                         <div>
                           <p className="font-semibold text-gray-900">{referral.patientName}</p>
@@ -552,20 +518,7 @@ const ReferralTriage = () => {
                       </div>
                     </td>
                     <td className="py-5 px-6">
-                      <div>
-                        <p className="font-medium text-gray-900">{referral.referringGP}</p>
-                        <p className="text-sm text-gray-500">{referral.practice}</p>
-                      </div>
-                    </td>
-                    <td className="py-5 px-6">
-                      <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(referral.status)}`}>
-                        {referral.status.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="py-5 px-6">
-                      <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getProcedureStatusColor(referral.procedureStatus)}`}>
-                        {referral.procedureStatus}
-                      </span>
+                      <p className="font-medium text-gray-900">{referral.referringGP}</p>
                     </td>
                     <td className="py-5 px-6">
                       <div className="flex items-center space-x-2">
@@ -574,32 +527,8 @@ const ReferralTriage = () => {
                           className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
                         >
                           <Eye className="h-3 w-3 mr-1" />
-                          <span>View</span>
+                          <span>View/Add Details</span>
                         </button>
-                        {referral.status === 'triaged' && referral.procedureStatus === 'pending' && (
-                          <button
-                            onClick={() => {
-                              setSelectedReferral(referral);
-                              handleScheduleProcedure();
-                            }}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-800 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                          >
-                            <Calendar className="h-3 w-3 mr-1" />
-                            <span>Schedule Procedure</span>
-                          </button>
-                        )}
-                        {referral.procedureStatus === 'completed' && (
-                          <button
-                            onClick={() => {
-                              setSelectedReferral(referral);
-                              handleScheduleOPD();
-                            }}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-800 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                          >
-                            <Calendar className="h-3 w-3 mr-1" />
-                            <span>Schedule OPD</span>
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -617,24 +546,20 @@ const ReferralTriage = () => {
               <p className="text-gray-500 mb-6 max-w-md mx-auto">
                 {searchTerm !== ''
                   ? 'No referrals match your search criteria.'
-                  : `No ${activeTab} referrals found.`
+                  : 'No referrals found.'
                 }
               </p>
-              <div className="flex items-center justify-center space-x-4">
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Clear Search
-                </button>
-                <button
-                  onClick={() => setActiveTab(activeTab === 'pending' ? 'triaged' : 'pending')}
-                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
-                >
-                  Switch to {activeTab === 'pending' ? 'Triaged' : 'Pending'}
-                </button>
-              </div>
+              {searchTerm !== '' && (
+                <div className="flex items-center justify-center">
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Clear Search
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -647,7 +572,7 @@ const ReferralTriage = () => {
           <div className="relative top-4 mx-auto p-0  shadow-lg rounded-md bg-white max-w-6xl w-full min-w-[800px] mb-4 h-[90vh] flex flex-col">
             <div className="p-0 flex flex-col h-full">
               {/* Modal Header */}
-              <div className="flex items-center justify-end p-6 border-b border-gray-200 flex-shrink-0">
+              <div className="flex items-center justify-end p-3 border-b border-gray-200 flex-shrink-0">
                 <button
                   onClick={closePatientModal}
                   className="flex items-center px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
@@ -658,326 +583,388 @@ const ReferralTriage = () => {
               </div>
 
               {/* Patient Header Card */}
-              <div className="bg-white border-b border-gray-200 px-6 py-6 flex-shrink-0">
-                <div className="bg-gradient-to-r from-green-50 to-gray-50 border border-gray-200 rounded-lg px-6 py-6">
-                  <div className="flex items-start justify-between">
+              <div className="bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
+                <div className="bg-gradient-to-r from-green-50 to-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    {/* Left side - Patient Information */}
                     <div className="flex items-center space-x-4">
-                      <div className="relative">
-                        <div className="w-16 h-16 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-lg">
-                            {selectedReferral.patientName.split(' ').map(n => n[0]).join('')}
-                          </span>
-                        </div>
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
+                        <span className="text-white font-semibold text-sm">
+                          {selectedReferral.patientName.split(' ').map(n => n[0]).join('')}
+                        </span>
                       </div>
                       <div>
-                        <h1 className="text-2xl font-semibold text-gray-900">{selectedReferral.patientName}</h1>
-                        <p className="text-sm text-gray-600">Referral ID: {selectedReferral.id}</p>
-                        <div className="flex items-center space-x-4 mt-2">
-                          <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-md ${getStatusColor(selectedReferral.status)}`}>
+                        <h1 className="text-lg font-semibold text-gray-900">{selectedReferral.patientName}</h1>
+                        <p className="text-xs text-gray-600">Referral ID: {selectedReferral.id}</p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md ${getStatusColor(selectedReferral.status)}`}>
                             {selectedReferral.status.replace('_', ' ')}
                           </span>
-                          <span className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-md bg-green-100 text-green-800">
+                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md bg-green-100 text-green-800">
                             Age: {selectedReferral.age} years
+                          </span>
+                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md bg-blue-100 text-blue-800">
+                            {selectedReferral.gender}
                           </span>
                         </div>
                       </div>
                     </div>
+
+                    {/* Right side - GP Information */}
                     <div className="text-right">
-                      {selectedReferral.status === 'pending' && (
-                        <button
-                          onClick={handleTriageAccept}
-                          className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                        >
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          Accept Triage
-                        </button>
-                      )}
-                      {selectedReferral.status === 'triaged' && (
-                        <button
-                          onClick={handleScheduleProcedure}
-                          className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-                        >
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          Schedule Procedure
-                        </button>
-                      )}
+                      <h3 className="text-sm font-semibold text-gray-900 mb-1">Referring GP</h3>
+                      <p className="text-sm font-medium text-gray-900">{selectedReferral.referringGP}</p>
+                      <p className="text-xs text-gray-600">{selectedReferral.practice}</p>
+                      <p className="text-xs text-gray-500 mt-1">Referral Date: {selectedReferral.referralDate}</p>
                     </div>
                   </div>
                 </div>
               </div>
 
 
-              {/* Tabs */}
+              {/* Content */}
               <div className="bg-white flex flex-col flex-1 min-h-0">
-                <div className="border-b border-gray-200 flex-shrink-0">
-                  <nav className="flex space-x-8 px-6" aria-label="Tabs">
-                    {[
-                      { id: 'overview', name: 'Overview', icon: User },
-                      { id: 'psa', name: 'PSA Data', icon: TrendingUp }
-                    ].map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setModalActiveTab(tab.id)}
-                        className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-colors ${
-                          modalActiveTab === tab.id
-                            ? 'border-gray-900 text-gray-900'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }`}
-                      >
-                        <tab.icon className="h-4 w-4 mr-2" />
-                        {tab.name}
-                      </button>
-                    ))}
-                  </nav>
-                </div>
+                <div className="p-4 flex-1 overflow-y-auto">
 
-                <div className="p-6 flex-1 overflow-y-auto">
-                  {/* Overview Tab */}
-                  {modalActiveTab === 'overview' && (
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="border border-gray-200 rounded-lg p-5">
-                          <h3 className="font-semibold text-gray-900 mb-4 text-base">Patient Information</h3>
-                          <div className="space-y-3 text-sm">
-                            <div className="flex justify-between">
-                              <span className="font-medium text-gray-600">Name:</span>
-                              <span className="text-gray-900">{selectedReferral.patientName}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="font-medium text-gray-600">Referral ID:</span>
-                              <span className="text-gray-900">{selectedReferral.id}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="font-medium text-gray-600">Age:</span>
-                              <span className="text-gray-900">{selectedReferral.age} years</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="font-medium text-gray-600">Gender:</span>
-                              <span className="text-gray-900">{selectedReferral.gender}</span>
-                            </div>
+                  {/* PSA Data Section */}
+                  <div className="space-y-4 mb-6">
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                      <h2 className="text-base font-semibold text-gray-900 mb-4">PSA Data & Criteria</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+                          <div className="text-3xl font-bold text-blue-900">{selectedReferral.lastPSA}</div>
+                          <div className="text-sm text-blue-700">ng/mL</div>
+                          <div className="text-xs text-blue-600 mt-1">Latest PSA</div>
+                        </div>
+                        <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
+                          <div className="text-lg font-semibold text-green-900">{selectedReferral.psaCriteria}</div>
+                          <div className="text-sm text-green-700">PSA Criteria</div>
+                        </div>
+                        <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
+                          <div className="text-lg font-semibold text-purple-900">{selectedReferral.lastPSADate}</div>
+                          <div className="text-sm text-purple-700">Test Date</div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Comorbidities</h3>
+                          <div className="space-y-2">
+                            {selectedReferral.comorbidities.map((comorbidity, index) => (
+                              <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                {comorbidity}
+                              </span>
+                            ))}
                           </div>
                         </div>
-                        <div className="border border-gray-200 rounded-lg p-5">
-                          <h3 className="font-semibold text-gray-900 mb-4 text-base">Referring GP</h3>
-                          <div className="space-y-3 text-sm">
-                            <div className="flex justify-between">
-                              <span className="font-medium text-gray-600">GP Name:</span>
-                              <span className="text-gray-900">{selectedReferral.referringGP}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="font-medium text-gray-600">Practice:</span>
-                              <span className="text-gray-900">{selectedReferral.practice}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="font-medium text-gray-600">Referral Date:</span>
-                              <span className="text-gray-900">{selectedReferral.referralDate}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="font-medium text-gray-600">Received:</span>
-                              <span className="text-gray-900">{selectedReferral.receivedDate}</span>
-                            </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Current Medications</h3>
+                          <div className="space-y-2">
+                            {selectedReferral.medications.map((medication, index) => (
+                              <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {medication}
+                              </span>
+                            ))}
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-
-                  {/* PSA Data Tab */}
-                  {modalActiveTab === 'psa' && (
-                    <div className="space-y-6">
-                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-6">PSA Data & Criteria</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                          <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-                            <div className="text-3xl font-bold text-blue-900">{selectedReferral.lastPSA}</div>
-                            <div className="text-sm text-blue-700">ng/mL</div>
-                            <div className="text-xs text-blue-600 mt-1">Latest PSA</div>
-                          </div>
-                          <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
-                            <div className="text-lg font-semibold text-green-900">{selectedReferral.psaCriteria}</div>
-                            <div className="text-sm text-green-700">PSA Criteria</div>
-                          </div>
-                          <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
-                            <div className="text-lg font-semibold text-purple-900">{selectedReferral.lastPSADate}</div>
-                            <div className="text-sm text-purple-700">Test Date</div>
-                          </div>
-                        </div>
-                        
-                        <div className="mb-6">
-                          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Clinical Details</h3>
-                          <div className="bg-gray-50 rounded-lg p-4">
-                            <p className="text-sm text-gray-700">{selectedReferral.clinicalDetails}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div>
-                            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Comorbidities</h3>
-                            <div className="space-y-2">
-                              {selectedReferral.comorbidities.map((comorbidity, index) => (
-                                <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                  {comorbidity}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                          <div>
-                            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Current Medications</h3>
-                            <div className="space-y-2">
-                              {selectedReferral.medications.map((medication, index) => (
-                                <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                  {medication}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="mt-6">
-                          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Family History</h3>
-                          <div className="bg-gray-50 rounded-lg p-4">
-                            <p className="text-sm text-gray-700">{selectedReferral.familyHistory}</p>
-                          </div>
+                      
+                      <div className="mt-4">
+                        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Family History</h3>
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <p className="text-sm text-gray-700">{selectedReferral.familyHistory}</p>
                         </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+                  </div>
 
-      {/* Triage Accept Confirmation Modal */}
-      {showTriageAcceptModal && selectedReferral && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-md overflow-y-auto h-full w-full z-[60] flex items-center justify-center p-4">
-          <div className="relative mx-auto w-full max-w-md">
-            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-              {/* Header */}
-              <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-8 text-center">
-                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-white/20 backdrop-blur-sm mb-4">
-                  <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-white">Accept Patient Triage</h3>
-                <p className="text-green-100 text-sm mt-2">Confirm triage acceptance</p>
-              </div>
-              
-              {/* Content */}
-              <div className="px-6 py-6">
-                <p className="text-gray-600 text-center leading-relaxed">
-                  Are you sure you want to accept the triage for <span className="font-semibold text-gray-900">{selectedReferral.patientName}</span>? 
-                  This will move the patient to the next stage of the clinical workflow.
-                </p>
-                
-                <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-                  <div className="flex items-center mb-3">
-                    <div className="h-2 w-2 bg-blue-500 rounded-full mr-2"></div>
-                    <h4 className="text-sm font-semibold text-blue-900">Patient Details</h4>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div>
-                      <span className="text-blue-600 font-medium">PSA:</span>
-                      <span className="text-blue-800 ml-1">{selectedReferral.lastPSA} ng/mL</span>
-                    </div>
-                    <div>
-                      <span className="text-blue-600 font-medium">Age:</span>
-                      <span className="text-blue-800 ml-1">{selectedReferral.age} years</span>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="text-blue-600 font-medium">Priority:</span>
-                      <span className="text-blue-800 ml-1 capitalize">{selectedReferral.priority}</span>
+                  {/* Clinical Notes Section */}
+                  <div className="space-y-4 mb-6">
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                      <h2 className="text-base font-semibold text-gray-900 mb-4">Clinical Notes</h2>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1">
+                            Clinical Notes
+                          </label>
+                          <textarea
+                            value={clinicalData.clinicalNotes}
+                            onChange={(e) => setClinicalData({...clinicalData, clinicalNotes: e.target.value})}
+                            rows={4}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            placeholder="Enter clinical observations and notes..."
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-              
-              {/* Actions */}
-              <div className="px-6 pb-6">
-                <div className="flex space-x-3">
-                  <button
-                    onClick={confirmTriageAccept}
-                    className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-3 px-4 rounded-xl hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02]"
-                  >
-                    Accept Triage
-                  </button>
-                  <button
-                    onClick={cancelTriageAccept}
-                    className="flex-1 bg-gray-100 text-gray-700 font-semibold py-3 px-4 rounded-xl hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition-all duration-200"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Success Modal */}
-      {showSuccessModal && selectedReferral && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-md overflow-y-auto h-full w-full z-[70] flex items-center justify-center p-4">
-          <div className="relative mx-auto w-full max-w-md">
-            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-              {/* Header */}
-              <div className="bg-gradient-to-r from-emerald-500 to-green-600 px-6 py-8 text-center">
-                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-white/20 backdrop-blur-sm mb-4">
-                  <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                  </svg>
+                  {/* Patient Assessment Section */}
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                      <h2 className="text-base font-semibold text-gray-900 mb-4">Patient Assessment</h2>
+
+                      {/* Symptoms */}
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
+                          Symptoms
+                        </label>
+                        <textarea
+                          value={clinicalData.symptoms}
+                          onChange={(e) => setClinicalData({...clinicalData, symptoms: e.target.value})}
+                          rows={2}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          placeholder="Describe patient symptoms..."
+                        />
+                      </div>
+
+                      {/* Family History */}
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
+                          Family History
+                        </label>
+                        <textarea
+                          value={clinicalData.familyHistory}
+                          onChange={(e) => setClinicalData({...clinicalData, familyHistory: e.target.value})}
+                          rows={2}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          placeholder="Enter relevant family medical history..."
+                        />
+                      </div>
+
+                      {/* Medications and Allergies */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1">
+                            Current Medications
+                          </label>
+                          <textarea
+                            value={clinicalData.medications}
+                            onChange={(e) => setClinicalData({...clinicalData, medications: e.target.value})}
+                            rows={2}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            placeholder="List current medications..."
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1">
+                            Allergies
+                          </label>
+                          <textarea
+                            value={clinicalData.allergies}
+                            onChange={(e) => setClinicalData({...clinicalData, allergies: e.target.value})}
+                            rows={2}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            placeholder="List known allergies..."
+                          />
+                        </div>
+                      </div>
+
+                      {/* Vital Signs */}
+                      <div className="mb-4">
+                        <h3 className="text-sm font-medium text-gray-700 mb-3">Vital Signs</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">
+                              Blood Pressure
+                            </label>
+                            <input
+                              type="text"
+                              value={clinicalData.vitalSigns.bloodPressure}
+                              onChange={(e) => setClinicalData({
+                                ...clinicalData, 
+                                vitalSigns: {...clinicalData.vitalSigns, bloodPressure: e.target.value}
+                              })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                              placeholder="120/80"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">
+                              Heart Rate (bpm)
+                            </label>
+                            <input
+                              type="number"
+                              value={clinicalData.vitalSigns.heartRate}
+                              onChange={(e) => setClinicalData({
+                                ...clinicalData, 
+                                vitalSigns: {...clinicalData.vitalSigns, heartRate: e.target.value}
+                              })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                              placeholder="72"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">
+                              Temperature (°C)
+                            </label>
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={clinicalData.vitalSigns.temperature}
+                              onChange={(e) => setClinicalData({
+                                ...clinicalData, 
+                                vitalSigns: {...clinicalData.vitalSigns, temperature: e.target.value}
+                              })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                              placeholder="36.5"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">
+                              Weight (kg)
+                            </label>
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={clinicalData.vitalSigns.weight}
+                              onChange={(e) => setClinicalData({
+                                ...clinicalData, 
+                                vitalSigns: {...clinicalData.vitalSigns, weight: e.target.value}
+                              })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                              placeholder="70.5"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* Documents & Test Results Section */}
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-base font-semibold text-gray-900">Documents & Test Results</h2>
+                        <button
+                          onClick={addDocument}
+                          className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Document
+                        </button>
+                      </div>
+
+                      {documents.length === 0 ? (
+                        <div className="text-center py-8">
+                          <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                            <FileText className="h-8 w-8 text-gray-400" />
+                          </div>
+                          <p className="text-sm text-gray-500 mb-4">No documents added yet</p>
+                          <button
+                            onClick={addDocument}
+                            className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add First Document
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {documents.map((document, index) => (
+                            <div key={document.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                              <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-sm font-medium text-gray-700">Document {index + 1}</h3>
+                                <button
+                                  onClick={() => removeDocument(document.id)}
+                                  className="flex items-center px-2 py-1 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 hover:border-red-300 transition-colors"
+                                >
+                                  <X className="h-3 w-3 mr-1" />
+                                  Remove
+                                </button>
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                                    Document Title
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={document.title}
+                                    onChange={(e) => updateDocumentTitle(document.id, e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                    placeholder="e.g., PSA Test Results, MRI Report, Biopsy Report"
+                                  />
+                                </div>
+                                
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                                    Upload File
+                                  </label>
+                                  <div className="relative">
+                                    <input
+                                      type="file"
+                                      onChange={(e) => handleFileUpload(document.id, e)}
+                                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.tiff"
+                                    />
+                                    <div className="flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors">
+                                      <div className="flex items-center">
+                                        <Upload className="h-4 w-4 text-gray-400 mr-2" />
+                                        <span className="text-sm text-gray-600">
+                                          {document.fileName || 'Choose file...'}
+                                        </span>
+                                      </div>
+                                      <span className="text-xs text-gray-500">Browse</span>
+                                    </div>
+                                  </div>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Supported formats: PDF, DOC, DOCX, JPG, PNG, TIFF
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Save Clinical Data Button */}
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                      <div className="pt-4 border-t border-gray-200">
+                        <button
+                          onClick={() => {
+                            console.log('Saving clinical data:', clinicalData);
+                            console.log('Saving documents:', documents);
+                            // Here you would typically save the data to your backend
+                            // Simulate success for now - in real app, handle success/failure based on API response
+                            setShowSaveSuccessModal(true);
+                          }}
+                          className="w-full flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-[1.01]"
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Save Clinical Data
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-white">Triage Accepted Successfully!</h3>
-                <p className="text-green-100 text-sm mt-2">Patient moved to next stage</p>
               </div>
               
-              {/* Content */}
-              <div className="px-6 py-6">
-                <p className="text-gray-600 text-center leading-relaxed">
-                  The triage for <span className="font-semibold text-gray-900">{selectedReferral.patientName}</span> has been accepted and the patient has been moved to the next stage of the clinical workflow.
-                </p>
-                
-                <div className="mt-6 p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-100">
-                  <div className="flex items-center mb-3">
-                    <div className="h-2 w-2 bg-emerald-500 rounded-full mr-2"></div>
-                    <h4 className="text-sm font-semibold text-emerald-900">Status Updated</h4>
-                  </div>
-                  <div className="space-y-2 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-emerald-600 font-medium">Referral ID:</span>
-                      <span className="text-emerald-800 font-mono">{selectedReferral.id}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-emerald-600 font-medium">Status:</span>
-                      <span className="text-emerald-800">Triaged</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-emerald-600 font-medium">Next Step:</span>
-                      <span className="text-emerald-800">Clinical Assessment</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Actions */}
-              <div className="px-6 pb-6">
+              {/* Footer Section */}
+              <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
                 <button
-                  onClick={closeSuccessModal}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold py-3 px-4 rounded-xl hover:from-emerald-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02]"
+                  onClick={() => {
+                    // Handle move to OPD logic
+                    console.log('Moving patient to OPD:', selectedReferral.patientName);
+                    setShowMoveToOPDSuccessModal(true);
+                  }}
+                  className="flex items-center px-4 py-2 bg-gradient-to-r from-black to-green-600 text-white font-medium rounded-lg shadow-lg hover:from-gray-800 hover:to-green-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 ease-in-out transform hover:scale-105"
                 >
-                  Continue
+                  <Stethoscope className="h-4 w-4 mr-2" />
+                  <span>Move to OPD</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
+
 
       {/* Schedule Procedure Modal */}
       {showScheduleModal && selectedReferral && (
@@ -1398,6 +1385,138 @@ const ReferralTriage = () => {
                   className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-3 px-4 rounded-xl hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02]"
                 >
                   Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Move to OPD Success Modal */}
+      {showMoveToOPDSuccessModal && selectedReferral && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-[130] flex items-center justify-center p-4">
+          <div className="relative mx-auto w-full max-w-md">
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-emerald-500 to-green-600 px-6 py-8 text-center">
+                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-white/20 backdrop-blur-sm mb-4">
+                  <Stethoscope className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white">Patient Moved to OPD!</h3>
+                <p className="text-green-100 text-sm mt-2">Patient has been successfully transferred to OPD</p>
+              </div>
+              
+              {/* Content */}
+              <div className="px-6 py-6">
+                <div className="text-center">
+                  <div className="p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-100">
+                    <div className="text-sm text-emerald-800 space-y-2">
+                      <p><strong>Patient:</strong> {selectedReferral.patientName}</p>
+                      <p><strong>Referral ID:</strong> {selectedReferral.id}</p>
+                      <p><strong>Status:</strong> Moved to OPD</p>
+                      <p><strong>Date:</strong> {new Date().toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-4">
+                    The patient has been successfully moved to the OPD workflow and will be scheduled for consultation.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Actions */}
+              <div className="px-6 pb-6">
+                <button
+                  onClick={() => {
+                    setShowMoveToOPDSuccessModal(false);
+                    setShowPatientModal(false);
+                    setSelectedReferral(null);
+                  }}
+                  className="w-full bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold py-3 px-4 rounded-xl hover:from-emerald-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02]"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Save Success Modal */}
+      {showSaveSuccessModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-[140] flex items-center justify-center p-4">
+          <div className="relative mx-auto w-full max-w-md">
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-8 text-center">
+                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-white/20 backdrop-blur-sm mb-4">
+                  <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-white">Data Saved Successfully!</h3>
+                <p className="text-green-100 text-sm mt-2">Clinical data has been saved</p>
+              </div>
+              
+              {/* Content */}
+              <div className="px-6 py-6">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">
+                    The clinical data for {selectedReferral?.patientName} has been successfully saved to the system.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Actions */}
+              <div className="px-6 pb-6">
+                <button
+                  onClick={() => setShowSaveSuccessModal(false)}
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-3 px-4 rounded-xl hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02]"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Save Failure Modal */}
+      {showSaveFailureModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-[140] flex items-center justify-center p-4">
+          <div className="relative mx-auto w-full max-w-md">
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-8 text-center">
+                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-white/20 backdrop-blur-sm mb-4">
+                  <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-white">Save Failed</h3>
+                <p className="text-red-100 text-sm mt-2">Unable to save clinical data</p>
+              </div>
+              
+              {/* Content */}
+              <div className="px-6 py-6">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">
+                    There was an error saving the clinical data. Please try again or contact support if the problem persists.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Actions */}
+              <div className="px-6 pb-6">
+                <button
+                  onClick={() => setShowSaveFailureModal(false)}
+                  className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold py-3 px-4 rounded-xl hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02]"
+                >
+                  Try Again
                 </button>
               </div>
             </div>

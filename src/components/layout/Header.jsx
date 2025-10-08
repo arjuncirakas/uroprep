@@ -72,7 +72,7 @@ const Header = ({ onToggleSidebar, isCollapsed }) => {
               className="p-2.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 hover:scale-105 group"
               title="Logout"
             >
-              <LogOut className="h-4 w-4 group-hover:rotate-12 transition-transform duration-200" />
+              <LogOut className="h-4 w-4" />
             </button>
           </div>
         </div>

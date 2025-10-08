@@ -1,46 +1,20 @@
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 import AddPatientModal from '../../components/modals/AddPatientModal';
 import { usePatientDetails } from '../../contexts/PatientDetailsContext';
 import { 
   Search, 
   UserPlus, 
   Eye, 
-  Edit, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Calendar,
-  Clock,
-  Database,
-  Activity,
-  Stethoscope,
-  Heart,
-  ArrowRight,
   X,
-  Filter,
-  User,
-  FileText,
-  AlertTriangle,
-  CheckCircle,
-  Target,
-  Shield,
   Users
 } from 'lucide-react';
 
 const PatientManagement = () => {
-  const navigate = useNavigate();
-  const { db1, db2, db3, db4 } = useSelector(state => state.databases);
-  const { referrals } = useSelector(state => state.referrals);
   const { openPatientDetails } = usePatientDetails();
-  
-  // Mock logged-in doctor (in real app, this would come from auth state)
-  const loggedInDoctor = 'Dr. Michael Chen';
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPathway, setSelectedPathway] = useState('all');
-  const [activeTab, setActiveTab] = useState('All Patients');
+  const [activeTab, setActiveTab] = useState('New Patients');
   const [sortBy, setSortBy] = useState('name');
   
   // Add Patient Modal state
@@ -336,9 +310,21 @@ const PatientManagement = () => {
     
     const pathwayMatch = selectedPathway === 'all' || patient.status === selectedPathway;
     
-    // Tab filtering
-    const tabMatch = activeTab === 'All Patients' || 
-      (activeTab === 'My Patients' && patient.assignedDoctor === loggedInDoctor);
+    // Tab filtering based on database/pathway
+    let tabMatch = false;
+    switch (activeTab) {
+      case 'New Patients':
+        tabMatch = patient.database === 'DB1' || patient.status === 'OPD Queue';
+        break;
+      case 'Surgical Pathway':
+        tabMatch = patient.database === 'DB3' || patient.status === 'Surgery Scheduled' || patient.status === 'Inpatient';
+        break;
+      case 'Post-op Follow-up':
+        tabMatch = patient.database === 'DB4' || patient.status === 'Post-Op Follow-Up' || patient.status === 'Discharged';
+        break;
+      default:
+        tabMatch = true;
+    }
     
     return searchMatch && pathwayMatch && tabMatch;
   });
@@ -361,41 +347,12 @@ const PatientManagement = () => {
   });
 
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'OPD Queue': return 'bg-blue-100 text-blue-800';
-      case 'Active Surveillance': return 'bg-green-100 text-green-800';
-      case 'Surgery Scheduled': return 'bg-orange-100 text-orange-800';
-      case 'Post-Op Follow-Up': return 'bg-purple-100 text-purple-800';
-      case 'Inpatient': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPatientTypeColor = (patientType) => {
-    switch (patientType) {
-      case 'OPD': return 'bg-blue-100 text-blue-800';
-      case 'IPD': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'High': return 'bg-red-100 text-red-800';
       case 'Medium': return 'bg-yellow-100 text-yellow-800';
       case 'Normal': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getDatabaseIcon = (database) => {
-    switch (database) {
-      case 'DB1': return Database;
-      case 'DB2': return Activity;
-      case 'DB3': return Stethoscope;
-      case 'DB4': return Heart;
-      default: return User;
     }
   };
 
@@ -419,7 +376,7 @@ const PatientManagement = () => {
 
   // Patient Details Modal handlers
   const handleViewPatientDetails = (patientId) => {
-    openPatientDetails(patientId);
+    openPatientDetails(patientId, 'urologist');
   };
 
 
@@ -450,39 +407,56 @@ const PatientManagement = () => {
         </div>
         {/* Patient Tab Switcher */}
         <div className="px-6 py-4 bg-white border-b border-gray-200">
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 overflow-x-auto">
             <button
-              onClick={() => setActiveTab('All Patients')}
-              className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                activeTab === 'All Patients'
+              onClick={() => setActiveTab('New Patients')}
+              className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                activeTab === 'New Patients'
                   ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              All Patients
+              New Patients
               <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                activeTab === 'All Patients'
+                activeTab === 'New Patients'
                   ? 'bg-green-400 text-white'
                   : 'bg-gray-200 text-gray-600'
               }`}>
-                {allPatients.length}
+                {allPatients.filter(p => p.database === 'DB1' || p.status === 'OPD Queue').length}
               </span>
             </button>
             <button
-              onClick={() => setActiveTab('My Patients')}
-              className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                activeTab === 'My Patients'
+              onClick={() => setActiveTab('Surgical Pathway')}
+              className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                activeTab === 'Surgical Pathway'
                   ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              My Patients
+              Surgical Pathway
               <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                activeTab === 'My Patients'
+                activeTab === 'Surgical Pathway'
                   ? 'bg-green-400 text-white'
                   : 'bg-gray-200 text-gray-600'
               }`}>
-                {allPatients.filter(p => p.assignedDoctor === loggedInDoctor).length}
+                {allPatients.filter(p => p.database === 'DB3' || p.status === 'Surgery Scheduled' || p.status === 'Inpatient').length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('Post-op Follow-up')}
+              className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                activeTab === 'Post-op Follow-up'
+                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              Post-op Follow-up
+              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                activeTab === 'Post-op Follow-up'
+                  ? 'bg-green-400 text-white'
+                  : 'bg-gray-200 text-gray-600'
+              }`}>
+                {allPatients.filter(p => p.database === 'DB4' || p.status === 'Post-Op Follow-Up' || p.status === 'Discharged').length}
               </span>
             </button>
           </div>
@@ -502,8 +476,6 @@ const PatientManagement = () => {
         <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Patient List</h2>
-              <p className="text-sm text-gray-600 mt-1">All patients under urologist care</p>
             </div>
           </div>
         </div>
@@ -536,7 +508,6 @@ const PatientManagement = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Pathway</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Latest PSA</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Next Appointment</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Priority</th>
@@ -545,7 +516,6 @@ const PatientManagement = () => {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredPatients.map((patient, index) => {
-                const DatabaseIcon = getDatabaseIcon(patient.database);
                 return (
                     <tr key={patient.id} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
                       <td className="py-5 px-6">
@@ -566,11 +536,6 @@ const PatientManagement = () => {
                             <p className="text-xs text-gray-400">Age: {patient.age} • {patient.referringGP}</p>
                           </div>
                         </div>
-                      </td>
-                      <td className="py-5 px-6">
-                        <span className={`inline-flex items-center justify-center text-center px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(patient.status)}`}>
-                          {patient.status}
-                        </span>
                       </td>
                       <td className="py-5 px-6">
                         <p className="font-medium text-gray-900">{patient.psa} ng/mL</p>
@@ -614,7 +579,7 @@ const PatientManagement = () => {
                 <button
                   onClick={() => {
                     setSearchTerm('');
-                    setActiveTab('All Patients');
+                    setActiveTab('New Patients');
                   }}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                 >

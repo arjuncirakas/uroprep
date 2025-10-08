@@ -22,7 +22,7 @@ const AdminSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
   const { user, role } = useSelector((state) => state.auth);
   
   const navigationItems = [
-    { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    // { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/admin/users', label: 'User Management', icon: Users },
     { path: '/admin/analytics', label: 'Analytics & Reports', icon: BarChart3 },
     { path: '/admin/settings', label: 'System Settings', icon: Settings },

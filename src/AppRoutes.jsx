@@ -111,6 +111,7 @@ const AppRoutes = () => {
                 <UrologyNurseLayout />
               </ProtectedRoute>
             }>
+              <Route index element={<Navigate to="triage" replace />} />
               <Route path="dashboard" element={<UrologyNurseDashboard />} />
               <Route path="patients" element={<Patients />} />
               <Route path="triage" element={<ReferralTriage />} />
@@ -139,6 +140,7 @@ const AppRoutes = () => {
           <UrologistLayout />
         </ProtectedRoute>
       }>
+        <Route index element={<Navigate to="patient-management" replace />} />
         <Route path="dashboard" element={<UrologistDashboard />} />
         <Route path="patient-management" element={<PatientManagement />} />
         <Route path="psa-chart/:id" element={<PSAChart />} />

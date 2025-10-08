@@ -30,7 +30,8 @@ import {
   ChevronRight,
   Download,
   Database,
-  Users
+  Users,
+  ArrowRightCircle
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -56,7 +57,7 @@ ChartJS.register(
   Legend
 );
 
-const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole = 'urologist' }) => {
+const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isClinicalHistoryModalOpen, setIsClinicalHistoryModalOpen] = useState(false);
   const [isPSAModalOpen, setIsPSAModalOpen] = useState(false);
@@ -99,6 +100,10 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole = 'urologist
   });
   const [isClinicalNotesModalOpen, setIsClinicalNotesModalOpen] = useState(false);
   const [activeNoteTab, setActiveNoteTab] = useState('general');
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isPathwayModalOpen, setIsPathwayModalOpen] = useState(false);
+  const [selectedPathway, setSelectedPathway] = useState('');
   const [clinicalNotesForm, setClinicalNotesForm] = useState({
     // General Info
     note: '',
@@ -133,6 +138,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole = 'urologist
     emergencyPhone: '0412 345 679',
     currentStatus: 'Active Surveillance',
     currentDatabase: 'DB2',
+    pathway: 'Active Surveillance',
     lastPSA: { value: 6.2, date: '2024-01-10' },
     referrals: [
       { id: 1, date: '2023-06-15', reason: 'PSA 8.5', status: 'Completed', outcome: 'Active Surveillance' },
@@ -938,6 +944,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole = 'urologist
     }));
   };
 
+
   const handleAddClinicalNote = (e) => {
     e.preventDefault();
     
@@ -1162,50 +1169,44 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole = 'urologist
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: User, count: 1, active: activeTab === 'overview' },
-    { id: 'clinical-notes', name: 'Clinical Notes', icon: FileText, count: 4, active: activeTab === 'clinical-notes' },
     { id: 'mdt-notes', name: 'MDT Notes', icon: Users, count: 2, active: activeTab === 'mdt-notes' },
-    { id: 'surveillance', name: 'PSA', icon: Activity, count: 5, active: activeTab === 'surveillance' },
-    { id: 'appointments', name: 'Appointments', icon: CalendarIcon, count: 2, active: activeTab === 'appointments' },
-    { id: 'imaging', name: 'Imaging & Procedures', icon: Database, count: 1, active: activeTab === 'imaging' },
-    { id: 'clinical', name: 'Clinical History', icon: Stethoscope, count: 3, active: activeTab === 'clinical' },
     { id: 'discharge', name: 'Discharge Summaries', icon: FileText, count: 1, active: activeTab === 'discharge' }
   ];
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-6">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-[95vw] h-[90vh] min-h-[600px] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-[95vw] h-[95vh] min-h-[600px] overflow-hidden flex flex-col">
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-gray-50 flex-shrink-0">
-          <div className="flex items-center space-x-4">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-gray-50 flex-shrink-0">
+          <div className="flex items-center space-x-3">
             <div className="relative">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
                 <span className="text-white font-semibold text-sm">
                   {mockPatient.name.split(' ').map(n => n[0]).join('')}
                 </span>
               </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">{mockPatient.name}</h1>
+              <h1 className="text-lg font-semibold text-gray-900">{mockPatient.name}</h1>
+              <div className="flex items-center space-x-2 mt-0.5">
               <p className="text-sm text-gray-600">UPI: {mockPatient.id}</p>
-              <div className="flex items-center space-x-3 mt-1">
-                <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-md ${getStatusColor(mockPatient.currentStatus)}`}>
-                  {mockPatient.currentStatus}
-                </span>
-                <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-green-100 text-green-800">
-                  Age: {calculateAge(mockPatient.dob)} years
-                </span>
+                <span className="text-gray-300">•</span>
+                <p className="text-sm text-gray-600">Age: {calculateAge(mockPatient.dob)} years</p>
+                <span className="text-gray-300">•</span>
+                <p className="text-sm text-gray-600 flex items-center">
+                  <Phone className="h-3.5 w-3.5 mr-1" />
+                  {mockPatient.phone}
+                </p>
               </div>
             </div>
           </div>
-          <div className="flex items-center">
             <button
               onClick={onClose}
               className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <X className="h-6 w-6" />
+            <X className="h-5 w-5" />
             </button>
-          </div>
         </div>
 
         {/* Professional Tab Navigation */}
@@ -1256,680 +1257,295 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole = 'urologist
         <div className="flex-1 overflow-y-auto p-8" style={{ height: 'calc(90vh - 180px)', minHeight: '400px' }}>
           {/* Overview Tab */}
           {activeTab === 'overview' && (
-            <div className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="border border-gray-200 rounded-lg p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-semibold text-gray-900 text-base">Patient Information</h3>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Side - PSA Details */}
+                <div className="border border-gray-200 rounded-xl p-6 bg-gradient-to-br from-white to-gray-50">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-gray-900 text-lg flex items-center">
+                      <Activity className="h-5 w-5 mr-2 text-green-600" />
+                      PSA Information
+                    </h3>
                     <button
-                      onClick={handleEditPersonalInfo}
-                      className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                      onClick={() => setIsPSAModalOpen(true)}
+                      className="flex items-center px-3 py-1.5 text-sm font-medium text-green-600 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
                     >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
+                      <Activity className="h-4 w-4 mr-1" />
+                      View PSA
                     </button>
                   </div>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-600">Name:</span>
-                      <span className="text-gray-900 text-right">{mockPatient.name}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-600">UPI:</span>
-                      <span className="text-gray-900 text-right">{mockPatient.id}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-600">DOB:</span>
-                      <span className="text-gray-900 text-right">{formatDate(mockPatient.dob)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-600">Age:</span>
-                      <span className="text-gray-900 text-right">{calculateAge(mockPatient.dob)} years</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-600">Medicare:</span>
-                      <span className="text-gray-900 text-right">{mockPatient.medicare}</span>
-                    </div>
-                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-lg p-4 border border-gray-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-600">Latest PSA</span>
+                        <span className="text-2xl font-bold text-gray-900">{mockPatient.lastPSA.value} ng/mL</span>
                 </div>
-                <div className="border border-gray-200 rounded-lg p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-semibold text-gray-900 text-base">Contact Information</h3>
-                    <button
-                      onClick={handleEditPersonalInfo}
-                      className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </button>
-                  </div>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-600">Phone:</span>
-                      <span className="text-gray-900 text-right">{mockPatient.phone}</span>
-                    </div>
-                    <div className="flex justify-between items-start">
-                      <span className="font-medium text-gray-600">Address:</span>
-                      <span className="text-gray-900 text-right max-w-xs">{mockPatient.address}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-600">Emergency Contact:</span>
-                      <span className="text-gray-900 text-right">{mockPatient.emergencyContact}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-600">Emergency Phone:</span>
-                      <span className="text-gray-900 text-right">{mockPatient.emergencyPhone}</span>
-                    </div>
-                  </div>
+                      <p className="text-xs text-gray-500">Tested on {formatDate(mockPatient.lastPSA.date)}</p>
+              </div>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Clinical History Tab */}
-          {activeTab === 'clinical' && (
-            <div className="space-y-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">Clinical History Timeline</h3>
-                  <p className="text-sm text-gray-600 mt-1">Chronological record of patient interactions and procedures</p>
-                </div>
-                {userRole !== 'gp' && (
-                  <button
-                    onClick={() => setIsClinicalHistoryModalOpen(true)}
-                    className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Clinical History
-                  </button>
-                )}
-              </div>
+                {/* Right Side - Test Results & Documents */}
+                <div className="border border-gray-200 rounded-xl p-6 bg-gradient-to-br from-white to-gray-50">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-gray-900 text-lg flex items-center">
+                      <Database className="h-5 w-5 mr-2 text-blue-600" />
+                      Test Results & Documents
+                    </h3>
+                    {userRole !== 'gp' && (
+                      <button
+                        onClick={() => setIsImagingModalOpen(true)}
+                        className="flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Result
+                      </button>
+                    )}
+                  </div>
 
-              <div className="relative">
-                <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-                <div className="space-y-6">
-                  {mockPatient.clinicalHistoryTimeline.map((entry, index) => {
-                    const IconComponent = getClinicalHistoryTypeIcon(entry.type);
-                    return (
-                      <div key={entry.id} className="relative flex items-start space-x-4">
-                        <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center ${getClinicalHistoryTypeColor(entry.type)}`}>
-                          <IconComponent className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-gray-900">{entry.title}</h4>
-                              <div className="flex items-center space-x-2 mt-1">
-                                <span className="text-sm text-gray-600">{formatDate(entry.date)}</span>
-                                <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${getClinicalHistoryTypeColor(entry.type)}`}>
-                                  {entry.type.charAt(0).toUpperCase() + entry.type.slice(1)}
-                                </span>
-                                {entry.practitioner && (
-                                  <span className="text-sm text-gray-500">• {entry.practitioner}</span>
+                  {/* Test Results List */}
+                  <div className="space-y-3">
+                    {mockPatient.imaging.length > 0 ? (
+                      mockPatient.imaging.map((result) => (
+                        <div key={result.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200 hover:border-blue-300 transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start space-x-3 flex-1">
+                              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <Database className="h-4 w-4 text-blue-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <h5 className="text-sm font-semibold text-gray-900">{result.type}</h5>
+                                  <span className="text-xs text-gray-500">•</span>
+                                  <span className="text-xs text-gray-500">{formatDate(result.date)}</span>
+                                </div>
+                                <p className="text-sm text-gray-700 leading-relaxed">{result.result}</p>
+                                {result.document && (
+                                  <div className="mt-2 flex items-center space-x-2">
+                                    <span className="text-xs text-gray-500">Document:</span>
+                                    <span className="text-xs text-blue-600 font-medium">{result.documentName}</span>
+                                  </div>
                                 )}
                               </div>
                             </div>
-                            {userRole !== 'gp' && (
-                              <button
-                                onClick={() => handleEditClinicalHistory(entry)}
-                                className="flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded hover:bg-gray-200 transition-colors"
-                                title="Edit clinical history entry"
-                              >
-                                <Edit className="h-3 w-3 mr-1" />
-                                Edit
-                              </button>
-                            )}
-                          </div>
-                          
-                          <div className="space-y-3 text-sm">
-                            {entry.details && (
-                              <div>
-                                <span className="font-medium text-gray-600">Details:</span>
-                                <p className="text-gray-900 mt-1">{entry.details}</p>
-                              </div>
-                            )}
-                            {entry.findings && (
-                              <div>
-                                <span className="font-medium text-gray-600">Findings:</span>
-                                <p className="text-gray-900 mt-1">{entry.findings}</p>
-                              </div>
-                            )}
-                            {entry.recommendations && (
-                              <div>
-                                <span className="font-medium text-gray-600">Recommendations:</span>
-                                <p className="text-gray-900 mt-1">{entry.recommendations}</p>
-                              </div>
-                            )}
-                            {entry.medications && entry.medications.length > 0 && (
-                              <div>
-                                <span className="font-medium text-gray-600">Medications:</span>
-                                <div className="mt-2 space-y-2">
-                                  {entry.medications.map((medication, medIndex) => (
-                                    <div key={medIndex} className="flex items-center space-x-2 p-2 bg-orange-50 rounded-lg border border-orange-200">
-                                      <Pill className="h-4 w-4 text-orange-600 flex-shrink-0" />
-                                      <span className="text-gray-900 text-sm">{medication}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Add other tabs content here - PSA, Appointments, Imaging, Discharge */}
-          {/* For brevity, I'm including the key structure. The full content would be similar to the original PatientDetails component */}
-          
-          {activeTab === 'surveillance' && (
-            <div className="space-y-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">PSA Level Trends</h2>
-                  <p className="text-sm text-gray-600 mt-1">Monitor PSA progression over time</p>
-                </div>
-                <button
-                  onClick={() => setIsPSAModalOpen(true)}
-                  className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add PSA Value
-                </button>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-center mb-6">
-                  <div className="flex items-center justify-center space-x-2">
-                    <button 
-                      onClick={() => setPsaChartFilter('3months')}
-                      className={`px-3 py-1 text-sm border rounded-lg transition-colors cursor-pointer ${
-                        psaChartFilter === '3months' 
-                          ? 'bg-gradient-to-r from-green-800 to-black text-white border-transparent' 
-                          : 'border-gray-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      3 Months
-                    </button>
-                    <button 
-                      onClick={() => setPsaChartFilter('6months')}
-                      className={`px-3 py-1 text-sm border rounded-lg transition-colors cursor-pointer ${
-                        psaChartFilter === '6months' 
-                          ? 'bg-gradient-to-r from-green-800 to-black text-white border-transparent' 
-                          : 'border-gray-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      6 Months
-                    </button>
-                    <button 
-                      onClick={() => setPsaChartFilter('1year')}
-                      className={`px-3 py-1 text-sm border rounded-lg transition-colors cursor-pointer ${
-                        psaChartFilter === '1year' 
-                          ? 'bg-gradient-to-r from-green-800 to-black text-white border-transparent' 
-                          : 'border-gray-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      1 Year
-                    </button>
-                    <button 
-                      onClick={() => setPsaChartFilter('all')}
-                      className={`px-3 py-1 text-sm border rounded-lg transition-colors cursor-pointer ${
-                        psaChartFilter === 'all' 
-                          ? 'bg-gradient-to-r from-green-800 to-black text-white border-transparent' 
-                          : 'border-gray-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      All
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-md font-medium text-gray-900 mb-3">PSA Trend Line</h3>
-                    <div className="h-64 w-full">
-                      <Line data={psaLineChartConfig} options={chartOptions} />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-md font-medium text-gray-900 mb-3">PSA Values</h3>
-                    <div className="h-64 w-full">
-                      <Bar data={psaBarChartConfig} options={chartOptions} />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <div className="flex items-center justify-center space-x-6">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-green-500 rounded"></div>
-                      <span className="text-sm text-gray-600">Normal (≤6.0 ng/mL)</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-                      <span className="text-sm text-gray-600">Elevated (6.1-6.5 ng/mL)</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-red-500 rounded"></div>
-                      <span className="text-sm text-gray-600">High (&gt;6.5 ng/mL)</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">PSA Test History</h3>
-                    <p className="text-sm text-gray-600 mt-1">Complete record of PSA tests and their status</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {mockPatient.psaHistory.map((psa, index) => {
-                    const getPSAStatus = (value) => {
-                      if (value <= 6.0) return { status: 'Normal', color: 'bg-green-100 text-green-800', dot: 'bg-green-500' };
-                      if (value <= 6.5) return { status: 'Elevated', color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500' };
-                      return { status: 'High', color: 'bg-red-100 text-red-800', dot: 'bg-red-500' };
-                    };
-                    
-                    const psaStatus = getPSAStatus(psa.value);
-                    
-                    return (
-                      <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
-                        <div className="flex items-center space-x-4">
-                          <div className={`w-4 h-4 ${psaStatus.dot} rounded-full`}></div>
-                          <div className="flex items-center space-x-6">
-                            <div className="text-left">
-                              <p className="font-semibold text-gray-900 text-lg">{psa.value} ng/mL</p>
-                              <p className="text-sm text-gray-600">{formatDate(psa.date)}</p>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full ${psaStatus.color}`}>
-                                {psaStatus.status}
-                              </span>
-                              {psa.type === 'baseline' && (
-                                <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                                  Baseline
-                                </span>
+                            <div className="flex items-center space-x-2 ml-3">
+                              {result.document && (
+                                <button
+                                  className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-lg transition-colors"
+                                  title="Download document"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </button>
                               )}
+                              <button 
+                                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                                title="View details"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </button>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-3">
-                          <div className="text-right">
-                            <p className="text-sm text-gray-600">Test #{index + 1}</p>
-                            {index > 0 && (
-                              <p className={`text-sm font-medium ${
-                                psa.value > mockPatient.psaHistory[index - 1].value ? 'text-red-600' : 'text-green-600'
-                              }`}>
-                                {psa.value > mockPatient.psaHistory[index - 1].value ? '↗' : '↘'} {Math.abs(psa.value - mockPatient.psaHistory[index - 1].value).toFixed(1)}
-                              </p>
-                            )}
-                          </div>
-                          {userRole !== 'gp' && (
-                            <button
-                              onClick={() => handleEditPSA(psa)}
-                              className="flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded hover:bg-gray-200 transition-colors"
-                              title="Edit PSA test"
-                            >
-                              <Edit className="h-3 w-3 mr-1" />
-                              Edit
-                            </button>
-                          )}
-                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <Database className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                        <p className="text-sm font-medium text-gray-900 mb-1">No test results yet</p>
+                        <p className="text-xs text-gray-500">
+                          {userRole !== 'gp' ? 'Upload test results and documents above' : 'No test results available'}
+                        </p>
                       </div>
-                    );
-                  })}
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
 
-          {activeTab === 'appointments' && (
-            <div className="space-y-8">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-gray-900 text-base">Appointments</h3>
-                {userRole !== 'gp' && (
-                  <button className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Schedule Appointment
-                  </button>
-                )}
-              </div>
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
-                <div className="space-y-3">
-                  {mockPatient.appointments.map((appointment, index) => (
-                    <div key={appointment.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
-                      <div className="flex items-center space-x-4 flex-1">
-                        <div className="flex items-center space-x-3">
-                          <Calendar className="h-5 w-5 text-green-600" />
-                          <div className="text-left">
-                            <p className="font-medium text-gray-900">{appointment.type}</p>
-                            <p className="text-sm text-gray-600">{formatDate(appointment.date)} at {appointment.time}</p>
-                            <p className="text-xs text-gray-500 flex items-center">
-                              <MapPin className="h-3 w-3 mr-1" />
-                              {appointment.location}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getAppointmentStatusColor(appointment.status)}`}>
-                          {appointment.status}
-                        </span>
-                        <button 
-                          onClick={() => handleViewAppointmentDetails(appointment)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+              {/* Clinical Notes Timeline - Full Width Below */}
+              <div className="border border-gray-200 rounded-xl p-6 bg-gradient-to-br from-white to-gray-50">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-gray-900 text-lg flex items-center">
+                      <FileText className="h-5 w-5 mr-2 text-blue-600" />
+                      Clinical Notes Timeline
+                    </h3>
+                </div>
+
+                  {/* Add Note Section */}
+                  {userRole !== 'gp' && (
+                    <div className="mb-4 bg-white rounded-lg p-4 border-2 border-blue-200">
+                      <textarea
+                        value={clinicalNotesForm.note}
+                        onChange={(e) => setClinicalNotesForm({ ...clinicalNotesForm, note: e.target.value })}
+                        placeholder="Add a clinical note..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                        rows="3"
+                      />
+                      <div className="flex items-center justify-between mt-2">
+                        <select
+                          value={clinicalNotesForm.priority}
+                          onChange={(e) => setClinicalNotesForm({ ...clinicalNotesForm, priority: e.target.value })}
+                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
-                          <Eye className="h-3 w-3 mr-1" />
-                          <span>View</span>
+                          <option value="normal">Normal Priority</option>
+                          <option value="high">High Priority</option>
+                          <option value="urgent">Urgent</option>
+                        </select>
+                        <button
+                          onClick={() => {
+                            if (clinicalNotesForm.note.trim()) {
+                              // Create new note
+                              const now = new Date();
+                              const newNote = {
+                                id: `CN${Date.now()}`,
+                                timestamp: now.toISOString(),
+                                date: now.toISOString().split('T')[0],
+                                time: now.toTimeString().slice(0, 5),
+                                author: userRole === 'urologist' ? 'Dr. Sarah Wilson' : 'Jennifer Lee',
+                                authorRole: userRole === 'urologist' ? 'Urologist' : 'Urology Nurse',
+                                type: 'general',
+                                priority: clinicalNotesForm.priority,
+                                note: clinicalNotesForm.note,
+                                vitals: null,
+                                medicine: null
+                              };
+                              
+                              // Add to clinical notes
+                              setClinicalNotes(prev => [newNote, ...prev]);
+                              
+                              // Show success modal
+                              setSuccessMessage('Clinical note added successfully!');
+                              setIsSuccessModalOpen(true);
+                              
+                              // Reset form
+                              setClinicalNotesForm({ ...clinicalNotesForm, note: '', priority: 'normal' });
+                            }
+                          }}
+                          className="flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={!clinicalNotesForm.note.trim()}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Note
                         </button>
-                        {userRole !== 'gp' && (
-                          <button
-                            onClick={() => handleEditAppointment(appointment)}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
-                            title="Edit appointment"
-                          >
-                            <Edit className="h-3 w-3 mr-1" />
-                            <span>Edit</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           )}
 
-          {activeTab === 'imaging' && (
-            <div className="space-y-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">Imaging & Procedures</h3>
-                  <p className="text-sm text-gray-600 mt-1">Medical imaging and procedure records</p>
-                </div>
-                {userRole !== 'gp' && (
-                  <button
-                    onClick={() => setIsImagingModalOpen(true)}
-                    className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Imaging
-                  </button>
-                )}
-              </div>
-              <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-                <Database className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No imaging records</h3>
-                <p className="text-gray-500">Add imaging and procedure records for this patient</p>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'clinical-notes' && (
-            <div className="space-y-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">Clinical Notes Timeline</h3>
-                  <p className="text-sm text-gray-600 mt-1">Real-time clinical notes from doctors and nurses throughout the day</p>
-                </div>
-                {userRole !== 'gp' && (
-                  <button
-                    onClick={() => setIsClinicalNotesModalOpen(true)}
-                    className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Clinical Note
-                  </button>
-                )}
-              </div>
-
-              <div className="relative">
-                {/* Enhanced Timeline Line */}
-                <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-green-200 via-blue-200 to-gray-200"></div>
-                
-                <div className="space-y-8">
-                  {clinicalNotes
-                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                    .map((note, index) => {
-                      const IconComponent = getClinicalNotesTypeIcon(note.type);
+                  {/* Timeline */}
+                  <div className="relative">
+                    {/* Timeline Line */}
+                    <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-200 via-green-200 to-gray-200"></div>
+                    
+                    <div className="space-y-4">
+                      {[...clinicalNotes, ...mockPatient.clinicalNotes].map((note, index) => {
                       const isToday = note.date === new Date().toISOString().split('T')[0];
-                      const isRecent = index < 3; // Highlight recent notes
+                        const isRecent = index < 2;
                       
                       return (
-                        <div key={note.id} className="relative flex items-start space-x-6">
-                          {/* Enhanced Timeline Dot */}
+                          <div key={note.id} className="relative flex items-start space-x-4">
+                            {/* Timeline Dot */}
                           <div className="relative flex-shrink-0">
-                            <div className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center border-2 border-white ${
-                              isRecent ? 'ring-2 ring-green-300' : ''
-                            } ${getClinicalNotesTypeColor(note.type)}`}>
-                              <IconComponent className="h-5 w-5" />
-                            </div>
-                            {/* Connection line to next item */}
-                            {index < clinicalNotes.length - 1 && (
-                              <div className="absolute top-12 left-1/2 transform -translate-x-1/2 w-0.5 h-8 bg-gray-200"></div>
-                            )}
+                              <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 border-white ${
+                                isRecent ? 'ring-2 ring-blue-300' : ''
+                              } ${
+                                note.type === 'general' ? 'bg-blue-500' :
+                                note.type === 'vitals' ? 'bg-green-500' :
+                                'bg-purple-500'
+                              }`}>
+                                {note.type === 'general' ? (
+                                  <FileText className="h-4 w-4 text-white" />
+                                ) : note.type === 'vitals' ? (
+                                  <Activity className="h-4 w-4 text-white" />
+                                ) : (
+                                  <Pill className="h-4 w-4 text-white" />
+                                )}
+                              </div>
                           </div>
                           
-                          {/* Enhanced Note Card */}
-                          <div className={`flex-1 bg-white border rounded-xl p-6 transition-all duration-200 ${
-                            isRecent ? 'border-green-200 bg-green-50/30' : 'border-gray-200'
-                          }`}>
-                            {/* Header Section */}
-                            <div className="flex items-start justify-between mb-4">
+                            {/* Note Card */}
+                            <div className={`flex-1 bg-white border rounded-lg p-3 transition-all duration-200 ${
+                              isRecent ? 'border-blue-200 shadow-sm' : 'border-gray-200'
+                            }`}>
+                              <div className="flex items-start justify-between mb-2">
                               <div className="flex-1">
-                                {/* Author and Role */}
-                                <div className="flex items-center justify-between mb-3">
-                                  <div className="flex items-center space-x-2">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold ${
+                                  <div className="flex items-center space-x-2 mb-1">
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold ${
                                       note.authorRole === 'Urologist' ? 'bg-blue-600' : 'bg-green-600'
                                     }`}>
-                                      {note.author.split(' ').map(n => n[0]).join('')}
+                                      {note.author.split(' ').map(n => n[0]).join('').substring(0, 2)}
                                     </div>
-                                    <div>
-                                      <span className="font-semibold text-gray-900 text-base">{note.author}</span>
-                                      <span className={`ml-2 inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${getAuthorRoleColor(note.authorRole)}`}>
+                                    <span className="font-semibold text-gray-900 text-sm">{note.author}</span>
+                                    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${
+                                      note.authorRole === 'Urologist' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                                    }`}>
                                         {note.authorRole}
                                       </span>
                                     </div>
-                                  </div>
-                                  {userRole !== 'gp' && (
-                                    <button
-                                      onClick={() => handleEditClinicalNote(note)}
-                                      className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
-                                      title="Edit clinical note"
-                                    >
-                                      <Edit className="h-3 w-3 mr-1" />
-                                      <span>Edit</span>
-                                    </button>
-                                  )}
-                                </div>
-                                
-                        {/* Type and Priority Badges */}
-                        <div className="flex items-center space-x-2 mb-3">
-                          <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getClinicalNotesTypeColor(note.type)}`}>
-                            {note.type.charAt(0).toUpperCase() + note.type.slice(1)}
-                          </span>
-                          <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getPriorityColor(note.priority)}`}>
-                            {note.priority.charAt(0).toUpperCase() + note.priority.slice(1)} Priority
-                          </span>
+                                  <div className="flex items-center space-x-2 text-xs text-gray-500">
+                                    <Clock className="h-3 w-3" />
+                                    <span>{isToday ? 'Today' : formatDate(note.date)} at {note.time}</span>
                           {isToday && (
-                            <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 border border-green-200">
-                              <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-                              Today
+                                      <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 animate-pulse"></div>
+                                        New
                             </span>
                           )}
                         </div>
-                                
-                                {/* Timestamp */}
-                                <div className="flex items-center space-x-4 text-sm text-gray-600">
-                                  <span className="flex items-center">
-                                    <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                                    {isToday ? 'Today' : formatDate(note.date)}
-                                  </span>
-                                  <span className="flex items-center">
-                                    <Clock className="h-4 w-4 mr-2 text-gray-400" />
-                                    {note.time}
-                                  </span>
                                 </div>
-                              </div>
+                                <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+                                  note.priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                                  note.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {note.priority.charAt(0).toUpperCase() + note.priority.slice(1)}
+                                  </span>
                             </div>
                             
-                        {/* Note Content */}
-                        <div className="space-y-4">
-                          <div className="bg-white rounded-lg p-4 border border-gray-100">
-                            <p className="text-gray-900 leading-relaxed text-sm">{note.note}</p>
-                          </div>
-                          
-                          {/* Vitals Information */}
+                              <p className="text-sm text-gray-700 leading-relaxed">{note.note}</p>
+                              
                           {note.vitals && (
-                            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                              <h5 className="text-sm font-semibold text-green-800 mb-3 flex items-center">
-                                <Activity className="h-4 w-4 mr-2" />
-                                Vital Signs
-                              </h5>
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div className="mt-2 pt-2 border-t border-gray-100">
+                                  <div className="flex items-center space-x-3 text-xs">
                                 {note.vitals.bloodPressure && (
-                                  <div className="text-center">
-                                    <p className="text-xs text-green-600 font-medium">Blood Pressure</p>
-                                    <p className="text-sm font-semibold text-green-800">{note.vitals.bloodPressure}</p>
-                                  </div>
+                                      <span className="flex items-center text-gray-600">
+                                        <Activity className="h-3 w-3 mr-1 text-green-600" />
+                                        BP: <span className="font-semibold ml-1">{note.vitals.bloodPressure}</span>
+                                      </span>
                                 )}
                                 {note.vitals.heartRate && (
-                                  <div className="text-center">
-                                    <p className="text-xs text-green-600 font-medium">Heart Rate</p>
-                                    <p className="text-sm font-semibold text-green-800">{note.vitals.heartRate} bpm</p>
-                                  </div>
+                                      <span className="flex items-center text-gray-600">
+                                        <Heart className="h-3 w-3 mr-1 text-red-600" />
+                                        HR: <span className="font-semibold ml-1">{note.vitals.heartRate}</span>
+                                      </span>
                                 )}
                                 {note.vitals.temperature && (
-                                  <div className="text-center">
-                                    <p className="text-xs text-green-600 font-medium">Temperature</p>
-                                    <p className="text-sm font-semibold text-green-800">{note.vitals.temperature}</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* Medicine Information */}
-                          {note.medicine && note.medicine.length > 0 && (
-                            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                              <h5 className="text-sm font-semibold text-purple-800 mb-3 flex items-center">
-                                <Pill className="h-4 w-4 mr-2" />
-                                Medication Details ({note.medicine.length} {note.medicine.length === 1 ? 'Medicine' : 'Medicines'})
-                              </h5>
-                              <div className="space-y-4">
-                                {note.medicine.map((medicine, medIndex) => (
-                                  <div key={medIndex} className="bg-white rounded-lg p-3 border border-purple-100">
-                                    <div className="flex items-center justify-between mb-2">
-                                      <h6 className="text-sm font-semibold text-purple-900">
-                                        {medicine.medicineName || `Medicine ${medIndex + 1}`}
-                                      </h6>
-                                      <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-                                        medicine.taken ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                      }`}>
-                                        {medicine.taken ? 'Taken' : 'Not Taken'}
+                                      <span className="text-gray-600">
+                                        Temp: <span className="font-semibold">{note.vitals.temperature}</span>
                                       </span>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                      {medicine.dosage && (
-                                        <div>
-                                          <p className="text-xs text-purple-600 font-medium">Dosage</p>
-                                          <p className="text-sm font-semibold text-purple-800">{medicine.dosage}</p>
+                                    )}
                                         </div>
-                                      )}
-                                      {medicine.frequency && (
-                                        <div>
-                                          <p className="text-xs text-purple-600 font-medium">Frequency</p>
-                                          <p className="text-sm font-semibold text-purple-800">{medicine.frequency}</p>
-                                        </div>
-                                      )}
-                                      <div>
-                                        <p className="text-xs text-purple-600 font-medium">Compliance</p>
-                                        <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-                                          medicine.compliance === 'excellent' ? 'bg-green-100 text-green-800' :
-                                          medicine.compliance === 'good' ? 'bg-blue-100 text-blue-800' :
-                                          medicine.compliance === 'fair' ? 'bg-yellow-100 text-yellow-800' :
-                                          'bg-red-100 text-red-800'
-                                        }`}>
-                                          {medicine.compliance.charAt(0).toUpperCase() + medicine.compliance.slice(1)}
-                                        </span>
-                                      </div>
-                                    </div>
-                                    {medicine.sideEffects && (
-                                      <div className="mt-3">
-                                        <p className="text-xs text-purple-600 font-medium">Side Effects</p>
-                                        <p className="text-sm text-purple-800">{medicine.sideEffects}</p>
                                       </div>
                                     )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
                           </div>
                         </div>
                       );
                     })}
-                </div>
-              </div>
-
-              {/* Enhanced Summary Stats */}
-              <div className="mt-8 pt-6 border-t border-gray-200">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">Clinical Notes Summary</h4>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
-                    <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Stethoscope className="h-6 w-6 text-white" />
+                      
+                      {[...clinicalNotes, ...mockPatient.clinicalNotes].length === 0 && (
+                        <div className="text-center py-8 text-gray-500">
+                          <FileText className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                          <p className="text-sm">No clinical notes yet</p>
+                          {userRole !== 'gp' && (
+                            <p className="text-xs mt-1">Add your first note above</p>
+                          )}
                     </div>
-                    <p className="text-3xl font-bold text-blue-600">
-                      {clinicalNotes.filter(note => note.type === 'general').length}
-                    </p>
-                    <p className="text-sm font-medium text-gray-700">General Notes</p>
-                    <p className="text-xs text-gray-500 mt-1">Clinical assessments</p>
+                      )}
                   </div>
-                  <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
-                    <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Activity className="h-6 w-6 text-white" />
                     </div>
-                    <p className="text-3xl font-bold text-green-600">
-                      {clinicalNotes.filter(note => note.type === 'vitals').length}
-                    </p>
-                    <p className="text-sm font-medium text-gray-700">Vital Signs</p>
-                    <p className="text-xs text-gray-500 mt-1">Health monitoring</p>
                   </div>
-                  <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200">
-                    <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Pill className="h-6 w-6 text-white" />
-                    </div>
-                    <p className="text-3xl font-bold text-purple-600">
-                      {clinicalNotes.filter(note => note.type === 'medicine').length}
-                    </p>
-                    <p className="text-sm font-medium text-gray-700">Medication</p>
-                    <p className="text-xs text-gray-500 mt-1">Drug administration</p>
-                  </div>
-                  <div className="text-center p-6 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border border-orange-200">
-                    <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Clock className="h-6 w-6 text-white" />
-                    </div>
-                    <p className="text-3xl font-bold text-orange-600">
-                      {clinicalNotes.filter(note => note.date === new Date().toISOString().split('T')[0]).length}
-                    </p>
-                    <p className="text-sm font-medium text-gray-700">Today's Notes</p>
-                    <p className="text-xs text-gray-500 mt-1">Recent entries</p>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
+
+
 
           {activeTab === 'mdt-notes' && (
             <div className="space-y-8">
@@ -2122,135 +1738,6 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole = 'urologist
             </div>
           )}
 
-          {activeTab === 'imaging' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">Imaging & Procedures Timeline</h3>
-                  <p className="text-sm text-gray-600 mt-1">Chronological record of imaging studies and procedures with documents</p>
-                </div>
-                {userRole !== 'gp' && (
-                  <button
-                    onClick={() => setIsImagingModalOpen(true)}
-                    className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Imaging/Procedure
-                  </button>
-                )}
-              </div>
-
-              <div className="relative">
-                <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-                <div className="space-y-6">
-                  {[...mockPatient.imaging, ...mockPatient.procedures]
-                    .sort((a, b) => new Date(b.date) - new Date(a.date))
-                    .map((item, index) => {
-                      const isImaging = mockPatient.imaging.some(img => img.id === item.id);
-                      const iconColor = isImaging ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800';
-                      const IconComponent = isImaging ? Activity : Stethoscope;
-                      
-                      return (
-                        <div key={item.id} className="relative flex items-start space-x-4">
-                          <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center ${iconColor}`}>
-                            <IconComponent className="h-4 w-4" />
-                          </div>
-                          <div className="flex-1 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                            <div className="flex items-start justify-between mb-3">
-                              <div>
-                                <h4 className="font-semibold text-gray-900">{item.type}</h4>
-                                <div className="flex items-center space-x-2 mt-1">
-                                  <span className="text-sm text-gray-600">{formatDate(item.date)}</span>
-                                  <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${iconColor}`}>
-                                    {isImaging ? 'Imaging' : 'Procedure'}
-                                  </span>
-                                </div>
-                              </div>
-                              {userRole !== 'gp' && (
-                                <button
-                                  onClick={() => handleEditImaging(item)}
-                                  className="flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded hover:bg-gray-200 transition-colors"
-                                  title="Edit imaging/procedure entry"
-                                >
-                                  <Edit className="h-3 w-3 mr-1" />
-                                  Edit
-                                </button>
-                              )}
-                            </div>
-                            
-                            <div className="space-y-3 text-sm">
-                              <div>
-                                <span className="font-medium text-gray-600">Results:</span>
-                                <p className="text-gray-900 mt-1">{item.result}</p>
-                              </div>
-                              
-                              {item.document && (
-                                <div>
-                                  <span className="font-medium text-gray-600">Document:</span>
-                                  <div className="mt-2 flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                      <FileText className="h-4 w-4 text-blue-600" />
-                                    </div>
-                                    <div className="flex-1">
-                                      <p className="text-sm font-medium text-gray-900">{item.documentName}</p>
-                                      <p className="text-xs text-gray-500">PDF Document</p>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                      <button className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors">
-                                        <Eye className="h-3 w-3 mr-1" />
-                                        View
-                                      </button>
-                                      <button className="inline-flex items-center px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors">
-                                        <Download className="h-3 w-3 mr-1" />
-                                        Download
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="border border-gray-200 rounded-lg p-5">
-                  <h3 className="font-semibold text-gray-900 mb-4 text-base">Imaging Summary</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                      <span className="text-sm font-medium text-gray-700">Total Imaging Studies</span>
-                      <span className="text-lg font-bold text-blue-600">{mockPatient.imaging.length}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                      <span className="text-sm font-medium text-gray-700">Documents Available</span>
-                      <span className="text-lg font-bold text-green-600">
-                        {mockPatient.imaging.filter(img => img.document).length}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="border border-gray-200 rounded-lg p-5">
-                  <h3 className="font-semibold text-gray-900 mb-4 text-base">Procedures Summary</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-                      <span className="text-sm font-medium text-gray-700">Total Procedures</span>
-                      <span className="text-lg font-bold text-purple-600">{mockPatient.procedures.length}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                      <span className="text-sm font-medium text-gray-700">Documents Available</span>
-                      <span className="text-lg font-bold text-green-600">
-                        {mockPatient.procedures.filter(proc => proc.document).length}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {activeTab === 'discharge' && (
             <div className="space-y-6">
@@ -2450,6 +1937,80 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole = 'urologist
             </div>
           )}
         </div>
+
+        {/* Footer - Pathway Transfer Buttons - Only for Urologists */}
+        {userRole === 'urologist' && (
+          <div className="flex-shrink-0 border-t border-gray-200 bg-white px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-sm"></div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Current Pathway</span>
+                    <span className="text-sm font-semibold text-gray-900">{mockPatient.pathway}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <div className="flex flex-col items-end mr-3">
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Transfer Patient To</span>
+                  <span className="text-xs text-gray-400">Select new care pathway</span>
+                </div>
+                
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => {
+                      setSelectedPathway('Active Surveillance');
+                      setIsPathwayModalOpen(true);
+                    }}
+                    className="group relative flex items-center px-6 py-4 bg-white border-2 border-blue-300 rounded-2xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 min-w-[180px] ring-2 ring-blue-100 hover:ring-blue-200"
+                  >
+                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mr-4 group-hover:bg-blue-700 transition-colors duration-300">
+                      <Activity className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-bold text-gray-900 group-hover:text-blue-900 transition-colors">Active Surveillance</span>
+                      <span className="text-xs text-gray-600 group-hover:text-blue-700 transition-colors">Continue monitoring</span>
+                    </div>
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      setSelectedPathway('Surgical Pathway');
+                      setIsPathwayModalOpen(true);
+                    }}
+                    className="group relative flex items-center px-6 py-4 bg-white border-2 border-purple-300 rounded-2xl hover:border-purple-500 hover:bg-purple-50 transition-all duration-300 min-w-[180px] ring-2 ring-purple-100 hover:ring-purple-200"
+                  >
+                    <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center mr-4 group-hover:bg-purple-700 transition-colors duration-300">
+                      <Stethoscope className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-bold text-gray-900 group-hover:text-purple-900 transition-colors">Surgical Pathway</span>
+                      <span className="text-xs text-gray-600 group-hover:text-purple-700 transition-colors">Schedule surgery</span>
+                    </div>
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      setSelectedPathway('Post-Op Follow-up');
+                      setIsPathwayModalOpen(true);
+                    }}
+                    className="group relative flex items-center px-6 py-4 bg-white border-2 border-green-300 rounded-2xl hover:border-green-500 hover:bg-green-50 transition-all duration-300 min-w-[180px] ring-2 ring-green-100 hover:ring-green-200"
+                  >
+                    <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center mr-4 group-hover:bg-green-700 transition-colors duration-300">
+                      <Heart className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-bold text-gray-900 group-hover:text-green-900 transition-colors">Post-Op Follow-up</span>
+                      <span className="text-xs text-gray-600 group-hover:text-green-700 transition-colors">Recovery care</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Add Clinical History Modal */}
@@ -4559,6 +4120,377 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole = 'urologist
           </div>
         </div>
       )}
+
+      {/* Pathway Transfer Confirmation Modal */}
+      {isPathwayModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+            {/* Header */}
+            <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 px-6 pt-6 pb-5">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12"></div>
+              <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/10 rounded-full -ml-10 -mb-10"></div>
+              
+              {/* Warning Icon */}
+              <div className="relative flex justify-center mb-3">
+                <div className="relative">
+                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg">
+                    <AlertCircle className="h-7 w-7 text-orange-600" strokeWidth={2.5} />
+                  </div>
+                  <div className="absolute inset-0 w-12 h-12 bg-white rounded-full animate-ping opacity-20"></div>
+                </div>
+              </div>
+              
+              {/* Title */}
+              <h3 className="text-xl font-bold text-white text-center mb-1">
+                Confirm Pathway Transfer
+              </h3>
+              <p className="text-orange-50 text-center text-xs">
+                This action will change the patient's care pathway
+              </p>
+              
+              <button
+                onClick={() => {
+                  setIsPathwayModalOpen(false);
+                  setSelectedPathway('');
+                }}
+                className="absolute top-3 right-3 p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            
+            {/* Content */}
+            <div className="p-6">
+              <div className="mb-4 space-y-3">
+                <div className="flex items-center space-x-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <User className="h-3 w-3 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-blue-900">Patient</p>
+                    <p className="text-sm text-blue-700 font-semibold">{mockPatient.name} ({mockPatient.id})</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                    <ArrowRight className="h-3 w-3 text-gray-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-gray-700">Current Pathway</p>
+                    <p className="text-sm text-gray-900 font-semibold">{mockPatient.pathway}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3 p-3 bg-green-50 border-2 border-green-300 rounded-lg">
+                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <ArrowRightCircle className="h-3 w-3 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-green-900">New Pathway</p>
+                    <p className="text-sm text-green-800 font-bold">{selectedPathway}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-start space-x-2">
+                  <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-900">
+                    <span className="font-semibold">Please confirm:</span> Transferring this patient will update their care pathway and may trigger notifications to the care team.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => {
+                    setIsPathwayModalOpen(false);
+                    setSelectedPathway('');
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium border border-gray-300 text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    // In real app, this would save to backend
+                    console.log('Transferring patient to:', selectedPathway);
+                    setSuccessMessage(`Patient successfully transferred to ${selectedPathway}`);
+                    setIsPathwayModalOpen(false);
+                    setIsSuccessModalOpen(true);
+                    setSelectedPathway('');
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 font-medium shadow-lg shadow-green-200 hover:shadow-xl hover:shadow-green-300 text-sm"
+                >
+                  Confirm Transfer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {isSuccessModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+            {/* Header with decorative element */}
+            <div className="relative bg-gradient-to-br from-green-600 via-green-700 to-emerald-800 px-8 pt-12 pb-8">
+              {/* Decorative circles */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
+              
+              {/* Success Icon */}
+              <div className="relative flex justify-center mb-6">
+                <div className="relative">
+                  <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg">
+                    <CheckCircle className="h-12 w-12 text-green-600" strokeWidth={2.5} />
+                  </div>
+                  <div className="absolute inset-0 w-20 h-20 bg-white rounded-full animate-ping opacity-20"></div>
+                </div>
+              </div>
+              
+              {/* Title */}
+              <h3 className="text-2xl font-bold text-white text-center mb-2">
+                Success!
+              </h3>
+              <p className="text-green-50 text-center text-sm">
+                Your changes have been saved
+              </p>
+            </div>
+            
+            {/* Content */}
+            <div className="px-8 py-6">
+              <div className="flex items-start space-x-3 mb-6">
+                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-gray-800 font-medium mb-1">
+                    {successMessage}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    The information has been updated successfully and is now visible in the patient timeline.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setIsSuccessModalOpen(false)}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 font-medium shadow-lg shadow-green-200 hover:shadow-xl hover:shadow-green-300"
+                >
+                  Got it, thanks!
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PSA Charts Modal */}
+      {isPSAModalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-gray-50">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
+                  <Activity className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">PSA Charts & History</h2>
+                  <p className="text-sm text-gray-600">Patient: {mockPatient.name}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsPSAModalOpen(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-6">
+                {/* Chart Filter Buttons */}
+                <div className="flex items-center justify-center">
+                  <div className="flex items-center space-x-2">
+                    <button 
+                      onClick={() => setPsaChartFilter('3months')}
+                      className={`px-4 py-2 text-sm border rounded-lg transition-colors cursor-pointer ${
+                        psaChartFilter === '3months' 
+                          ? 'bg-gradient-to-r from-green-800 to-black text-white border-transparent' 
+                          : 'border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      3 Months
+                    </button>
+                    <button 
+                      onClick={() => setPsaChartFilter('6months')}
+                      className={`px-4 py-2 text-sm border rounded-lg transition-colors cursor-pointer ${
+                        psaChartFilter === '6months' 
+                          ? 'bg-gradient-to-r from-green-800 to-black text-white border-transparent' 
+                          : 'border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      6 Months
+                    </button>
+                    <button 
+                      onClick={() => setPsaChartFilter('1year')}
+                      className={`px-4 py-2 text-sm border rounded-lg transition-colors cursor-pointer ${
+                        psaChartFilter === '1year' 
+                          ? 'bg-gradient-to-r from-green-800 to-black text-white border-transparent' 
+                          : 'border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      1 Year
+                    </button>
+                    <button 
+                      onClick={() => setPsaChartFilter('all')}
+                      className={`px-4 py-2 text-sm border rounded-lg transition-colors cursor-pointer ${
+                        psaChartFilter === 'all' 
+                          ? 'bg-gradient-to-r from-green-800 to-black text-white border-transparent' 
+                          : 'border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      All Time
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">PSA Trend Line</h3>
+                    <div className="h-80 w-full">
+                      <Line data={psaLineChartConfig} options={chartOptions} />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">PSA Values</h3>
+                    <div className="h-80 w-full">
+                      <Bar data={psaBarChartConfig} options={chartOptions} />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Legend */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                  <div className="flex items-center justify-center space-x-8">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 bg-green-500 rounded"></div>
+                      <span className="text-sm text-gray-600">Normal (≤6.0 ng/mL)</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 bg-yellow-500 rounded"></div>
+                      <span className="text-sm text-gray-600">Elevated (6.1-6.5 ng/mL)</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 bg-red-500 rounded"></div>
+                      <span className="text-sm text-gray-600">High (&gt;6.5 ng/mL)</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* PSA Test History */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">PSA Test History</h3>
+                      <p className="text-sm text-gray-600 mt-1">Complete record of PSA tests and their status</p>
+                    </div>
+                    {userRole !== 'gp' && (
+                      <button
+                        onClick={() => {
+                          // In a real app, this would open an add PSA modal
+                          alert('Add PSA functionality would open here');
+                        }}
+                        className="flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add PSA Value
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    {mockPatient.psaHistory.map((psa, index) => {
+                      const getPSAStatus = (value) => {
+                        if (value <= 6.0) return { status: 'Normal', color: 'bg-green-100 text-green-800', dot: 'bg-green-500' };
+                        if (value <= 6.5) return { status: 'Elevated', color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500' };
+                        return { status: 'High', color: 'bg-red-100 text-red-800', dot: 'bg-red-500' };
+                      };
+                      
+                      const psaStatus = getPSAStatus(psa.value);
+                      
+                      return (
+                        <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
+                          <div className="flex items-center space-x-4">
+                            <div className={`w-4 h-4 ${psaStatus.dot} rounded-full`}></div>
+                            <div className="flex items-center space-x-6">
+                              <div className="text-left">
+                                <p className="font-semibold text-gray-900 text-lg">{psa.value} ng/mL</p>
+                                <p className="text-sm text-gray-600">{formatDate(psa.date)}</p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full ${psaStatus.color}`}>
+                                  {psaStatus.status}
+                                </span>
+                                {psa.type && (
+                                  <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+                                    psa.type === 'urgent' ? 'bg-red-100 text-red-800' :
+                                    psa.type === 'follow-up' ? 'bg-blue-100 text-blue-800' :
+                                    psa.type === 'baseline' ? 'bg-purple-100 text-purple-800' :
+                                    'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {psa.type}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <div className="text-right">
+                              <p className="text-sm text-gray-600">Test #{index + 1}</p>
+                              {index > 0 && (
+                                <p className={`text-sm font-medium ${
+                                  psa.value > mockPatient.psaHistory[index - 1].value ? 'text-red-600' : 'text-green-600'
+                                }`}>
+                                  {psa.value > mockPatient.psaHistory[index - 1].value ? '↗' : '↘'} {Math.abs(psa.value - mockPatient.psaHistory[index - 1].value).toFixed(1)}
+                                </p>
+                              )}
+                            </div>
+                            {userRole !== 'gp' && (
+                              <button
+                                onClick={() => {
+                                  // In a real app, this would open an edit PSA modal
+                                  alert('Edit PSA functionality would open here');
+                                }}
+                                className="flex items-center px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded hover:bg-gray-200 transition-colors"
+                                title="Edit PSA test"
+                              >
+                                <Edit className="h-3 w-3 mr-1" />
+                                Edit
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

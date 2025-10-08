@@ -57,7 +57,6 @@ import {
   LineChart,
   BarChart3,
   PieChart,
-  RefreshCw
 } from 'lucide-react';
 
 ChartJS.register(
@@ -468,15 +467,9 @@ const ActiveSurveillance = () => {
       {/* Surveillance Patients Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">Active Surveillance Queue</h2>
-              <p className="text-sm text-gray-600 mt-1">Patients on active surveillance protocol</p>
-            </div>
-            <button className="flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              <span className="font-medium">Refresh Queue</span>
-            </button>
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Active Surveillance Queue</h2>
+            <p className="text-sm text-gray-600 mt-1">Patients on active surveillance protocol</p>
           </div>
         </div>
 
@@ -548,7 +541,7 @@ const ActiveSurveillance = () => {
                     <td className="py-5 px-6">
                       <div className="flex items-center space-x-2">
                         <button 
-                          onClick={() => openPatientDetails(patient.id)}
+                          onClick={() => openPatientDetails(patient.id, 'urologist')}
                           className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
                         >
                           <Eye className="h-3 w-3 mr-1" />

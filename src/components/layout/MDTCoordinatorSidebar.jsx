@@ -23,7 +23,7 @@ const MDTCoordinatorSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse 
   const { user, role } = useSelector((state) => state.auth);
   
   const navigationItems = [
-    { path: '/mdt-coordinator/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    // { path: '/mdt-coordinator/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/mdt-coordinator/scheduling', label: 'MDT Scheduling', icon: Calendar },
     { path: '/mdt-coordinator/cases', label: 'Case Management', icon: ClipboardList },
     { path: '/mdt-coordinator/reports', label: 'Reports', icon: BarChart3 },

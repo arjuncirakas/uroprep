@@ -250,7 +250,9 @@ const UrologistDashboard = () => {
     setDragOverDate(null);
     
     if (draggedAppointment && targetDate) {
-      const targetDateStr = formatDateForStorage(targetDate);
+      // Create a new date object to avoid timezone issues
+      const targetDateObj = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+      const targetDateStr = formatDateForStorage(targetDateObj);
       const originalDateStr = draggedAppointment.date;
       
       // Don't allow dropping on the same date
@@ -263,7 +265,7 @@ const UrologistDashboard = () => {
         appointment: draggedAppointment,
         originalDate: originalDateStr,
         newDate: targetDateStr,
-        newDateFormatted: targetDate.toLocaleDateString('en-AU')
+        newDateFormatted: targetDateObj.toLocaleDateString('en-AU')
       });
       setShowRescheduleModal(true);
     }
@@ -594,7 +596,7 @@ const UrologistDashboard = () => {
 
   // Calendar helper functions
   const getAppointmentsForDate = (date) => {
-    const dateString = date.toISOString().split('T')[0];
+    const dateString = formatDateForStorage(date);
     return localAppointments.filter(apt => apt.date === dateString);
   };
 

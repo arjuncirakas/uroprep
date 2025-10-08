@@ -6,8 +6,7 @@ import {
   Eye,
   X,
   UserPlus,
-  Calendar,
-  Stethoscope
+  Calendar
 } from 'lucide-react';
 import { usePatientDetails } from '../../contexts/PatientDetailsContext';
 import AddPatientModal from '../../components/modals/AddPatientModal';
@@ -20,17 +19,13 @@ const Patients = () => {
   const loggedInNurse = 'Nurse Sarah Wilson';
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPathway, setSelectedPathway] = useState('all');
-  const [activeTab, setActiveTab] = useState('All Patients');
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [showAppointmentSuccessModal, setShowAppointmentSuccessModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [selectedAppointmentDate, setSelectedAppointmentDate] = useState('');
   const [selectedAppointmentTime, setSelectedAppointmentTime] = useState('');
   const [selectedDoctor, setSelectedDoctor] = useState('');
-  const [selectedProcedure, setSelectedProcedure] = useState('');
-  const [selectedProcedureDate, setSelectedProcedureDate] = useState('');
-  const [selectedProcedureTime, setSelectedProcedureTime] = useState('');
-  const [activeModalTab, setActiveModalTab] = useState('appointment');
+  const [appointmentNotes, setAppointmentNotes] = useState('');
   
   // Add Patient Modal state
   const [showAddPatientModal, setShowAddPatientModal] = useState(false);
@@ -201,14 +196,6 @@ const Patients = () => {
     { id: 'dr_davis', name: 'Dr. Robert Davis', specialization: 'Urologist', experience: '20 years' }
   ];
 
-  // Available procedures
-  const procedures = [
-    { id: 'mri', name: 'MRI', description: 'Magnetic Resonance Imaging of the prostate', duration: '45 minutes' },
-    { id: 'trus_biopsy', name: 'TRUS Biopsy', description: 'Transrectal Ultrasound-guided biopsy', duration: '30 minutes' },
-    { id: 'psa_test', name: 'PSA Test', description: 'Prostate-Specific Antigen blood test', duration: '15 minutes' },
-    { id: 'cystoscopy', name: 'Cystoscopy', description: 'Examination of the bladder and urethra', duration: '20 minutes' },
-    { id: 'urodynamics', name: 'Urodynamics', description: 'Assessment of bladder function', duration: '60 minutes' }
-  ];
 
   // Generate available time slots
   const generateTimeSlots = () => {
@@ -245,11 +232,7 @@ const Patients = () => {
     
     const pathwayMatch = selectedPathway === 'all' || patient.pathway === selectedPathway;
     
-    // Tab filtering
-    const tabMatch = activeTab === 'All Patients' || 
-      (activeTab === 'My Patients' && patient.addedBy === loggedInNurse);
-    
-    return searchMatch && pathwayMatch && tabMatch;
+    return searchMatch && pathwayMatch;
   });
 
   const handleViewPatientDetails = (patientId) => {
@@ -268,31 +251,18 @@ const Patients = () => {
       return;
     }
     const doctorName = doctors.find(d => d.id === selectedDoctor)?.name;
-    console.log('Booking appointment for patient:', selectedPatient?.name, 'on', selectedAppointmentDate, 'at', selectedAppointmentTime, 'with', doctorName);
+    console.log('Booking appointment for patient:', selectedPatient?.name, 'on', selectedAppointmentDate, 'at', selectedAppointmentTime, 'with', doctorName, 'Notes:', appointmentNotes);
     setShowAppointmentModal(false);
     setShowAppointmentSuccessModal(true);
   };
 
-  const confirmProcedureBooking = () => {
-    if (!selectedProcedureDate || !selectedProcedureTime || !selectedProcedure) {
-      alert('Please select date, time, and procedure');
-      return;
-    }
-    const procedureName = procedures.find(p => p.id === selectedProcedure)?.name;
-    console.log('Booking procedure for patient:', selectedPatient?.name, 'on', selectedProcedureDate, 'at', selectedProcedureTime, 'procedure:', procedureName);
-    setShowAppointmentModal(false);
-    setShowAppointmentSuccessModal(true);
-  };
 
   const cancelAppointmentBooking = () => {
     setShowAppointmentModal(false);
     setSelectedAppointmentDate('');
     setSelectedAppointmentTime('');
     setSelectedDoctor('');
-    setSelectedProcedure('');
-    setSelectedProcedureDate('');
-    setSelectedProcedureTime('');
-    setActiveModalTab('appointment');
+    setAppointmentNotes('');
     setSelectedPatient(null);
   };
 
@@ -301,10 +271,7 @@ const Patients = () => {
     setSelectedAppointmentDate('');
     setSelectedAppointmentTime('');
     setSelectedDoctor('');
-    setSelectedProcedure('');
-    setSelectedProcedureDate('');
-    setSelectedProcedureTime('');
-    setActiveModalTab('appointment');
+    setAppointmentNotes('');
     setSelectedPatient(null);
   };
 
@@ -326,65 +293,18 @@ const Patients = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Patients</h1>
-            <p className="text-gray-600 mt-1">Unified searchable list of all patients with current pathway status</p>
-          </div>
-          <button
-            onClick={handleAddPatient}
-            className="flex items-center px-6 py-3 bg-gradient-to-r from-green-800 to-black text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl"
-          >
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add Patient
-          </button>
-        </div>
+      {/* Add Patient Button */}
+      <div className="mb-6 flex justify-end">
+        <button
+          onClick={handleAddPatient}
+          className="flex items-center px-6 py-3 bg-gradient-to-r from-green-800 to-black text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl"
+        >
+          <UserPlus className="h-4 w-4 mr-2" />
+          Add Patient
+        </button>
       </div>
 
 
-      {/* Patient Tab Switcher */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 bg-white border-b border-gray-200">
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setActiveTab('All Patients')}
-              className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                activeTab === 'All Patients'
-                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              All Patients
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                activeTab === 'All Patients'
-                  ? 'bg-green-400 text-white'
-                  : 'bg-gray-200 text-gray-600'
-              }`}>
-                {mockPatients.length}
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveTab('My Patients')}
-              className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                activeTab === 'My Patients'
-                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              My Patients
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                activeTab === 'My Patients'
-                  ? 'bg-green-400 text-white'
-                  : 'bg-gray-200 text-gray-600'
-              }`}>
-                {mockPatients.filter(p => p.addedBy === loggedInNurse).length}
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* Patients Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -497,7 +417,6 @@ const Patients = () => {
                 <button
                   onClick={() => {
                     setSearchTerm('');
-                    setActiveTab('All Patients');
                   }}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                 >
@@ -542,35 +461,6 @@ const Patients = () => {
                 </div>
               </div>
               
-              {/* Tabs */}
-              <div className="px-6 py-4 bg-white border-b border-gray-200 flex-shrink-0">
-                <div className="flex space-x-2">
-                  {[
-                    { id: 'appointment', name: 'Doctor Appointment', icon: Calendar },
-                    { id: 'procedure', name: 'Schedule Procedure', icon: Stethoscope }
-                  ].map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveModalTab(tab.id)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center ${
-                        activeModalTab === tab.id
-                          ? 'bg-gradient-to-r from-green-500 to-green-600 text-white'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                      }`}
-                    >
-                      <tab.icon className="h-4 w-4 mr-2" />
-                      {tab.name}
-                      <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                        activeModalTab === tab.id
-                          ? 'bg-green-400 text-white'
-                          : 'bg-gray-200 text-gray-600'
-                      }`}>
-                        {tab.id === 'appointment' ? '2' : '5'}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
 
               {/* Content */}
               <div className="px-6 py-6 flex-1 overflow-y-auto">
@@ -599,166 +489,99 @@ const Patients = () => {
                     </div>
                   </div>
 
-                  {/* Appointment Tab */}
-                  {activeModalTab === 'appointment' && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* Date and Doctor Selection */}
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-900 mb-3">Select Date</label>
-                          <input
-                            type="date"
-                            value={selectedAppointmentDate}
-                            onChange={(e) => setSelectedAppointmentDate(e.target.value)}
-                            min={new Date().toISOString().split('T')[0]}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-900 mb-3">Select Doctor</label>
-                          <select
-                            value={selectedDoctor}
-                            onChange={(e) => setSelectedDoctor(e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                          >
-                            <option value="">Choose a doctor...</option>
-                            {doctors.map((doctor) => (
-                              <option key={doctor.id} value={doctor.id}>
-                                {doctor.name} - {doctor.specialization} ({doctor.experience})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Selected Summary */}
-                        {selectedAppointmentDate && selectedAppointmentTime && selectedDoctor && (
-                          <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-100">
-                            <div className="flex items-center mb-3">
-                              <div className="h-2 w-2 bg-green-500 rounded-full mr-2"></div>
-                              <h4 className="text-sm font-semibold text-green-900">Appointment Summary</h4>
-                            </div>
-                            <div className="text-sm text-green-800 space-y-2">
-                              <p><strong>Type:</strong> OPD Consultation</p>
-                              <p><strong>Patient:</strong> {selectedPatient.name}</p>
-                              <p><strong>Doctor:</strong> {doctors.find(d => d.id === selectedDoctor)?.name}</p>
-                              <p><strong>Date:</strong> {new Date(selectedAppointmentDate).toLocaleDateString('en-US', { 
-                                weekday: 'long', 
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric' 
-                              })}</p>
-                              <p><strong>Time:</strong> {selectedAppointmentTime}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Time Selection */}
+                  {/* Doctor Appointment Section */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Doctor, Date and Notes Selection */}
+                    <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-3">Select Time</label>
-                        <div className="grid grid-cols-3 gap-2 max-h-80 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
-                          {timeSlots.map((time) => (
-                            <button
-                              key={time}
-                              onClick={() => setSelectedAppointmentTime(time)}
-                              className={`px-3 py-2 text-sm rounded-md border transition-all duration-200 font-medium ${
-                                selectedAppointmentTime === time
-                                  ? 'bg-green-500 text-white border-green-500 shadow-sm'
-                                  : 'bg-white text-gray-700 border-gray-300 hover:border-green-300 hover:bg-green-50 hover:shadow-sm'
-                              }`}
-                            >
-                              {time}
-                            </button>
+                        <label className="block text-sm font-semibold text-gray-900 mb-3">Select Doctor *</label>
+                        <select
+                          value={selectedDoctor}
+                          onChange={(e) => setSelectedDoctor(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                        >
+                          <option value="">Choose a doctor...</option>
+                          {doctors.map((doctor) => (
+                            <option key={doctor.id} value={doctor.id}>
+                              {doctor.name} - {doctor.specialization} ({doctor.experience})
+                            </option>
                           ))}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2">Click on a time slot to select your preferred appointment time</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Procedure Tab */}
-                  {activeModalTab === 'procedure' && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* Procedure and Date Selection */}
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-900 mb-3">Select Procedure</label>
-                          <select
-                            value={selectedProcedure}
-                            onChange={(e) => setSelectedProcedure(e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                          >
-                            <option value="">Choose a procedure...</option>
-                            {procedures.map((procedure) => (
-                              <option key={procedure.id} value={procedure.id}>
-                                {procedure.name} - {procedure.duration}
-                              </option>
-                            ))}
-                          </select>
-                          {selectedProcedure && (
-                            <p className="text-xs text-gray-600 mt-2">
-                              {procedures.find(p => p.id === selectedProcedure)?.description}
-                            </p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-900 mb-3">Select Date</label>
-                          <input
-                            type="date"
-                            value={selectedProcedureDate}
-                            onChange={(e) => setSelectedProcedureDate(e.target.value)}
-                            min={new Date().toISOString().split('T')[0]}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                          />
-                        </div>
-
-                        {/* Selected Summary */}
-                        {selectedProcedureDate && selectedProcedureTime && selectedProcedure && (
-                          <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-100">
-                            <div className="flex items-center mb-3">
-                              <div className="h-2 w-2 bg-green-500 rounded-full mr-2"></div>
-                              <h4 className="text-sm font-semibold text-green-900">Procedure Summary</h4>
-                            </div>
-                            <div className="text-sm text-green-800 space-y-2">
-                              <p><strong>Type:</strong> {procedures.find(p => p.id === selectedProcedure)?.name}</p>
-                              <p><strong>Patient:</strong> {selectedPatient.name}</p>
-                              <p><strong>Duration:</strong> {procedures.find(p => p.id === selectedProcedure)?.duration}</p>
-                              <p><strong>Date:</strong> {new Date(selectedProcedureDate).toLocaleDateString('en-US', { 
-                                weekday: 'long', 
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric' 
-                              })}</p>
-                              <p><strong>Time:</strong> {selectedProcedureTime}</p>
-                            </div>
-                          </div>
-                        )}
+                        </select>
                       </div>
 
-                      {/* Time Selection */}
                       <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-3">Select Time</label>
-                        <div className="grid grid-cols-3 gap-2 max-h-80 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
-                          {timeSlots.map((time) => (
-                            <button
-                              key={time}
-                              onClick={() => setSelectedProcedureTime(time)}
-                              className={`px-3 py-2 text-sm rounded-md border transition-all duration-200 font-medium ${
-                                selectedProcedureTime === time
-                                  ? 'bg-green-500 text-white border-green-500 shadow-sm'
-                                  : 'bg-white text-gray-700 border-gray-300 hover:border-green-300 hover:bg-green-50 hover:shadow-sm'
-                              }`}
-                            >
-                              {time}
-                            </button>
-                          ))}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2">Click on a time slot to select your preferred procedure time</p>
+                        <label className="block text-sm font-semibold text-gray-900 mb-3">Select Date *</label>
+                        <input
+                          type="date"
+                          value={selectedAppointmentDate}
+                          onChange={(e) => setSelectedAppointmentDate(e.target.value)}
+                          min={new Date().toISOString().split('T')[0]}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                        />
                       </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-3">Notes</label>
+                        <textarea
+                          value={appointmentNotes}
+                          onChange={(e) => setAppointmentNotes(e.target.value)}
+                          rows={3}
+                          placeholder="Add any notes or special instructions for this appointment..."
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-none"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Optional: Add any relevant notes, symptoms, or instructions</p>
+                      </div>
+
+                      {/* Selected Summary */}
+                      {selectedAppointmentDate && selectedAppointmentTime && selectedDoctor && (
+                        <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-100">
+                          <div className="flex items-center mb-3">
+                            <div className="h-2 w-2 bg-green-500 rounded-full mr-2"></div>
+                            <h4 className="text-sm font-semibold text-green-900">Appointment Summary</h4>
+                          </div>
+                          <div className="text-sm text-green-800 space-y-2">
+                            <p><strong>Type:</strong> OPD Consultation</p>
+                            <p><strong>Patient:</strong> {selectedPatient.name}</p>
+                            <p><strong>Doctor:</strong> {doctors.find(d => d.id === selectedDoctor)?.name}</p>
+                            <p><strong>Date:</strong> {new Date(selectedAppointmentDate).toLocaleDateString('en-US', { 
+                              weekday: 'long', 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            })}</p>
+                            <p><strong>Time:</strong> {selectedAppointmentTime}</p>
+                            {appointmentNotes && (
+                              <div className="mt-3 pt-2 border-t border-green-200">
+                                <p><strong>Notes:</strong> {appointmentNotes}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
+
+                    {/* Time Selection */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-3">Select Time</label>
+                      <div className="grid grid-cols-3 gap-2 max-h-80 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        {timeSlots.map((time) => (
+                          <button
+                            key={time}
+                            onClick={() => setSelectedAppointmentTime(time)}
+                            className={`px-3 py-2 text-sm rounded-md border transition-all duration-200 font-medium ${
+                              selectedAppointmentTime === time
+                                ? 'bg-green-500 text-white border-green-500 shadow-sm'
+                                : 'bg-white text-gray-700 border-gray-300 hover:border-green-300 hover:bg-green-50 hover:shadow-sm'
+                            }`}
+                          >
+                            {time}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">Click on a time slot to select your preferred appointment time</p>
+                    </div>
+                  </div>
+
                 </div>
               </div>
               
@@ -766,25 +589,12 @@ const Patients = () => {
               <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex-shrink-0">
                 <div className="flex space-x-3">
                   <button
-                    onClick={activeModalTab === 'appointment' ? confirmAppointmentBooking : confirmProcedureBooking}
-                    disabled={
-                      activeModalTab === 'appointment' 
-                        ? (!selectedAppointmentDate || !selectedAppointmentTime || !selectedDoctor)
-                        : (!selectedProcedureDate || !selectedProcedureTime || !selectedProcedure)
-                    }
+                    onClick={confirmAppointmentBooking}
+                    disabled={!selectedAppointmentDate || !selectedAppointmentTime || !selectedDoctor}
                     className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold py-3 px-6 rounded-lg hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
-                    {activeModalTab === 'appointment' ? (
-                      <>
-                        <Calendar className="h-4 w-4 mr-2 inline" />
-                        Confirm Appointment
-                      </>
-                    ) : (
-                      <>
-                        <Stethoscope className="h-4 w-4 mr-2 inline" />
-                        Confirm Procedure
-                      </>
-                    )}
+                    <Calendar className="h-4 w-4 mr-2 inline" />
+                    Confirm Appointment
                   </button>
                   <button
                     onClick={cancelAppointmentBooking}
@@ -811,12 +621,8 @@ const Patients = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-white">
-                  {activeModalTab === 'appointment' ? 'Appointment Booked!' : 'Procedure Scheduled!'}
-                </h3>
-                <p className="text-green-100 text-sm mt-2">
-                  {activeModalTab === 'appointment' ? 'Appointment has been successfully scheduled' : 'Procedure has been successfully scheduled'}
-                </p>
+                <h3 className="text-xl font-bold text-white">Appointment Booked!</h3>
+                <p className="text-green-100 text-sm mt-2">Appointment has been successfully scheduled</p>
               </div>
               
               {/* Content */}
@@ -824,37 +630,26 @@ const Patients = () => {
                 <div className="text-center">
                   <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl border border-green-100">
                     <div className="text-sm text-green-800 space-y-2">
-                      {activeModalTab === 'appointment' ? (
-                        <>
-                          <p><strong>Type:</strong> OPD Consultation</p>
-                          <p><strong>Patient:</strong> {selectedPatient.name}</p>
-                          <p><strong>Doctor:</strong> {doctors.find(d => d.id === selectedDoctor)?.name}</p>
-                          <p><strong>Date:</strong> {new Date(selectedAppointmentDate).toLocaleDateString('en-US', { 
-                            weekday: 'long', 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                          })}</p>
-                          <p><strong>Time:</strong> {selectedAppointmentTime}</p>
-                        </>
-                      ) : (
-                        <>
-                          <p><strong>Type:</strong> {procedures.find(p => p.id === selectedProcedure)?.name}</p>
-                          <p><strong>Patient:</strong> {selectedPatient.name}</p>
-                          <p><strong>Duration:</strong> {procedures.find(p => p.id === selectedProcedure)?.duration}</p>
-                          <p><strong>Date:</strong> {new Date(selectedProcedureDate).toLocaleDateString('en-US', { 
-                            weekday: 'long', 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                          })}</p>
-                          <p><strong>Time:</strong> {selectedProcedureTime}</p>
-                        </>
+                      <p><strong>Type:</strong> OPD Consultation</p>
+                      <p><strong>Patient:</strong> {selectedPatient.name}</p>
+                      <p><strong>Doctor:</strong> {doctors.find(d => d.id === selectedDoctor)?.name}</p>
+                      <p><strong>Date:</strong> {new Date(selectedAppointmentDate).toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}</p>
+                      <p><strong>Time:</strong> {selectedAppointmentTime}</p>
+                      {appointmentNotes && (
+                        <div className="mt-3 pt-3 border-t border-green-200">
+                          <p><strong>Notes:</strong></p>
+                          <p className="text-xs text-green-700 mt-1 italic">"{appointmentNotes}"</p>
+                        </div>
                       )}
                     </div>
                   </div>
                   <p className="text-sm text-gray-600 mt-4">
-                    The patient will be notified about their scheduled {activeModalTab === 'appointment' ? 'appointment' : 'procedure'}.
+                    The patient will be notified about their scheduled appointment.
                   </p>
                 </div>
               </div>

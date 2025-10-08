@@ -21,7 +21,6 @@ const GPSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
   
   const navigationItems = [
     { path: '/gp/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/gp/new-referral', label: 'New Referral', icon: UserPlus },
     { path: '/gp/referral-status', label: 'Referral Status', icon: ClipboardList, relatedPaths: ['/gp/referral-details', '/gp/patient-details'] },
   ];
 

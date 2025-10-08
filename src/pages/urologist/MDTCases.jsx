@@ -68,15 +68,22 @@ const MDTCases = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showMDTNotesModal, setShowMDTNotesModal] = useState(false);
   const [showPSAChartModal, setShowPSAChartModal] = useState(false);
+  const [showAddTeamMemberModal, setShowAddTeamMemberModal] = useState(false);
   const [selectedCase, setSelectedCase] = useState(null);
   const [sortBy, setSortBy] = useState('priority');
   const [psaChartFilter, setPsaChartFilter] = useState('6months');
   
   // MDT Notes state management
   const [mdtNotes, setMdtNotes] = useState([]);
+  
+  // Initialize form with current date and time
+  const now = new Date();
+  const currentDate = now.toISOString().split('T')[0];
+  const currentTime = now.toTimeString().slice(0, 5);
+  
   const [mdtForm, setMdtForm] = useState({
-    mdtDate: '',
-    time: '',
+    mdtDate: currentDate,
+    time: currentTime,
     caseType: '',
     priority: 'Medium',
     status: 'Pending Review',
@@ -89,6 +96,16 @@ const MDTCases = () => {
   });
 
   const [isDragOver, setIsDragOver] = useState(false);
+  
+  // Add Team Member Modal state
+  const [newTeamMember, setNewTeamMember] = useState({
+    name: '',
+    department: ''
+  });
+
+  // Custom dropdown state
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [dropdownSearchTerm, setDropdownSearchTerm] = useState('');
 
   // Available team members for dropdown
   const availableTeamMembers = [
@@ -105,6 +122,12 @@ const MDTCases = () => {
     'Dr. Amanda White (Physiotherapist)',
     'Dr. Kevin Park (Nutritionist)'
   ];
+
+  // Filter team members based on search
+  const filteredTeamMembers = availableTeamMembers.filter(member => 
+    !mdtForm.teamMembers.includes(member) && 
+    member.toLowerCase().includes(dropdownSearchTerm.toLowerCase())
+  );
 
   // Mock MDT cases data
   const mdtCases = [
@@ -300,6 +323,16 @@ const MDTCases = () => {
 
   const handleMDTNotes = (case_) => {
     setSelectedCase(case_);
+    // Auto-populate date and time
+    const now = new Date();
+    const currentDate = now.toISOString().split('T')[0];
+    const currentTime = now.toTimeString().slice(0, 5);
+    
+    setMdtForm(prev => ({
+      ...prev,
+      mdtDate: currentDate,
+      time: currentTime
+    }));
     setShowMDTNotesModal(true);
   };
 
@@ -317,6 +350,62 @@ const MDTCases = () => {
     setShowPSAChartModal(false);
     setSelectedCase(null);
   };
+
+  const closeAddTeamMemberModal = () => {
+    setShowAddTeamMemberModal(false);
+    setNewTeamMember({ name: '', department: '' });
+  };
+
+  const handleAddNewTeamMember = () => {
+    if (newTeamMember.name.trim() && newTeamMember.department.trim()) {
+      const fullName = `Dr. ${newTeamMember.name.trim()}`;
+      const department = newTeamMember.department.trim();
+      const newMember = `${fullName} (${department})`;
+      
+      // Add to available team members list
+      if (!availableTeamMembers.includes(newMember)) {
+        availableTeamMembers.push(newMember);
+      }
+      
+      // Add to current form's team members
+      if (!mdtForm.teamMembers.includes(newMember)) {
+        setMdtForm(prev => ({
+          ...prev,
+          teamMembers: [...prev.teamMembers, newMember]
+        }));
+      }
+      
+      closeAddTeamMemberModal();
+    }
+  };
+
+  const handleSelectTeamMember = (member) => {
+    addTeamMember(member);
+    setIsDropdownOpen(false);
+    setDropdownSearchTerm('');
+  };
+
+  const handleDropdownToggle = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+    if (!isDropdownOpen) {
+      setDropdownSearchTerm('');
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isDropdownOpen && !event.target.closest('.dropdown-container')) {
+        setIsDropdownOpen(false);
+        setDropdownSearchTerm('');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   // MDT Notes helper functions
   const handleMDTFormChange = (field, value) => {
@@ -444,10 +533,14 @@ const MDTCases = () => {
 
     setMdtNotes(prev => [newMDTNote, ...prev]);
     
-    // Reset form
+    // Reset form (keep date and time for next use)
+    const now = new Date();
+    const currentDate = now.toISOString().split('T')[0];
+    const currentTime = now.toTimeString().slice(0, 5);
+    
     setMdtForm({
-      mdtDate: '',
-      time: '',
+      mdtDate: currentDate,
+      time: currentTime,
       caseType: '',
       priority: 'Medium',
       status: 'Pending Review',
@@ -663,10 +756,6 @@ const MDTCases = () => {
               <h2 className="text-xl font-semibold text-gray-900">MDT Cases Queue</h2>
               <p className="text-sm text-gray-600 mt-1">Cases awaiting multidisciplinary team discussion</p>
             </div>
-            <button className="flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              <span className="font-medium">Refresh Queue</span>
-            </button>
           </div>
         </div>
 
@@ -744,7 +833,7 @@ const MDTCases = () => {
                       <button
                           onClick={() => {
                             sessionStorage.setItem('lastVisitedPage', 'mdt-cases');
-                            openPatientDetails(case_.id);
+                            openPatientDetails(case_.id, 'urologist');
                           }}
                           className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
                       >
@@ -965,6 +1054,16 @@ const MDTCases = () => {
                       MDT Notes - {selectedCase.patientName}
                     </h3>
                     <p className="text-sm text-gray-600">Add comprehensive MDT discussion notes and outcomes</p>
+                    <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                      <span className="flex items-center">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        {mdtForm.mdtDate ? new Date(mdtForm.mdtDate).toLocaleDateString('en-AU') : 'Date not set'}
+                      </span>
+                      <span className="flex items-center">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {mdtForm.time || 'Time not set'}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <button
@@ -979,89 +1078,73 @@ const MDTCases = () => {
             {/* Modal Content - Scrollable */}
             <div className="flex-1 overflow-y-auto p-6">
               <div className="space-y-6">
-                {/* Basic Information */}
-                <div className="bg-white border border-gray-200 p-6">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">MDT Meeting Information</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">MDT Date *</label>
-                      <input
-                        type="date"
-                        value={mdtForm.mdtDate}
-                        onChange={(e) => handleMDTFormChange('mdtDate', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Time *</label>
-                      <input
-                        type="time"
-                        value={mdtForm.time}
-                        onChange={(e) => handleMDTFormChange('time', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Case Type *</label>
-                      <input
-                        type="text"
-                        value={mdtForm.caseType}
-                        onChange={(e) => handleMDTFormChange('caseType', e.target.value)}
-                        placeholder="e.g., High-risk prostate cancer"
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Priority *</label>
-                      <select
-                        value={mdtForm.priority}
-                        onChange={(e) => handleMDTFormChange('priority', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        <option value="High">High</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Low">Low</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
-                      <select
-                        value={mdtForm.status}
-                        onChange={(e) => handleMDTFormChange('status', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        <option value="Pending Review">Pending Review</option>
-                        <option value="Under Review">Under Review</option>
-                        <option value="Review Complete">Review Complete</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Team Members */}
                 <div className="bg-white border border-gray-200 p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-lg font-semibold text-gray-900">Team Members</h4>
-                    <div className="flex items-center space-x-3">
-                      <select
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            addTeamMember(e.target.value);
-                            e.target.value = ''; // Reset dropdown
-                          }
-                        }}
-                        className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                        defaultValue=""
+                    <div className="relative dropdown-container">
+                      <button
+                        onClick={handleDropdownToggle}
+                        className="flex items-center justify-between w-64 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white hover:bg-gray-50 transition-colors"
                       >
-                        <option value="" disabled>Select team member to add</option>
-                        {availableTeamMembers
-                          .filter(member => !mdtForm.teamMembers.includes(member))
-                          .map((member, index) => (
-                            <option key={index} value={member}>
-                              {member}
-                            </option>
-                          ))}
-                      </select>
+                        <span className="text-gray-500">Select team member to add</span>
+                        <svg className={`w-4 h-4 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      
+                      {isDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-80 overflow-hidden">
+                          {/* Search Field */}
+                          <div className="p-3 border-b border-gray-200">
+                            <div className="relative">
+                              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                              <input
+                                type="text"
+                                placeholder="Search team members..."
+                                value={dropdownSearchTerm}
+                                onChange={(e) => setDropdownSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                autoFocus
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Add New Button */}
+                          <div className="p-2 border-b border-gray-200">
+                            <button
+                              onClick={() => {
+                                setShowAddTeamMemberModal(true);
+                                setIsDropdownOpen(false);
+                              }}
+                              className="w-full flex items-center px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add New Team Member
+                            </button>
+                          </div>
+                          
+                          {/* Team Members List */}
+                          <div className="max-h-48 overflow-y-auto">
+                            {filteredTeamMembers.length > 0 ? (
+                              filteredTeamMembers.map((member, index) => (
+                                <button
+                                  key={index}
+                                  onClick={() => handleSelectTeamMember(member)}
+                                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-b border-gray-100 last:border-b-0"
+                                >
+                                  {member}
+                                </button>
+                              ))
+                            ) : (
+                              <div className="px-3 py-4 text-sm text-gray-500 text-center">
+                                {dropdownSearchTerm ? 'No team members found matching your search' : 'No available team members'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-3">
@@ -1083,18 +1166,6 @@ const MDTCases = () => {
                       </div>
                     ))}
                   </div>
-                </div>
-
-                {/* Discussion Notes */}
-                <div className="bg-white border border-gray-200 p-6">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">MDT Discussion Notes</h4>
-                  <textarea
-                    value={mdtForm.discussionNotes}
-                    onChange={(e) => handleMDTFormChange('discussionNotes', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    rows="6"
-                    placeholder="Enter detailed MDT discussion notes, findings, and clinical reasoning..."
-                  />
                 </div>
 
                 {/* MDT Outcome */}
@@ -1150,6 +1221,18 @@ const MDTCases = () => {
                       </div>
                     </button>
                   </div>
+                </div>
+
+                {/* Discussion Notes */}
+                <div className="bg-white border border-gray-200 p-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">MDT Discussion Notes</h4>
+                  <textarea
+                    value={mdtForm.discussionNotes}
+                    onChange={(e) => handleMDTFormChange('discussionNotes', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    rows="6"
+                    placeholder="Enter detailed MDT discussion notes, findings, and clinical reasoning..."
+                  />
                 </div>
 
                 {/* Recommendations */}
@@ -1584,6 +1667,90 @@ const MDTCases = () => {
                   className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium"
                 >
                   Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Team Member Modal */}
+      {showAddTeamMemberModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white max-w-md w-full border border-gray-200 rounded-xl shadow-2xl">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 px-6 py-4 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
+                    <Plus className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Add New Team Member</h3>
+                    <p className="text-sm text-gray-600">Add a new team member to the MDT</p>
+                  </div>
+                </div>
+                <button
+                  onClick={closeAddTeamMemberModal}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                <input
+                  type="text"
+                  value={newTeamMember.name}
+                  onChange={(e) => setNewTeamMember(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g., John Smith"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                />
+                <p className="text-xs text-gray-500 mt-1">Enter the full name (Dr. will be added automatically)</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Department/Specialty *</label>
+                <input
+                  type="text"
+                  value={newTeamMember.department}
+                  onChange={(e) => setNewTeamMember(prev => ({ ...prev, department: e.target.value }))}
+                  placeholder="e.g., Cardiologist, Nurse Practitioner"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                />
+                <p className="text-xs text-gray-500 mt-1">Enter the medical specialty or department</p>
+              </div>
+
+              {/* Preview */}
+              {newTeamMember.name.trim() && newTeamMember.department.trim() && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm font-medium text-blue-900 mb-1">Preview:</p>
+                  <p className="text-sm text-blue-700">
+                    Dr. {newTeamMember.name.trim()} ({newTeamMember.department.trim()})
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-gray-50 border-t border-gray-200 px-6 py-4 rounded-b-xl">
+              <div className="flex items-center justify-end space-x-3">
+                <button
+                  onClick={closeAddTeamMemberModal}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddNewTeamMember}
+                  disabled={!newTeamMember.name.trim() || !newTeamMember.department.trim()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                >
+                  Add Team Member
                 </button>
               </div>
             </div>
