@@ -10,7 +10,7 @@ const UrologistLayoutContent = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
-  const { showPatientDetailsModal, selectedPatientId, closePatientDetails } = usePatientDetails();
+  const { showPatientDetailsModal, selectedPatientId, userRole, closePatientDetails } = usePatientDetails();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -71,6 +71,7 @@ const UrologistLayoutContent = () => {
         isOpen={showPatientDetailsModal}
         onClose={closePatientDetails}
         patientId={selectedPatientId}
+        userRole={userRole}
       />
     </div>
   );

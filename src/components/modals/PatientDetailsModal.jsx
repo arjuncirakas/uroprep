@@ -109,11 +109,6 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
     note: '',
     priority: 'normal',
     
-    // Vitals
-    bloodPressure: '',
-    heartRate: '',
-    temperature: '',
-    
     // Medicine Details
     medicines: [{
       id: Date.now(),
@@ -352,14 +347,10 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
         time: '10:15',
         author: 'Jennifer Lee',
         authorRole: 'Urology Nurse',
-        type: 'vitals',
+        type: 'general',
         priority: 'normal',
-        note: 'Routine vital signs check completed. Patient arrived on time for appointment.',
-        vitals: {
-          bloodPressure: '125/80',
-          heartRate: '72',
-          temperature: '36.5°C'
-        },
+        note: 'Routine check completed. Patient arrived on time for appointment.',
+        vitals: null,
         medicine: null
       },
       {
@@ -1201,12 +1192,50 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
               </div>
             </div>
           </div>
-            <button
-              onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-            <X className="h-5 w-5" />
-            </button>
+            <div className="flex items-center space-x-3">
+              {/* Pathway Transfer Buttons - Only for Urologists */}
+              {userRole === 'urologist' && (
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm font-medium text-gray-700 mr-2">Transfer to:</span>
+                  <button
+                    onClick={() => {
+                      setSelectedPathway('Active Surveillance');
+                      setIsPathwayModalOpen(true);
+                    }}
+                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg border-0 font-medium"
+                  >
+                    <Activity className="h-4 w-4 mr-2" />
+                    <span className="text-sm">Active Surveillance</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedPathway('Surgical Pathway');
+                      setIsPathwayModalOpen(true);
+                    }}
+                    className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200 shadow-md hover:shadow-lg border-0 font-medium"
+                  >
+                    <Stethoscope className="h-4 w-4 mr-2" />
+                    <span className="text-sm">Surgical</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedPathway('Post-Op Follow-up');
+                      setIsPathwayModalOpen(true);
+                    }}
+                    className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg border-0 font-medium"
+                  >
+                    <Heart className="h-4 w-4 mr-2" />
+                    <span className="text-sm">Post-Op</span>
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={onClose}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
         </div>
 
         {/* Professional Tab Navigation */}
@@ -1380,6 +1409,8 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                         rows="3"
                       />
+                      
+
                       <div className="flex items-center justify-between mt-2">
                         <select
                           value={clinicalNotesForm.priority}
@@ -1412,12 +1443,27 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                               // Add to clinical notes
                               setClinicalNotes(prev => [newNote, ...prev]);
                               
+                              // Debug log to verify vitals are being saved
+                              console.log('New note with vitals:', newNote);
+                              
                               // Show success modal
                               setSuccessMessage('Clinical note added successfully!');
                               setIsSuccessModalOpen(true);
                               
                               // Reset form
-                              setClinicalNotesForm({ ...clinicalNotesForm, note: '', priority: 'normal' });
+                              setClinicalNotesForm({ 
+                                note: '', 
+                                priority: 'normal',
+                                medicines: [{
+                                  id: Date.now(),
+                                  medicineName: '',
+                                  dosage: '',
+                                  frequency: '',
+                                  taken: false,
+                                  sideEffects: '',
+                                  compliance: 'good'
+                                }]
+                              });
                             }
                           }}
                           className="flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1436,7 +1482,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                     <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-200 via-green-200 to-gray-200"></div>
                     
                     <div className="space-y-4">
-                      {[...clinicalNotes, ...mockPatient.clinicalNotes].map((note, index) => {
+                      {clinicalNotes.map((note, index) => {
                       const isToday = note.date === new Date().toISOString().split('T')[0];
                         const isRecent = index < 2;
                       
@@ -1446,18 +1492,8 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                           <div className="relative flex-shrink-0">
                               <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 border-white ${
                                 isRecent ? 'ring-2 ring-blue-300' : ''
-                              } ${
-                                note.type === 'general' ? 'bg-blue-500' :
-                                note.type === 'vitals' ? 'bg-green-500' :
-                                'bg-purple-500'
-                              }`}>
-                                {note.type === 'general' ? (
-                                  <FileText className="h-4 w-4 text-white" />
-                                ) : note.type === 'vitals' ? (
-                                  <Activity className="h-4 w-4 text-white" />
-                                ) : (
-                                  <Pill className="h-4 w-4 text-white" />
-                                )}
+                              } bg-blue-500`}>
+                                <FileText className="h-4 w-4 text-white" />
                               </div>
                           </div>
                           
@@ -1502,35 +1538,12 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                             
                               <p className="text-sm text-gray-700 leading-relaxed">{note.note}</p>
                               
-                          {note.vitals && (
-                                <div className="mt-2 pt-2 border-t border-gray-100">
-                                  <div className="flex items-center space-x-3 text-xs">
-                                {note.vitals.bloodPressure && (
-                                      <span className="flex items-center text-gray-600">
-                                        <Activity className="h-3 w-3 mr-1 text-green-600" />
-                                        BP: <span className="font-semibold ml-1">{note.vitals.bloodPressure}</span>
-                                      </span>
-                                )}
-                                {note.vitals.heartRate && (
-                                      <span className="flex items-center text-gray-600">
-                                        <Heart className="h-3 w-3 mr-1 text-red-600" />
-                                        HR: <span className="font-semibold ml-1">{note.vitals.heartRate}</span>
-                                      </span>
-                                )}
-                                {note.vitals.temperature && (
-                                      <span className="text-gray-600">
-                                        Temp: <span className="font-semibold">{note.vitals.temperature}</span>
-                                      </span>
-                                    )}
-                                        </div>
-                                      </div>
-                                    )}
                           </div>
                         </div>
                       );
                     })}
                       
-                      {[...clinicalNotes, ...mockPatient.clinicalNotes].length === 0 && (
+                      {clinicalNotes.length === 0 && (
                         <div className="text-center py-8 text-gray-500">
                           <FileText className="h-12 w-12 mx-auto mb-2 text-gray-400" />
                           <p className="text-sm">No clinical notes yet</p>
@@ -1938,79 +1951,6 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
           )}
         </div>
 
-        {/* Footer - Pathway Transfer Buttons - Only for Urologists */}
-        {userRole === 'urologist' && (
-          <div className="flex-shrink-0 border-t border-gray-200 bg-white px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-sm"></div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Current Pathway</span>
-                    <span className="text-sm font-semibold text-gray-900">{mockPatient.pathway}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                <div className="flex flex-col items-end mr-3">
-                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Transfer Patient To</span>
-                  <span className="text-xs text-gray-400">Select new care pathway</span>
-                </div>
-                
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => {
-                      setSelectedPathway('Active Surveillance');
-                      setIsPathwayModalOpen(true);
-                    }}
-                    className="group relative flex items-center px-6 py-4 bg-white border-2 border-blue-300 rounded-2xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 min-w-[180px] ring-2 ring-blue-100 hover:ring-blue-200"
-                  >
-                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mr-4 group-hover:bg-blue-700 transition-colors duration-300">
-                      <Activity className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="flex flex-col items-start">
-                      <span className="text-sm font-bold text-gray-900 group-hover:text-blue-900 transition-colors">Active Surveillance</span>
-                      <span className="text-xs text-gray-600 group-hover:text-blue-700 transition-colors">Continue monitoring</span>
-                    </div>
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      setSelectedPathway('Surgical Pathway');
-                      setIsPathwayModalOpen(true);
-                    }}
-                    className="group relative flex items-center px-6 py-4 bg-white border-2 border-purple-300 rounded-2xl hover:border-purple-500 hover:bg-purple-50 transition-all duration-300 min-w-[180px] ring-2 ring-purple-100 hover:ring-purple-200"
-                  >
-                    <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center mr-4 group-hover:bg-purple-700 transition-colors duration-300">
-                      <Stethoscope className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="flex flex-col items-start">
-                      <span className="text-sm font-bold text-gray-900 group-hover:text-purple-900 transition-colors">Surgical Pathway</span>
-                      <span className="text-xs text-gray-600 group-hover:text-purple-700 transition-colors">Schedule surgery</span>
-                    </div>
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      setSelectedPathway('Post-Op Follow-up');
-                      setIsPathwayModalOpen(true);
-                    }}
-                    className="group relative flex items-center px-6 py-4 bg-white border-2 border-green-300 rounded-2xl hover:border-green-500 hover:bg-green-50 transition-all duration-300 min-w-[180px] ring-2 ring-green-100 hover:ring-green-200"
-                  >
-                    <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center mr-4 group-hover:bg-green-700 transition-colors duration-300">
-                      <Heart className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="flex flex-col items-start">
-                      <span className="text-sm font-bold text-gray-900 group-hover:text-green-900 transition-colors">Post-Op Follow-up</span>
-                      <span className="text-xs text-gray-600 group-hover:text-green-700 transition-colors">Recovery care</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Add Clinical History Modal */}

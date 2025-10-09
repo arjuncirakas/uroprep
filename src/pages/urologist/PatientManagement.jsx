@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import AddPatientModal from '../../components/modals/AddPatientModal';
+import ScheduleMDTModal from '../../components/modals/ScheduleMDTModal';
 import { usePatientDetails } from '../../contexts/PatientDetailsContext';
 import { 
   Search, 
   UserPlus, 
   Eye, 
   X,
-  Users
+  Users,
+  Calendar
 } from 'lucide-react';
 
 const PatientManagement = () => {
@@ -19,6 +21,10 @@ const PatientManagement = () => {
   
   // Add Patient Modal state
   const [showAddPatientModal, setShowAddPatientModal] = useState(false);
+
+  // Schedule MDT Modal state
+  const [showScheduleMDTModal, setShowScheduleMDTModal] = useState(false);
+  const [selectedPatientForMDT, setSelectedPatientForMDT] = useState(null);
 
   // Mock patient data combining all databases
   const allPatients = [
@@ -379,6 +385,22 @@ const PatientManagement = () => {
     openPatientDetails(patientId, 'urologist');
   };
 
+  // Schedule MDT Modal handlers
+  const handleScheduleMDT = (patient) => {
+    setSelectedPatientForMDT(patient);
+    setShowScheduleMDTModal(true);
+  };
+
+  const handleMDTScheduled = (mdtData) => {
+    console.log('MDT scheduled:', mdtData);
+    // Here you could update your local state or dispatch to Redux store
+  };
+
+  const handleCloseScheduleMDTModal = () => {
+    setShowScheduleMDTModal(false);
+    setSelectedPatientForMDT(null);
+  };
+
 
   return (
     <div className="space-y-6">
@@ -557,6 +579,16 @@ const PatientManagement = () => {
                             <Eye className="h-4 w-4 mr-2" />
                             <span>View Details</span>
                         </button>
+                        {/* Show Schedule MDT button only for Surgical Pathway patients */}
+                        {activeTab === 'Surgical Pathway' && (
+                          <button
+                            onClick={() => handleScheduleMDT(patient)}
+                            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-800 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                          >
+                            <Calendar className="h-4 w-4 mr-2" />
+                            <span>Schedule MDT</span>
+                          </button>
+                        )}
                       </div>
                       </td>
                     </tr>
@@ -605,6 +637,14 @@ const PatientManagement = () => {
         onClose={handleCloseAddPatientModal}
         onPatientAdded={handlePatientAdded}
         isUrologist={true}
+      />
+
+      {/* Schedule MDT Modal */}
+      <ScheduleMDTModal
+        isOpen={showScheduleMDTModal}
+        onClose={handleCloseScheduleMDTModal}
+        onScheduled={handleMDTScheduled}
+        selectedPatientData={selectedPatientForMDT}
       />
 
     </div>
