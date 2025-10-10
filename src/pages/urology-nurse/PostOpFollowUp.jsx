@@ -75,7 +75,7 @@ const PostOpFollowUp = () => {
   
   // Calendar view states
   const [activeFilter, setActiveFilter] = useState('Post-Op Patients');
-  const [calendarViewMode, setCalendarViewMode] = useState('calendar');
+  const [calendarViewMode, setCalendarViewMode] = useState('calendar'); // week, calendar, daily
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
@@ -87,14 +87,6 @@ const PostOpFollowUp = () => {
   const [hoveredPSA, setHoveredPSA] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   
-  // PSA entry modal states
-  const [isPSAModalOpen, setIsPSAModalOpen] = useState(false);
-  const [selectedPatientForPSA, setSelectedPatientForPSA] = useState(null);
-  const [psaForm, setPsaForm] = useState({
-    date: '',
-    value: '',
-    notes: ''
-  });
   
   // Drag and drop states
   const [draggedAppointment, setDraggedAppointment] = useState(null);
@@ -771,45 +763,6 @@ const PostOpFollowUp = () => {
     setSelectedPatientForPSAMonitoring(null);
   };
 
-  // PSA Entry handlers
-  const handlePSAEntry = (patientId) => {
-    const patient = mockPostOpPatients.find(p => p.id === patientId);
-    setSelectedPatientForPSA(patient);
-    setIsPSAModalOpen(true);
-  };
-
-  const handlePSAFormChange = (e) => {
-    const { name, value } = e.target;
-    setPsaForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleAddPSA = (e) => {
-    e.preventDefault();
-    // In a real app, this would save to the backend
-    console.log('Adding PSA value for patient:', selectedPatientForPSA?.id, psaForm);
-    
-    // Reset form and close modal
-    setPsaForm({
-      date: '',
-      value: '',
-      notes: ''
-    });
-    setSelectedPatientForPSA(null);
-    setIsPSAModalOpen(false);
-  };
-
-  const closePSAModal = () => {
-    setIsPSAModalOpen(false);
-    setSelectedPatientForPSA(null);
-    setPsaForm({
-      date: '',
-      value: '',
-      notes: ''
-    });
-  };
 
   // PSA Chart configuration
   const getPSAChartData = (patient, chartType) => {
@@ -1223,6 +1176,152 @@ const PostOpFollowUp = () => {
     );
   };
 
+  const renderDailyView = () => {
+    const selectedDateObj = new Date(selectedDate);
+    const allAppointments = getAllAppointments();
+    const dayAppointments = allAppointments.filter(apt => apt.date === selectedDate);
+    
+    // Sort appointments by time
+    const sortedAppointments = dayAppointments.sort((a, b) => {
+      const timeA = a.time.replace(/[^\d]/g, '');
+      const timeB = b.time.replace(/[^\d]/g, '');
+      return timeA.localeCompare(timeB);
+    });
+
+    const navigateDay = (direction) => {
+      const newDate = new Date(selectedDateObj);
+      newDate.setDate(newDate.getDate() + direction);
+      setSelectedDate(newDate.toISOString().split('T')[0]);
+    };
+    
+    return (
+      <div className="p-6">
+        {/* Daily Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => navigateDay(-1)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <h3 className="text-xl font-semibold text-gray-900">
+              {selectedDateObj.toLocaleDateString('en-AU', { 
+                weekday: 'long',
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric' 
+              })}
+            </h3>
+            <button
+              onClick={() => navigateDay(1)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Daily Schedule */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          {sortedAppointments.length > 0 ? (
+            <div className="divide-y divide-gray-200">
+              {sortedAppointments.map((appointment, index) => (
+                <div
+                  key={appointment.id}
+                  onClick={() => handleViewAppointment(appointment)}
+                  className={`p-6 hover:bg-gray-50 transition-colors duration-200 cursor-pointer ${
+                    index % 2 === 0 ? 'bg-white' : 'bg-gray-25'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      {/* Time */}
+                      <div className="flex-shrink-0">
+                        <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center border border-blue-200">
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-blue-900">{appointment.time}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Appointment Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h4 className="text-lg font-semibold text-gray-900 truncate">
+                            {appointment.patientName}
+                          </h4>
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            {appointment.upi}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-4 mb-2">
+                          <div className="flex items-center space-x-2">
+                            <div className={`w-3 h-3 rounded-full ${
+                              appointment.interval === 3 ? 'bg-blue-500' :
+                              appointment.interval === 6 ? 'bg-green-500' :
+                              appointment.interval === 9 ? 'bg-yellow-500' :
+                              'bg-purple-500'
+                            }`}></div>
+                            <span className="text-sm font-medium text-gray-700">{appointment.title}</span>
+                          </div>
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                            {appointment.status}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center space-x-6 text-sm text-gray-600">
+                          <div className="flex items-center space-x-1">
+                            <Stethoscope className="h-4 w-4" />
+                            <span>{appointment.assignedDoctor}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Clock className="h-4 w-4" />
+                            <span>{appointment.interval} months</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center space-x-2">
+                      <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                        {appointment.interval}M
+                      </span>
+                      <div className="w-8 h-8 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
+                        <span className="text-white font-semibold text-xs">
+                          {appointment.patientName.split(' ').map(n => n[0]).join('')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <div className="mx-auto w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-6">
+                <Calendar className="h-12 w-12 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                No appointments scheduled
+              </h3>
+              <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                There are no follow-up appointments scheduled for {selectedDateObj.toLocaleDateString('en-AU', { 
+                  weekday: 'long',
+                  day: 'numeric', 
+                  month: 'long', 
+                  year: 'numeric' 
+                })}.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // Drag and drop functions
   const handleDragStart = (e, appointment) => {
     setDraggedAppointment(appointment);
@@ -1531,13 +1630,6 @@ const PostOpFollowUp = () => {
                           <span>PSA Monitoring</span>
                         </button>
                         
-                        <button 
-                          onClick={() => handlePSAEntry(patient.id)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          <span>Add PSA</span>
-                        </button>
                         
                         <button 
                           onClick={() => handleBookAppointment(patient)}
@@ -1605,6 +1697,17 @@ const PostOpFollowUp = () => {
                 {/* View Mode Tabs */}
                 <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
                   <button
+                    onClick={() => setCalendarViewMode('daily')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                      calendarViewMode === 'daily' 
+                        ? 'bg-gradient-to-r from-green-800 to-black text-white shadow-md' 
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+                    }`}
+                    title="Daily View"
+                  >
+                    Day
+                  </button>
+                  <button
                     onClick={() => setCalendarViewMode('week')}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                       calendarViewMode === 'week' 
@@ -1630,7 +1733,7 @@ const PostOpFollowUp = () => {
               </div>
             </div>
             
-            {calendarViewMode === 'week' ? renderWeekView() : renderCalendarView()}
+            {calendarViewMode === 'daily' ? renderDailyView() : calendarViewMode === 'week' ? renderWeekView() : renderCalendarView()}
           </div>
         </div>
       )}
@@ -2324,115 +2427,6 @@ const PostOpFollowUp = () => {
         </div>
       )}
 
-      {/* PSA Entry Modal */}
-      {isPSAModalOpen && selectedPatientForPSA && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Add PSA Value</h2>
-                <p className="text-sm text-gray-600 mt-1">Patient: {selectedPatientForPSA.patientName}</p>
-              </div>
-              <button
-                onClick={closePSAModal}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <form onSubmit={handleAddPSA} className="p-6 space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Test Date *
-                </label>
-                <input
-                  type="date"
-                  name="date"
-                  value={psaForm.date}
-                  onChange={handlePSAFormChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  PSA Value (ng/mL) *
-                </label>
-                <input
-                  type="number"
-                  name="value"
-                  value={psaForm.value}
-                  onChange={handlePSAFormChange}
-                  required
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  placeholder="e.g., 6.2"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Notes
-                </label>
-                <textarea
-                  name="notes"
-                  value={psaForm.notes}
-                  onChange={handlePSAFormChange}
-                  rows={3}
-                  placeholder="Add any clinical notes or observations..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
-                />
-              </div>
-
-              {/* PSA Status Preview */}
-              {psaForm.value && (
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">PSA Status Preview:</h4>
-                  <div className="flex items-center space-x-2">
-                    {parseFloat(psaForm.value) <= 6.0 ? (
-                      <>
-                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                        <span className="text-sm font-medium text-green-800">Normal (≤6.0 ng/mL)</span>
-                      </>
-                    ) : parseFloat(psaForm.value) <= 6.5 ? (
-                      <>
-                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                        <span className="text-sm font-medium text-yellow-800">Elevated (6.1-6.5 ng/mL)</span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <span className="text-sm font-medium text-red-800">High (&gt;6.5 ng/mL)</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={closePSAModal}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex items-center px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add PSA Value
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* PSA Tooltip Portal - Rendered outside table overflow */}
       {hoveredPSA && createPortal(

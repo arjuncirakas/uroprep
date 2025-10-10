@@ -27,6 +27,7 @@ const NewReferralModal = ({ isOpen, onClose }) => {
     familyHistory: false,
     comorbidities: [],
     imaging: null,
+    preferredDoctor: '',
     
     // GP Details (auto-filled)
     gpName: user?.name || '',
@@ -48,6 +49,21 @@ const NewReferralModal = ({ isOpen, onClose }) => {
     'Liver disease',
     'Immunocompromised',
     'Other'
+  ]
+
+  // Available doctors for referral
+  const availableDoctors = [
+    'Dr. Sarah Johnson',
+    'Dr. Michael Chen',
+    'Dr. Emily Rodriguez',
+    'Dr. David Thompson',
+    'Dr. Lisa Anderson',
+    'Dr. James Wilson',
+    'Dr. Maria Garcia',
+    'Dr. Robert Brown',
+    'Dr. Jennifer Taylor',
+    'Dr. Christopher Lee',
+    'Any Available Doctor'
   ]
 
 
@@ -441,6 +457,27 @@ const NewReferralModal = ({ isOpen, onClose }) => {
                         <span className="text-sm text-gray-700">No</span>
                       </label>
                     </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label htmlFor="modal-preferredDoctor" className="block text-sm font-medium text-gray-700">
+                      Preferred Doctor
+                    </label>
+                    <select
+                      id="modal-preferredDoctor"
+                      value={formData.preferredDoctor}
+                      onChange={(e) => handleInputChange('preferredDoctor', e.target.value)}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    >
+                      <option value="">Select preferred doctor (optional)</option>
+                      {availableDoctors.map((doctor) => (
+                        <option key={doctor} value={doctor}>
+                          {doctor}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 

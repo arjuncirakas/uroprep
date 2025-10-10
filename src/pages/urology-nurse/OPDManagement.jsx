@@ -61,6 +61,13 @@ const OPDManagement = () => {
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [showPSAHistoryModal, setShowPSAHistoryModal] = useState(false);
   const [psaChartType, setPsaChartType] = useState('line');
+  const [isPSAModalOpen, setIsPSAModalOpen] = useState(false);
+  const [selectedPatientForPSA, setSelectedPatientForPSA] = useState(null);
+  const [psaForm, setPsaForm] = useState({
+    date: '',
+    value: '',
+    notes: ''
+  });
 
   // Mock OPD queue data
   const mockOPDQueue = [
@@ -819,6 +826,46 @@ const OPDManagement = () => {
     alert('Patient data updated successfully!');
   };
 
+  // PSA Entry handlers
+  const handlePSAEntry = (patientId) => {
+    const patient = mockOPDQueue.find(p => p.id === patientId);
+    setSelectedPatientForPSA(patient);
+    setIsPSAModalOpen(true);
+  };
+
+  const handlePSAFormChange = (e) => {
+    const { name, value } = e.target;
+    setPsaForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleAddPSA = (e) => {
+    e.preventDefault();
+    // In a real app, this would save to the backend
+    console.log('Adding PSA value for patient:', selectedPatientForPSA?.id, psaForm);
+    
+    // Reset form and close modal
+    setPsaForm({
+      date: '',
+      value: '',
+      notes: ''
+    });
+    setSelectedPatientForPSA(null);
+    setIsPSAModalOpen(false);
+  };
+
+  const closePSAModal = () => {
+    setIsPSAModalOpen(false);
+    setSelectedPatientForPSA(null);
+    setPsaForm({
+      date: '',
+      value: '',
+      notes: ''
+    });
+  };
+
   // PSA reference values based on age and gender
   const getPSABaselineInfo = (gender, age) => {
     if (gender === 'Male') {
@@ -1015,9 +1062,9 @@ const OPDManagement = () => {
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">PSA Level</th>
                   {(activeFilter === 'New Patient' || activeFilter === 'Appointment for Urologist') && (
                     <>
-                      <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">MRI</th>
-                      <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Biopsy</th>
-                      <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">TRUS</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">MRI</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Biopsy</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">TRUS</th>
                     </>
                   )}
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
@@ -1074,32 +1121,26 @@ const OPDManagement = () => {
                     </td>
                     {(activeFilter === 'New Patient' || activeFilter === 'Appointment for Urologist') && (
                       <>
-                      <td className="py-5 px-6">
-                          <div className="flex items-center justify-center">
+                      <td className="py-5 px-6 text-center">
                             {patient.testResults?.mri === 'Available' ? (
-                              <CheckCircle className="h-5 w-5 text-green-600" title="MRI Results Available" />
+                              <CheckCircle className="h-5 w-5 text-green-600 mx-auto" title="MRI Results Available" />
                             ) : (
-                              <XCircle className="h-5 w-5 text-red-500" title="MRI Results Not Available" />
+                              <XCircle className="h-5 w-5 text-red-500 mx-auto" title="MRI Results Not Available" />
                             )}
-                          </div>
                       </td>
-                        <td className="py-5 px-6">
-                          <div className="flex items-center justify-center">
+                        <td className="py-5 px-6 text-center">
                             {patient.testResults?.biopsy === 'Available' ? (
-                              <CheckCircle className="h-5 w-5 text-green-600" title="Biopsy Results Available" />
+                              <CheckCircle className="h-5 w-5 text-green-600 mx-auto" title="Biopsy Results Available" />
                             ) : (
-                              <XCircle className="h-5 w-5 text-red-500" title="Biopsy Results Not Available" />
+                              <XCircle className="h-5 w-5 text-red-500 mx-auto" title="Biopsy Results Not Available" />
                             )}
-                          </div>
                         </td>
-                        <td className="py-5 px-6">
-                          <div className="flex items-center justify-center">
+                        <td className="py-5 px-6 text-center">
                             {patient.testResults?.trus === 'Available' ? (
-                              <CheckCircle className="h-5 w-5 text-green-600" title="TRUS Results Available" />
+                              <CheckCircle className="h-5 w-5 text-green-600 mx-auto" title="TRUS Results Available" />
                             ) : (
-                              <XCircle className="h-5 w-5 text-red-500" title="TRUS Results Not Available" />
+                              <XCircle className="h-5 w-5 text-red-500 mx-auto" title="TRUS Results Not Available" />
                             )}
-                          </div>
                         </td>
                       </>
                     )}
@@ -1111,6 +1152,13 @@ const OPDManagement = () => {
                         >
                           <Eye className="h-3 w-3 mr-1" />
                           <span>View</span>
+                        </button>
+                        <button 
+                          onClick={() => handlePSAEntry(patient.id)}
+                          className="inline-flex items-center justify-center px-3 py-3 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-800 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 h-10"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          <span>Add PSA</span>
                         </button>
                         {patient.status === 'Waiting for Scheduling' && (
                           <>
@@ -1179,20 +1227,10 @@ const OPDManagement = () => {
       {/* Patient Details Modal */}
       {showPatientModal && selectedPatient && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-          <div className="relative top-4 mx-auto p-0 shadow-lg rounded-md bg-white max-w-6xl w-full min-w-[800px] mb-4 h-[90vh] flex flex-col">
+          <div className="relative top-4 mx-auto p-0 shadow-lg rounded-md bg-white max-w-7xl w-full min-w-[1200px] mb-4 h-[90vh] flex flex-col">
             <div className="p-0 flex flex-col h-full">
               {/* Modal Header */}
               <div className="flex items-center justify-end p-3 border-b border-gray-200 flex-shrink-0">
-                <div className="flex items-center space-x-2">
-                  {!isEditing && (
-                  <button
-                      onClick={handleEditToggle}
-                      className="flex items-center px-4 py-2 rounded-lg transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700"
-                    >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit Details
-                    </button>
-                  )}
                 <button
                   onClick={closePatientModal}
                   className="flex items-center px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
@@ -1200,7 +1238,6 @@ const OPDManagement = () => {
                   <X className="h-4 w-4 mr-2" />
                   Close
                 </button>
-                </div>
               </div>
 
               {/* Patient Header Card */}
@@ -1217,7 +1254,7 @@ const OPDManagement = () => {
                       <div>
                         <h1 className="text-lg font-semibold text-gray-900">{selectedPatient.patientName}</h1>
                         <p className="text-xs text-gray-600">UPI: {selectedPatient.upi}</p>
-                        <div className="flex items-center space-x-2 mt-1">
+                        <div className="flex items-center space-x-2 mt-2">
                           <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md ${getStatusColor(selectedPatient.status)}`}>
                             {selectedPatient.status.replace('_', ' ')}
                           </span>
@@ -1231,151 +1268,103 @@ const OPDManagement = () => {
                       </div>
                     </div>
 
-                    {/* Right side - Clinical Information */}
-                    <div className="text-right">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-1">Clinical Information</h3>
-                      <p className="text-sm font-medium text-gray-900">Referral: {selectedPatient.referralSource}</p>
-                      <p className="text-xs text-gray-600">Entry Date: {selectedPatient.dateOfEntry || '2024-01-10'}</p>
-                      <p className="text-xs text-gray-500 mt-1">Urologist: {selectedPatient.assignedUrologist}</p>
+                    {/* Right side - PSA Data */}
+                    <div className="flex items-center space-x-6">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-900">{selectedPatient.latestPSA}</div>
+                        <div className="text-xs text-blue-700">ng/mL</div>
+                        <div className="text-xs text-blue-600 mt-1">Latest PSA</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-semibold text-purple-900">{selectedPatient.dateOfEntry || '2024-01-10'}</div>
+                        <div className="text-xs text-purple-700">Test Date</div>
+                      </div>
+                      <button
+                        onClick={() => setShowPSAHistoryModal(true)}
+                        className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                      >
+                        <TrendingUp className="h-4 w-4 mr-1" />
+                        View PSA History
+                      </button>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Content */}
+              {/* Content - Two Column Layout */}
               <div className="bg-white flex flex-col flex-1 min-h-0">
-                <div className="p-4 flex-1 overflow-y-auto">
-
-                  {/* PSA Data Section */}
-                  <div className="space-y-4 mb-6">
-                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                        <div className="flex items-center justify-between mb-4">
-                          <h2 className="text-base font-semibold text-gray-900">PSA Data & Criteria</h2>
-                          <button
-                            onClick={() => setShowPSAHistoryModal(true)}
-                            className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
-                          >
-                            <TrendingUp className="h-4 w-4 mr-1" />
-                            View PSA History
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                          <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-                            <div 
-                              className={`text-3xl font-bold cursor-help ${
-                                selectedPatient.latestPSA > 10 ? 'text-red-600' : 
-                                selectedPatient.latestPSA > 4 ? 'text-amber-600' : 
-                                'text-blue-900'
-                              }`}
-                              onMouseEnter={(e) => handlePSAHover(e, selectedPatient)}
-                              onMouseLeave={handlePSALeave}
-                            >
-                              {selectedPatient.latestPSA}
-                            </div>
-                            <div className="text-sm text-blue-700">ng/mL</div>
-                            <div className="text-xs text-blue-600 mt-1">Latest PSA</div>
-                          </div>
-                          <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
-                            <div className="text-lg font-semibold text-green-900">{selectedPatient.psaCriteria || 'PSA 4-10 ng/mL'}</div>
-                            <div className="text-sm text-green-700">PSA Criteria</div>
-                          </div>
-                          <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
-                            <div className="text-lg font-semibold text-purple-900">{selectedPatient.dateOfEntry || '2024-01-10'}</div>
-                            <div className="text-sm text-purple-700">Test Date</div>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 flex-1 overflow-hidden">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
+                    
+                    {/* LEFT COLUMN */}
+                    <div className="space-y-3">
+                      {/* Patient Assessment */}
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+                        <h2 className="text-sm font-semibold text-gray-900 mb-3">Patient Assessment</h2>
+                        <div className="grid grid-cols-1 gap-3">
+                          {/* Symptoms */}
                           <div>
-                            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Comorbidities</h3>
-                            <div className="space-y-2">
-                              {(selectedPatient.comorbidities || []).map((comorbidity, index) => (
-                                <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                  {comorbidity}
-                                </span>
-                              ))}
-                              {(!selectedPatient.comorbidities || selectedPatient.comorbidities.length === 0) && (
-                                <span className="text-sm text-gray-500">No comorbidities recorded</span>
-                              )}
-                            </div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Symptoms</label>
+                            {isEditing ? (
+                              <textarea
+                                value={clinicalData.symptoms}
+                                onChange={(e) => setClinicalData({...clinicalData, symptoms: e.target.value})}
+                                rows={2}
+                                className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-transparent text-sm"
+                                placeholder="Describe symptoms..."
+                              />
+                            ) : (
+                              <div className="w-full px-2 py-1 bg-gray-50 border border-gray-200 rounded text-sm text-gray-700 min-h-[2rem]">
+                                {clinicalData.symptoms || 'No symptoms recorded'}
+                              </div>
+                            )}
                           </div>
+
+                          {/* Allergies */}
                           <div>
-                            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Current Medications</h3>
-                            <div className="space-y-2">
-                              {(selectedPatient.medications || []).map((medication, index) => (
-                                <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                  {medication}
-                                </span>
-                              ))}
-                              {(!selectedPatient.medications || selectedPatient.medications.length === 0) && (
-                                <span className="text-sm text-gray-500">No medications recorded</span>
-                              )}
-                            </div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Allergies</label>
+                            {isEditing ? (
+                              <textarea
+                                value={clinicalData.allergies}
+                                onChange={(e) => setClinicalData({...clinicalData, allergies: e.target.value})}
+                                rows={2}
+                                className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-transparent text-sm"
+                                placeholder="List allergies..."
+                              />
+                            ) : (
+                              <div className="w-full px-2 py-1 bg-gray-50 border border-gray-200 rounded text-sm text-gray-700 min-h-[2rem]">
+                                {clinicalData.allergies || 'No allergies recorded'}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Nurse Notes */}
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Clinical Notes</label>
+                            {isEditing ? (
+                              <textarea
+                                value={clinicalData.clinicalNotes}
+                                onChange={(e) => setClinicalData({...clinicalData, clinicalNotes: e.target.value})}
+                                rows={3}
+                                className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-transparent text-sm"
+                                placeholder="Enter clinical notes..."
+                              />
+                            ) : (
+                              <div className="w-full px-2 py-1 bg-gray-50 border border-gray-200 rounded text-sm text-gray-700 min-h-[3rem]">
+                                {clinicalData.clinicalNotes || 'No clinical notes available'}
+                              </div>
+                            )}
                           </div>
                         </div>
-                        
-                        <div className="mt-4">
-                          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Family History</h3>
-                          <div className="bg-gray-50 rounded-lg p-3">
-                            <p className="text-sm text-gray-700">{selectedPatient.familyHistory || 'No significant family history recorded'}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                  {/* Patient Assessment Section */}
-                  <div className="space-y-4 mb-6">
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                      <h2 className="text-base font-semibold text-gray-900 mb-4">Patient Assessment</h2>
-
-                      {/* Symptoms */}
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-600 mb-1">
-                          Symptoms
-                        </label>
-                        {isEditing ? (
-                          <textarea
-                            value={clinicalData.symptoms}
-                            onChange={(e) => setClinicalData({...clinicalData, symptoms: e.target.value})}
-                            rows={2}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            placeholder="Describe patient symptoms..."
-                          />
-                        ) : (
-                          <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 min-h-[2.5rem] flex items-center">
-                            {clinicalData.symptoms || 'No symptoms recorded'}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Allergies */}
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-600 mb-1">
-                          Allergies
-                        </label>
-                        {isEditing ? (
-                          <textarea
-                            value={clinicalData.allergies}
-                            onChange={(e) => setClinicalData({...clinicalData, allergies: e.target.value})}
-                            rows={2}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            placeholder="List known allergies..."
-                          />
-                        ) : (
-                          <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 min-h-[2.5rem] flex items-center">
-                            {clinicalData.allergies || 'No allergies recorded'}
-                          </div>
-                        )}
                       </div>
 
                       {/* Vital Signs */}
-                      <div className="mb-4">
-                        <h3 className="text-sm font-medium text-gray-700 mb-3">Vital Signs</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+                        <h2 className="text-sm font-semibold text-gray-900 mb-3">Vital Signs</h2>
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* Blood Pressure */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">
-                              Blood Pressure
-                            </label>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Blood Pressure</label>
                             {isEditing ? (
                               <input
                                 type="text"
@@ -1384,19 +1373,19 @@ const OPDManagement = () => {
                                   ...clinicalData, 
                                   vitalSigns: {...clinicalData.vitalSigns, bloodPressure: e.target.value}
                                 })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-transparent text-sm"
                                 placeholder="120/80"
                               />
                             ) : (
-                              <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
+                              <div className="w-full px-2 py-1 bg-gray-50 border border-gray-200 rounded text-sm text-gray-700">
                                 {clinicalData.vitalSigns.bloodPressure || 'Not recorded'}
                               </div>
                             )}
                           </div>
+
+                          {/* Heart Rate */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">
-                              Heart Rate (bpm)
-                            </label>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Heart Rate</label>
                             {isEditing ? (
                               <input
                                 type="number"
@@ -1405,19 +1394,19 @@ const OPDManagement = () => {
                                   ...clinicalData, 
                                   vitalSigns: {...clinicalData.vitalSigns, heartRate: e.target.value}
                                 })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-transparent text-sm"
                                 placeholder="72"
                               />
                             ) : (
-                              <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
+                              <div className="w-full px-2 py-1 bg-gray-50 border border-gray-200 rounded text-sm text-gray-700">
                                 {clinicalData.vitalSigns.heartRate || 'Not recorded'}
                               </div>
                             )}
                           </div>
+
+                          {/* Temperature */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">
-                              Temperature (°C)
-                            </label>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Temperature</label>
                             {isEditing ? (
                               <input
                                 type="number"
@@ -1427,19 +1416,19 @@ const OPDManagement = () => {
                                   ...clinicalData, 
                                   vitalSigns: {...clinicalData.vitalSigns, temperature: e.target.value}
                                 })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-transparent text-sm"
                                 placeholder="36.5"
                               />
                             ) : (
-                              <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
+                              <div className="w-full px-2 py-1 bg-gray-50 border border-gray-200 rounded text-sm text-gray-700">
                                 {clinicalData.vitalSigns.temperature || 'Not recorded'}
                               </div>
                             )}
                           </div>
+
+                          {/* Weight */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">
-                              Weight (kg)
-                            </label>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Weight</label>
                             {isEditing ? (
                               <input
                                 type="number"
@@ -1449,78 +1438,42 @@ const OPDManagement = () => {
                                   ...clinicalData, 
                                   vitalSigns: {...clinicalData.vitalSigns, weight: e.target.value}
                                 })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-transparent text-sm"
                                 placeholder="70.5"
                               />
                             ) : (
-                              <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
+                              <div className="w-full px-2 py-1 bg-gray-50 border border-gray-200 rounded text-sm text-gray-700">
                                 {clinicalData.vitalSigns.weight || 'Not recorded'}
                               </div>
                             )}
                           </div>
                         </div>
                       </div>
-
                     </div>
-                  </div>
 
-                  {/* Nurse Note Section */}
-                  <div className="space-y-4 mb-6">
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                      <h2 className="text-base font-semibold text-gray-900 mb-4">Nurse Note</h2>
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-600 mb-1">
-                            Clinical Notes
-                          </label>
-                          {isEditing ? (
-                            <textarea
-                              value={clinicalData.clinicalNotes}
-                              onChange={(e) => setClinicalData({...clinicalData, clinicalNotes: e.target.value})}
-                              rows={4}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                              placeholder="Enter clinical observations and notes..."
-                            />
-                          ) : (
-                            <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 min-h-[6rem] flex items-start">
-                              {clinicalData.clinicalNotes || 'No clinical notes available'}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Test Results Section */}
-                  <div className="space-y-4 mb-6">
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                      <h2 className="text-base font-semibold text-gray-900 mb-4">Test Results</h2>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* MRI Results */}
+                    {/* RIGHT COLUMN */}
+                    <div className="space-y-3">
+                      {/* Test Results */}
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+                        <h2 className="text-sm font-semibold text-gray-900 mb-3">Test Results</h2>
                         <div className="space-y-3">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                            <h3 className="text-sm font-semibold text-gray-900">MRI Results</h3>
-                            {testResults.mriDocument && (
-                              <div className="flex items-center space-x-1">
-                                <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                                  <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          {/* MRI Results */}
+                          <div>
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <h3 className="text-xs font-semibold text-gray-900">MRI Results</h3>
+                              {testResults.mriDocument && (
+                                <div className="w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
+                                  <svg className="w-1.5 h-1.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                   </svg>
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Upload Report
-                            </label>
+                              )}
+                            </div>
                             {testResults.mriDocument ? (
-                              <div className="flex items-center justify-between px-3 py-2 border border-green-300 rounded-lg bg-green-50">
+                              <div className="flex items-center justify-between px-2 py-1 border border-green-300 rounded bg-green-50">
                                 <div className="flex items-center">
-                                  <FileText className="h-3 w-3 text-green-600 mr-2" />
+                                  <FileText className="h-3 w-3 text-green-600 mr-1" />
                                   <span className="text-xs text-green-800 font-medium">
                                     {testResults.mriDocument.name}
                                   </span>
@@ -1540,9 +1493,9 @@ const OPDManagement = () => {
                                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.tiff"
                                 />
-                                <div className="flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors">
+                                <div className="flex items-center justify-between px-2 py-1 border border-gray-300 rounded bg-white hover:bg-gray-50 transition-colors">
                                   <div className="flex items-center">
-                                    <Upload className="h-3 w-3 text-gray-400 mr-2" />
+                                    <Upload className="h-3 w-3 text-gray-400 mr-1" />
                                     <span className="text-xs text-gray-600">Choose file...</span>
                                   </div>
                                   <span className="text-xs text-gray-500">Browse</span>
@@ -1550,31 +1503,24 @@ const OPDManagement = () => {
                               </div>
                             )}
                           </div>
-                        </div>
 
-                        {/* Biopsy Results */}
-                        <div className="space-y-3">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                            <h3 className="text-sm font-semibold text-gray-900">Biopsy Results</h3>
-                            {testResults.biopsyDocument && (
-                              <div className="flex items-center space-x-1">
-                                <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                                  <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          {/* Biopsy Results */}
+                          <div>
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <h3 className="text-xs font-semibold text-gray-900">Biopsy Results</h3>
+                              {testResults.biopsyDocument && (
+                                <div className="w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
+                                  <svg className="w-1.5 h-1.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                   </svg>
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Upload Report
-                            </label>
+                              )}
+                            </div>
                             {testResults.biopsyDocument ? (
-                              <div className="flex items-center justify-between px-3 py-2 border border-green-300 rounded-lg bg-green-50">
+                              <div className="flex items-center justify-between px-2 py-1 border border-green-300 rounded bg-green-50">
                                 <div className="flex items-center">
-                                  <FileText className="h-3 w-3 text-green-600 mr-2" />
+                                  <FileText className="h-3 w-3 text-green-600 mr-1" />
                                   <span className="text-xs text-green-800 font-medium">
                                     {testResults.biopsyDocument.name}
                                   </span>
@@ -1594,9 +1540,9 @@ const OPDManagement = () => {
                                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.tiff"
                                 />
-                                <div className="flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors">
+                                <div className="flex items-center justify-between px-2 py-1 border border-gray-300 rounded bg-white hover:bg-gray-50 transition-colors">
                                   <div className="flex items-center">
-                                    <Upload className="h-3 w-3 text-gray-400 mr-2" />
+                                    <Upload className="h-3 w-3 text-gray-400 mr-1" />
                                     <span className="text-xs text-gray-600">Choose file...</span>
                                   </div>
                                   <span className="text-xs text-gray-500">Browse</span>
@@ -1604,31 +1550,24 @@ const OPDManagement = () => {
                               </div>
                             )}
                           </div>
-                        </div>
 
-                        {/* TRUS Results */}
-                        <div className="space-y-3">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                            <h3 className="text-sm font-semibold text-gray-900">TRUS Results</h3>
-                            {testResults.trusDocument && (
-                              <div className="flex items-center space-x-1">
-                                <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                                  <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          {/* TRUS Results */}
+                          <div>
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                              <h3 className="text-xs font-semibold text-gray-900">TRUS Results</h3>
+                              {testResults.trusDocument && (
+                                <div className="w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
+                                  <svg className="w-1.5 h-1.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                   </svg>
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Upload Report
-                            </label>
+                              )}
+                            </div>
                             {testResults.trusDocument ? (
-                              <div className="flex items-center justify-between px-3 py-2 border border-green-300 rounded-lg bg-green-50">
+                              <div className="flex items-center justify-between px-2 py-1 border border-green-300 rounded bg-green-50">
                                 <div className="flex items-center">
-                                  <FileText className="h-3 w-3 text-green-600 mr-2" />
+                                  <FileText className="h-3 w-3 text-green-600 mr-1" />
                                   <span className="text-xs text-green-800 font-medium">
                                     {testResults.trusDocument.name}
                                   </span>
@@ -1648,9 +1587,9 @@ const OPDManagement = () => {
                                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.tiff"
                                 />
-                                <div className="flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors">
+                                <div className="flex items-center justify-between px-2 py-1 border border-gray-300 rounded bg-white hover:bg-gray-50 transition-colors">
                                   <div className="flex items-center">
-                                    <Upload className="h-3 w-3 text-gray-400 mr-2" />
+                                    <Upload className="h-3 w-3 text-gray-400 mr-1" />
                                     <span className="text-xs text-gray-600">Choose file...</span>
                                   </div>
                                   <span className="text-xs text-gray-500">Browse</span>
@@ -1660,83 +1599,70 @@ const OPDManagement = () => {
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* Additional Test Results Section */}
-                  <div className="space-y-4 mb-6">
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-base font-semibold text-gray-900">Additional Test Results</h2>
-                        <button
-                          onClick={addAdditionalTest}
-                          className="flex items-center px-3 py-2 text-sm font-medium text-purple-600 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 hover:border-purple-300 transition-colors"
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add Test
-                        </button>
-                      </div>
-
-                      {additionalTests.length === 0 ? (
-                        <div className="text-center py-8">
-                          <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                            <FileText className="h-8 w-8 text-purple-400" />
-                          </div>
-                          <p className="text-sm text-gray-500 mb-4">No additional tests added yet</p>
+                      {/* Additional Test Results */}
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+                        <div className="flex items-center justify-between mb-3">
+                          <h2 className="text-sm font-semibold text-gray-900">Additional Tests</h2>
                           <button
                             onClick={addAdditionalTest}
-                            className="inline-flex items-center px-4 py-2 text-sm font-medium text-purple-600 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 hover:border-purple-300 transition-colors"
+                            className="flex items-center px-2 py-1 text-xs font-medium text-purple-600 bg-purple-50 border border-purple-200 rounded hover:bg-purple-100 hover:border-purple-300 transition-colors"
                           >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add First Test
+                            <Plus className="h-3 w-3 mr-1" />
+                            Add
                           </button>
                         </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {additionalTests.map((test, index) => (
-                            <div key={test.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                              <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-sm font-medium text-gray-700">Additional Test {index + 1}</h3>
-                                <button
-                                  onClick={() => removeAdditionalTest(test.id)}
-                                  className="flex items-center px-2 py-1 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 hover:border-red-300 transition-colors"
-                                >
-                                  <X className="h-3 w-3 mr-1" />
-                                  Remove
-                                </button>
-                              </div>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-600 mb-1">
-                                    Test Title
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={test.title}
-                                    onChange={(e) => updateAdditionalTest(test.id, 'title', e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                                    placeholder="e.g., Blood Chemistry, Urinalysis, CT Scan"
-                                  />
+
+                        {additionalTests.length === 0 ? (
+                          <div className="text-center py-4">
+                            <div className="mx-auto w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mb-2">
+                              <FileText className="h-4 w-4 text-purple-400" />
+                            </div>
+                            <p className="text-xs text-gray-500 mb-2">No additional tests</p>
+                            <button
+                              onClick={addAdditionalTest}
+                              className="inline-flex items-center px-2 py-1 text-xs font-medium text-purple-600 bg-purple-50 border border-purple-200 rounded hover:bg-purple-100 hover:border-purple-300 transition-colors"
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              Add Test
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                            {additionalTests.map((test, index) => (
+                              <div key={test.id} className="border border-gray-200 rounded p-2 bg-gray-50">
+                                <div className="flex items-center justify-between mb-1">
+                                  <h3 className="text-xs font-medium text-gray-700">Test {index + 1}</h3>
+                                  <button
+                                    onClick={() => removeAdditionalTest(test.id)}
+                                    className="flex items-center px-1 py-0.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 hover:border-red-300 transition-colors"
+                                  >
+                                    <X className="h-2 w-2 mr-0.5" />
+                                    Remove
+                                  </button>
                                 </div>
                                 
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-600 mb-1">
-                                    Result
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={test.result}
-                                    onChange={(e) => updateAdditionalTest(test.id, 'result', e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                                    placeholder="Enter test result or status"
-                                  />
-                                </div>
-                                
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-600 mb-1">
-                                    Upload Report
-                                  </label>
+                                <div className="space-y-1">
+                                  <div>
+                                    <input
+                                      type="text"
+                                      value={test.title}
+                                      onChange={(e) => updateAdditionalTest(test.id, 'title', e.target.value)}
+                                      className="w-full px-1 py-0.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent text-xs"
+                                      placeholder="Test title"
+                                    />
+                                  </div>
+                                  
+                                  <div>
+                                    <input
+                                      type="text"
+                                      value={test.result}
+                                      onChange={(e) => updateAdditionalTest(test.id, 'result', e.target.value)}
+                                      className="w-full px-1 py-0.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent text-xs"
+                                      placeholder="Result"
+                                    />
+                                  </div>
+                                  
                                   <div className="relative">
                                     <input
                                       type="file"
@@ -1744,50 +1670,43 @@ const OPDManagement = () => {
                                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.tiff"
                                     />
-                                    <div className="flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors">
+                                    <div className="flex items-center justify-between px-1 py-0.5 border border-gray-300 rounded bg-white hover:bg-gray-50 transition-colors">
                                       <div className="flex items-center">
-                                        <Upload className="h-4 w-4 text-gray-400 mr-2" />
-                                        <span className="text-sm text-gray-600">
+                                        <Upload className="h-2 w-2 text-gray-400 mr-1" />
+                                        <span className="text-xs text-gray-600">
                                           {test.fileName || 'Choose file...'}
                                         </span>
                                       </div>
                                       <span className="text-xs text-gray-500">Browse</span>
                                     </div>
                                   </div>
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    Supported formats: PDF, DOC, DOCX, JPG, PNG, TIFF
-                                  </p>
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {/* Save/Cancel Buttons - Only show when editing */}
                   {isEditing && (
-                    <div className="space-y-4">
-                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                        <div className="pt-4 border-t border-gray-200">
-                          <div className="flex space-x-3">
-                            <button
-                              onClick={() => setIsEditing(false)}
-                              className="flex-1 flex items-center justify-center px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
-                            >
-                              <X className="h-4 w-4 mr-2" />
-                              Cancel
-                            </button>
-                            <button
-                              onClick={handleSaveChanges}
-                              className="flex-1 flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-[1.01]"
-                            >
-                              <Save className="h-4 w-4 mr-2" />
-                              Save Changes
-                            </button>
-                          </div>
-                        </div>
+                    <div className="mt-3 bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={() => setIsEditing(false)}
+                          className="flex-1 flex items-center justify-center px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors border border-gray-300 text-sm"
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleSaveChanges}
+                          className="flex-1 flex items-center justify-center px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded shadow-sm hover:from-blue-700 hover:to-blue-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 text-sm"
+                        >
+                          <Save className="h-3 w-3 mr-1" />
+                          Save Changes
+                        </button>
                       </div>
                     </div>
                   )}
@@ -2176,6 +2095,111 @@ const OPDManagement = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* PSA Entry Modal */}
+      {isPSAModalOpen && selectedPatientForPSA && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Add PSA Value</h2>
+                <p className="text-sm text-gray-600 mt-1">Patient: {selectedPatientForPSA.patientName}</p>
+              </div>
+              <button
+                onClick={closePSAModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddPSA} className="p-6 space-y-6">
+              {/* PSA Value */}
+              <div>
+                <label htmlFor="value" className="block text-sm font-medium text-gray-700 mb-2">
+                  PSA Value (ng/mL)
+                </label>
+                <input
+                  type="number"
+                  id="value"
+                  name="value"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={psaForm.value}
+                  onChange={handlePSAFormChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                  placeholder="Enter PSA value"
+                  required
+                />
+              </div>
+
+              {/* Test Date */}
+              <div>
+                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
+                  Test Date
+                </label>
+                <input
+                  type="date"
+                  id="date"
+                  name="date"
+                  value={psaForm.date}
+                  onChange={handlePSAFormChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                  required
+                />
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+                  Notes (Optional)
+                </label>
+                <textarea
+                  id="notes"
+                  name="notes"
+                  rows={3}
+                  value={psaForm.notes}
+                  onChange={handlePSAFormChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none"
+                  placeholder="Additional notes about this PSA test..."
+                />
+              </div>
+
+              {/* PSA Reference Info */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-blue-900 mb-2">PSA Reference Ranges</h3>
+                <div className="text-xs text-blue-800 space-y-1">
+                  <p><strong>Normal:</strong> &lt; 4.0 ng/mL</p>
+                  <p><strong>Borderline:</strong> 4.0 - 10.0 ng/mL</p>
+                  <p><strong>Elevated:</strong> 10.0 - 20.0 ng/mL</p>
+                  <p><strong>High Risk:</strong> &gt; 20.0 ng/mL</p>
+                </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  <em>Note: Ranges may vary based on age and individual factors.</em>
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closePSAModal}
+                  className="flex-1 px-4 py-3 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold rounded-lg hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200"
+                >
+                  Add PSA Value
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

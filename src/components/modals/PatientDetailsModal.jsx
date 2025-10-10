@@ -108,6 +108,65 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
   const [isPathwayModalOpen, setIsPathwayModalOpen] = useState(false);
   const [selectedPathway, setSelectedPathway] = useState('');
   const [transferNote, setTransferNote] = useState('');
+  const [transferDetails, setTransferDetails] = useState({
+    reason: '',
+    priority: 'normal',
+    clinicalRationale: '',
+    additionalNotes: ''
+  });
+  const [appointmentBooking, setAppointmentBooking] = useState({
+    appointmentDate: '',
+    appointmentTime: '',
+    notes: ''
+  });
+  const [recurringAppointments, setRecurringAppointments] = useState({
+    interval: '3'
+  });
+  const [medicationDetails, setMedicationDetails] = useState({
+    medications: [{
+      id: Date.now(),
+      name: '',
+      dosage: '',
+      frequency: '',
+      duration: '',
+      instructions: ''
+    }],
+    appointmentDate: '',
+    appointmentTime: '',
+    notes: ''
+  });
+  const [isDischargeSummaryModalOpen, setIsDischargeSummaryModalOpen] = useState(false);
+
+  // Medication management functions
+  const addMedication = () => {
+    setMedicationDetails(prev => ({
+      ...prev,
+      medications: [...prev.medications, {
+        id: Date.now(),
+        name: '',
+        dosage: '',
+        frequency: '',
+        duration: '',
+        instructions: ''
+      }]
+    }));
+  };
+
+  const removeMedication = (id) => {
+    setMedicationDetails(prev => ({
+      ...prev,
+      medications: prev.medications.filter(med => med.id !== id)
+    }));
+  };
+
+  const updateMedication = (id, field, value) => {
+    setMedicationDetails(prev => ({
+      ...prev,
+      medications: prev.medications.map(med => 
+        med.id === id ? { ...med, [field]: value } : med
+      )
+    }));
+  };
   const [clinicalNotesForm, setClinicalNotesForm] = useState({
     // General Info
     note: '',
@@ -740,14 +799,14 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
     }));
   };
 
-  const addMedication = () => {
+  const addClinicalHistoryMedication = () => {
     setClinicalHistoryForm(prev => ({
       ...prev,
       medications: [...prev.medications, '']
     }));
   };
 
-  const removeMedication = (index) => {
+  const removeClinicalHistoryMedication = (index) => {
     setClinicalHistoryForm(prev => ({
       ...prev,
       medications: prev.medications.filter((_, i) => i !== index)
@@ -1161,8 +1220,8 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-6">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-[95vw] h-[95vh] min-h-[600px] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4 sm:p-6">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-[95vw] h-[95vh] min-h-[450px] max-h-[95vh] overflow-hidden flex flex-col">
         {/* Modal Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-gray-50 flex-shrink-0">
           <div className="flex items-center space-x-3">
@@ -1188,32 +1247,6 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
               </div>
             </div>
           </div>
-            <div className="flex items-center space-x-3">
-              {/* PSA Monitoring Button */}
-              <button
-                onClick={() => setIsPSAModalOpen(true)}
-                className="flex items-center px-3 py-2 text-sm font-medium text-green-600 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
-              >
-                <Activity className="h-4 w-4 mr-2" />
-                PSA Monitoring
-              </button>
-
-              {/* Test Results & Documents Button */}
-              <button
-                onClick={() => setIsTestResultsModalOpen(true)}
-                className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
-              >
-                <Database className="h-4 w-4 mr-2" />
-                Test Results
-              </button>
-
-              <button
-                onClick={onClose}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
         </div>
 
         {/* Professional Tab Navigation */}
@@ -1261,32 +1294,28 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
         </div>
 
         {/* Modal Content */}
-        <div className="flex-1 overflow-y-auto p-8" style={{ height: 'calc(90vh - 280px)', minHeight: '400px' }}>
+        <div className="flex-1 overflow-hidden" style={{ height: 'calc(100vh - 180px)', minHeight: '250px' }}>
           {/* Overview Tab */}
           {activeTab === 'overview' && (
-            <div className="space-y-6">
-
-              {/* Clinical Notes Timeline - Full Width Below */}
-              <div className="border border-gray-200 rounded-xl p-6 bg-gradient-to-br from-white to-gray-50">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-gray-900 text-lg flex items-center">
-                      <FileText className="h-5 w-5 mr-2 text-blue-600" />
-                      Clinical Notes Timeline
+            <div className="h-full flex">
+              {/* Left Component - Clinical Notes */}
+              <div className="w-1/2 h-full flex flex-col border-r border-gray-200">
+                {/* Add Note Section - Non-scrollable */}
+                {userRole !== 'gp' && (
+                  <div className="flex-shrink-0 p-4 bg-white border-b border-gray-200">
+                    <h3 className="font-semibold text-gray-900 text-base flex items-center mb-3">
+                      <FileText className="h-4 w-4 mr-2 text-blue-600" />
+                      Clinical Notes
                     </h3>
-                </div>
-
-                  {/* Add Note Section */}
-                  {userRole !== 'gp' && (
-                    <div className="mb-4 bg-white rounded-lg p-4 border-2 border-blue-200">
+                    <div className="bg-blue-50 rounded-lg p-3 border-2 border-blue-200">
                       <textarea
                         value={clinicalNotesForm.note}
                         onChange={(e) => setClinicalNotesForm({ ...clinicalNotesForm, note: e.target.value })}
                         placeholder="Add a clinical note..."
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                        rows="3"
+                        rows="2"
                       />
                       
-
                       <div className="flex items-center justify-between mt-2">
                         <select
                           value={clinicalNotesForm.priority}
@@ -1300,7 +1329,6 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                         <button
                           onClick={() => {
                             if (clinicalNotesForm.note.trim()) {
-                              // Create new note
                               const now = new Date();
                               const newNote = {
                                 id: `CN${Date.now()}`,
@@ -1316,17 +1344,10 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                                 medicine: null
                               };
                               
-                              // Add to clinical notes
                               setClinicalNotes(prev => [newNote, ...prev]);
-                              
-                              // Debug log to verify vitals are being saved
-                              console.log('New note with vitals:', newNote);
-                              
-                              // Show success modal
                               setSuccessMessage('Clinical note added successfully!');
                               setIsSuccessModalOpen(true);
                               
-                              // Reset form
                               setClinicalNotesForm({ 
                                 note: '', 
                                 priority: 'normal',
@@ -1342,43 +1363,49 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                               });
                             }
                           }}
-                          className="flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex items-center px-3 py-1.5 text-sm bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                           disabled={!clinicalNotesForm.note.trim()}
                         >
-                          <Plus className="h-4 w-4 mr-1" />
+                          <Plus className="h-3 w-3 mr-1" />
                           Add Note
                         </button>
-              </div>
-            </div>
-          )}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-                  {/* Timeline */}
+                {/* Timeline - Scrollable */}
+                <div className="flex-1 overflow-y-auto p-6" style={{ maxHeight: 'calc(100vh - 350px)' }}>
+                  <h4 className="font-medium text-gray-700 text-sm mb-4 flex items-center">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Notes Timeline
+                  </h4>
                   <div className="relative">
                     {/* Timeline Line */}
                     <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-200 via-green-200 to-gray-200"></div>
                     
                     <div className="space-y-4">
                       {clinicalNotes.map((note, index) => {
-                      const isToday = note.date === new Date().toISOString().split('T')[0];
+                        const isToday = note.date === new Date().toISOString().split('T')[0];
                         const isRecent = index < 2;
                       
-                      return (
+                        return (
                           <div key={note.id} className="relative flex items-start space-x-4">
                             {/* Timeline Dot */}
-                          <div className="relative flex-shrink-0">
+                            <div className="relative flex-shrink-0">
                               <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 border-white ${
                                 isRecent ? 'ring-2 ring-blue-300' : ''
                               } bg-blue-500`}>
                                 <FileText className="h-4 w-4 text-white" />
                               </div>
-                          </div>
+                            </div>
                           
                             {/* Note Card */}
                             <div className={`flex-1 bg-white border rounded-lg p-3 transition-all duration-200 ${
                               isRecent ? 'border-blue-200 shadow-sm' : 'border-gray-200'
                             }`}>
                               <div className="flex items-start justify-between mb-2">
-                              <div className="flex-1">
+                                <div className="flex-1">
                                   <div className="flex items-center space-x-2 mb-1">
                                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold ${
                                       note.authorRole === 'Urologist' ? 'bg-blue-600' : 'bg-green-600'
@@ -1389,19 +1416,19 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                                     <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${
                                       note.authorRole === 'Urologist' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
                                     }`}>
-                                        {note.authorRole}
-                                      </span>
-                                    </div>
+                                      {note.authorRole}
+                                    </span>
+                                  </div>
                                   <div className="flex items-center space-x-2 text-xs text-gray-500">
                                     <Clock className="h-3 w-3" />
                                     <span>{isToday ? 'Today' : formatDate(note.date)} at {note.time}</span>
-                          {isToday && (
+                                    {isToday && (
                                       <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">
                                         <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 animate-pulse"></div>
                                         New
-                            </span>
-                          )}
-                        </div>
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                                 <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
                                   note.priority === 'urgent' ? 'bg-red-100 text-red-800' :
@@ -1409,15 +1436,14 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                                   'bg-gray-100 text-gray-800'
                                 }`}>
                                   {note.priority.charAt(0).toUpperCase() + note.priority.slice(1)}
-                                  </span>
-                            </div>
+                                </span>
+                              </div>
                             
                               <p className="text-sm text-gray-700 leading-relaxed">{note.note}</p>
-                              
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                       
                       {clinicalNotes.length === 0 && (
                         <div className="text-center py-8 text-gray-500">
@@ -1426,18 +1452,129 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                           {userRole !== 'gp' && (
                             <p className="text-xs mt-1">Add your first note above</p>
                           )}
-                    </div>
+                        </div>
                       )}
-                  </div>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Right Component - PSA & Test Results */}
+              <div className="w-1/2 h-full flex flex-col overflow-y-auto p-6 bg-gray-50" style={{ maxHeight: 'calc(100vh - 350px)' }}>
+                {/* PSA Details - Compact */}
+                <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-gray-900 text-base flex items-center">
+                        <Activity className="h-4 w-4 mr-2 text-green-600" />
+                        PSA Monitoring
+                      </h3>
+                      <button
+                        onClick={() => setIsPSAModalOpen(true)}
+                        className="flex items-center px-2 py-1 text-xs font-medium text-green-600 bg-green-50 border border-green-200 rounded hover:bg-green-100 transition-colors"
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        View Details
+                      </button>
+                    </div>
+
+                    {/* Latest PSA Value - Compact */}
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 p-3 rounded">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center space-x-1 mb-1">
+                            <Heart className="h-3 w-3 text-green-600" />
+                            <span className="text-xs font-medium text-gray-600 uppercase">Latest PSA</span>
+                          </div>
+                          <p className="text-lg font-bold text-gray-900">{mockPatient.lastPSA.value} <span className="text-xs font-normal text-gray-600">ng/mL</span></p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-gray-500">Test Date</p>
+                          <p className="text-xs font-medium text-gray-700">{formatDate(mockPatient.lastPSA.date)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Latest Test Results - Simple List */}
+                <div className="bg-white border border-gray-200 rounded-lg shadow-sm flex-1">
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-gray-900 text-base flex items-center">
+                        <Database className="h-4 w-4 mr-2 text-blue-600" />
+                        Test Results
+                      </h3>
+                      <button
+                        onClick={() => setIsTestResultsModalOpen(true)}
+                        className="flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        View All
+                      </button>
+                    </div>
+
+                    {/* Simple Test List */}
+                    <div className="space-y-2">
+                      {/* Latest Imaging */}
+                      {mockPatient.imaging.slice(0, 1).map((img) => (
+                        <div key={img.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded border">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{img.type}</p>
+                            <p className="text-xs text-gray-500">{formatDate(img.date)}</p>
+                          </div>
+                          <button
+                            onClick={() => setIsTestResultsModalOpen(true)}
+                            className="flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            View
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Latest Procedure */}
+                      {mockPatient.procedures.slice(0, 1).map((proc) => (
+                        <div key={proc.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded border">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{proc.type}</p>
+                            <p className="text-xs text-gray-500">{formatDate(proc.date)}</p>
+                          </div>
+                          <button
+                            onClick={() => setIsTestResultsModalOpen(true)}
+                            className="flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            View
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Add more tests if needed - simple list format */}
+                      <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded border">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">Blood Work</p>
+                          <p className="text-xs text-gray-500">{formatDate(mockPatient.lastPSA.date)}</p>
+                        </div>
+                        <button
+                          onClick={() => setIsTestResultsModalOpen(true)}
+                          className="flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          View
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
 
 
           {activeTab === 'mdt-notes' && (
-            <div className="space-y-8">
+            <div className="h-full overflow-y-auto p-6 space-y-8" style={{ maxHeight: 'calc(100vh - 350px)' }}>
               <div>
                 <h3 className="font-semibold text-gray-900 text-lg">MDT Notes Timeline</h3>
                 <p className="text-sm text-gray-600 mt-1">Multidisciplinary team discussions, decisions, and outcomes</p>
@@ -1629,7 +1766,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
 
 
           {activeTab === 'discharge' && (
-            <div className="space-y-6">
+            <div className="h-full overflow-y-auto p-6 space-y-6" style={{ maxHeight: 'calc(100vh - 350px)' }}>
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-gray-900 text-base">Discharge Summaries</h3>
                 {userRole !== 'gp' && (
@@ -2033,7 +2170,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                   </label>
                   <button
                     type="button"
-                    onClick={addMedication}
+                    onClick={addClinicalHistoryMedication}
                     className="flex items-center px-3 py-1 text-sm text-blue-600 hover:text-blue-700 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
                   >
                     <Plus className="h-4 w-4 mr-1" />
@@ -2053,7 +2190,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                       {clinicalHistoryForm.medications.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => removeMedication(index)}
+                          onClick={() => removeClinicalHistoryMedication(index)}
                           className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                           title="Remove medication"
                         >
@@ -3905,7 +4042,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
       {/* Pathway Transfer Confirmation Modal */}
       {isPathwayModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden transform transition-all flex flex-col">
             {/* Header */}
             <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 px-6 pt-6 pb-5">
               <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12"></div>
@@ -3934,6 +4071,22 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                   setIsPathwayModalOpen(false);
                   setSelectedPathway('');
                   setTransferNote('');
+                  setAppointmentBooking({
+                    enabled: false,
+                    appointmentDate: '',
+                    appointmentTime: '',
+                    appointmentType: 'Follow-up',
+                    duration: 30,
+                    notes: ''
+                  });
+                  setRecurringAppointments({
+                    enabled: false,
+                    interval: '1',
+                    intervalType: 'months',
+                    totalDuration: '12',
+                    durationType: 'months',
+                    notes: ''
+                  });
                 }}
                 className="absolute top-3 right-3 p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
               >
@@ -3942,7 +4095,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
             </div>
             
             {/* Content */}
-            <div className="p-6">
+            <div className="flex-1 overflow-y-auto p-6">
               <div className="mb-4 space-y-3">
                 <div className="flex items-center space-x-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -3973,32 +4126,461 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                   </p>
                 </div>
               </div>
-              
-              {/* Transfer Notes Section */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                  Transfer Notes <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={transferNote}
-                  onChange={(e) => setTransferNote(e.target.value)}
-                  placeholder="Please provide reason for transfer, clinical rationale, or any important notes..."
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm resize-none"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  This note will be added to the patient's clinical timeline and visible to the care team.
-                </p>
+
+              {/* Conditional Content Based on Pathway */}
+              {selectedPathway === 'Medication' && (
+                <>
+                  {/* Medication Details Section */}
+                  <div className="mb-6">
+                    <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-xl p-5">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center mr-3">
+                            <Pill className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <h4 className="text-lg font-semibold text-gray-900">Medication Details</h4>
+                            <p className="text-sm text-gray-600">Prescribe medications for patient</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={addMedication}
+                          className="flex items-center px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Medication
+                        </button>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        {medicationDetails.medications.map((medication, index) => (
+                          <div key={medication.id} className="bg-white border border-orange-200 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <h5 className="font-medium text-gray-900">Medication {index + 1}</h5>
+                              {medicationDetails.medications.length > 1 && (
+                                <button
+                                  onClick={() => removeMedication(medication.id)}
+                                  className="text-red-600 hover:text-red-700 p-1"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Medication Name <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={medication.name}
+                                  onChange={(e) => updateMedication(medication.id, 'name', e.target.value)}
+                                  placeholder="Enter medication name..."
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Dosage <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={medication.dosage}
+                                  onChange={(e) => updateMedication(medication.id, 'dosage', e.target.value)}
+                                  placeholder="e.g., 5mg, 10ml"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Frequency <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={medication.frequency}
+                                  onChange={(e) => updateMedication(medication.id, 'frequency', e.target.value)}
+                                  placeholder="e.g., Once daily, Twice daily"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Duration
+                                </label>
+                                <input
+                                  type="text"
+                                  value={medication.duration}
+                                  onChange={(e) => updateMedication(medication.id, 'duration', e.target.value)}
+                                  placeholder="e.g., 30 days, 3 months"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                                />
+                              </div>
+                            </div>
+                            
+                            <div className="mt-3">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Special Instructions
+                              </label>
+                              <textarea
+                                value={medication.instructions}
+                                onChange={(e) => updateMedication(medication.id, 'instructions', e.target.value)}
+                                placeholder="Any special instructions for taking this medication..."
+                                rows={2}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm resize-none"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Follow-up Appointment for Medication */}
+                  <div className="mb-6">
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
+                      <div className="flex items-center mb-4">
+                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                          <Calendar className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-900">Follow-up Appointment</h4>
+                          <p className="text-sm text-gray-600">Schedule medication review appointment</p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Appointment Date <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="date"
+                            value={medicationDetails.appointmentDate}
+                            onChange={(e) => setMedicationDetails(prev => ({ ...prev, appointmentDate: e.target.value }))}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white shadow-sm"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Appointment Time <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="time"
+                            value={medicationDetails.appointmentTime}
+                            onChange={(e) => setMedicationDetails(prev => ({ ...prev, appointmentTime: e.target.value }))}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white shadow-sm"
+                            required
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Appointment Notes
+                        </label>
+                        <textarea
+                          value={medicationDetails.notes}
+                          onChange={(e) => setMedicationDetails(prev => ({ ...prev, notes: e.target.value }))}
+                          placeholder="Add any notes for the follow-up appointment..."
+                          rows={2}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white shadow-sm resize-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Discharge Pathway Content */}
+              {selectedPathway === 'Discharge' && (
+                <>
+              {/* Discharge Details Section */}
+              <div className="mb-6">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5">
+                  <div className="flex items-center mb-4">
+                    <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center mr-3">
+                      <FileText className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900">Discharge Details</h4>
+                      <p className="text-sm text-gray-600">Final discharge information</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Discharge Reason <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={transferDetails.reason}
+                      onChange={(e) => setTransferDetails(prev => ({ ...prev, reason: e.target.value }))}
+                      placeholder="Enter reason for discharge..."
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white shadow-sm"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Clinical Summary <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={transferDetails.clinicalRationale}
+                      onChange={(e) => setTransferDetails(prev => ({ ...prev, clinicalRationale: e.target.value }))}
+                      placeholder="Provide detailed clinical summary and discharge instructions..."
+                      rows={4}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white shadow-sm resize-none"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Additional Discharge Notes
+                    </label>
+                    <textarea
+                      value={transferDetails.additionalNotes}
+                      onChange={(e) => setTransferDetails(prev => ({ ...prev, additionalNotes: e.target.value }))}
+                      placeholder="Any additional notes, follow-up instructions, or special considerations for the patient..."
+                      rows={3}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white shadow-sm resize-none"
+                    />
+                  </div>
+                </div>
               </div>
-              
-              {/* Action Buttons */}
+                </>
+              )}
+
+              {/* Default content for other pathways */}
+              {selectedPathway !== 'Medication' && selectedPathway !== 'Discharge' && (
+                <>
+              {/* Transfer Details Section */}
+              <div className="mb-6">
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5">
+                  <div className="flex items-center mb-4">
+                    <div className="w-10 h-10 bg-amber-600 rounded-lg flex items-center justify-center mr-3">
+                      <FileText className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900">Transfer Details</h4>
+                      <p className="text-sm text-gray-600">Required information for pathway transfer</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Reason for Transfer <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={transferDetails.reason}
+                        onChange={(e) => setTransferDetails(prev => ({ ...prev, reason: e.target.value }))}
+                        placeholder="Enter reason for transfer..."
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm bg-white shadow-sm"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Transfer Priority <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={transferDetails.priority}
+                        onChange={(e) => setTransferDetails(prev => ({ ...prev, priority: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm bg-white shadow-sm"
+                      >
+                        <option value="normal">Normal Priority</option>
+                        <option value="high">High Priority</option>
+                        <option value="urgent">Urgent</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Clinical Rationale <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={transferDetails.clinicalRationale}
+                      onChange={(e) => setTransferDetails(prev => ({ ...prev, clinicalRationale: e.target.value }))}
+                      placeholder="Provide detailed clinical justification for this pathway transfer..."
+                      rows={3}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm bg-white shadow-sm resize-none"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Additional Notes
+                    </label>
+                    <textarea
+                      value={transferDetails.additionalNotes}
+                      onChange={(e) => setTransferDetails(prev => ({ ...prev, additionalNotes: e.target.value }))}
+                      placeholder="Any additional information, patient concerns, or special considerations..."
+                      rows={2}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm bg-white shadow-sm resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Appointment Booking Section - Not needed for Radiotherapy */}
+              {selectedPathway !== 'Radiotherapy' && (
+              <div className="mb-6">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
+                  <div className="flex items-center mb-4">
+                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                      <Calendar className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900">Schedule Follow-up Appointment</h4>
+                      <p className="text-sm text-gray-600">Required for Active Monitoring pathway</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Appointment Date <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={appointmentBooking.appointmentDate}
+                        onChange={(e) => setAppointmentBooking(prev => ({ ...prev, appointmentDate: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white shadow-sm"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Appointment Time <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="time"
+                        value={appointmentBooking.appointmentTime}
+                        onChange={(e) => setAppointmentBooking(prev => ({ ...prev, appointmentTime: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white shadow-sm"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Special Instructions
+                    </label>
+                    <textarea
+                      value={appointmentBooking.notes}
+                      onChange={(e) => setAppointmentBooking(prev => ({ ...prev, notes: e.target.value }))}
+                      placeholder="Add any special instructions or notes for this appointment..."
+                      rows={2}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white shadow-sm resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+              )}
+
+              {/* Recurring Check-ups Section - Not needed for Radiotherapy */}
+              {selectedPathway !== 'Radiotherapy' && (
+              <div className="mb-6">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5">
+                  <div className="flex items-center mb-4">
+                    <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center mr-3">
+                      <Calendar className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900">Set Up Regular Check-ups</h4>
+                      <p className="text-sm text-gray-600">Automatically schedule follow-up appointments</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Check-up Frequency <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={recurringAppointments.interval}
+                      onChange={(e) => setRecurringAppointments(prev => ({ ...prev, interval: e.target.value }))}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white shadow-sm"
+                      required
+                    >
+                      <option value="1">Monthly check-ups</option>
+                      <option value="3">Every 3 months (Quarterly)</option>
+                      <option value="6">Every 6 months (Bi-annual)</option>
+                      <option value="12">Annual check-ups</option>
+                    </select>
+                  </div>
+                  
+                  <div className="bg-white border border-green-200 rounded-lg p-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Calendar className="h-3 w-3 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 mb-1">
+                          {recurringAppointments.interval === '1' && 'Monthly Check-ups Scheduled'}
+                          {recurringAppointments.interval === '3' && 'Quarterly Check-ups Scheduled'}
+                          {recurringAppointments.interval === '6' && 'Bi-annual Check-ups Scheduled'}
+                          {recurringAppointments.interval === '12' && 'Annual Check-ups Scheduled'}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          The system will automatically create follow-up appointments based on your selected frequency. 
+                          You'll receive notifications before each scheduled visit.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              )}
+                </>
+              )}
+            </div>
+            
+            {/* Fixed Footer */}
+            <div className="flex-shrink-0 p-6 bg-gray-50 border-t border-gray-200">
               <div className="flex items-center space-x-3">
                 <button
                   onClick={() => {
                     setIsPathwayModalOpen(false);
                     setSelectedPathway('');
                     setTransferNote('');
+                    setTransferDetails({
+                      reason: '',
+                      priority: 'normal',
+                      clinicalRationale: '',
+                      additionalNotes: ''
+                    });
+                    setAppointmentBooking({
+                      appointmentDate: '',
+                      appointmentTime: '',
+                      notes: ''
+                    });
+                    setRecurringAppointments({
+                      interval: '3'
+                    });
+                    setMedicationDetails({
+                      medications: [{
+                        id: Date.now(),
+                        name: '',
+                        dosage: '',
+                        frequency: '',
+                        duration: '',
+                        instructions: ''
+                      }],
+                      appointmentDate: '',
+                      appointmentTime: '',
+                      notes: ''
+                    });
                   }}
                   className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium border border-gray-300 text-sm"
                 >
@@ -4006,20 +4588,107 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                 </button>
                 <button
                   onClick={() => {
-                    if (!transferNote.trim()) {
-                      alert('Please provide transfer notes before confirming');
-                      return;
+                    if (selectedPathway === 'Medication') {
+                      // Validate medication fields
+                      const hasValidMedications = medicationDetails.medications.every(med => 
+                        med.name.trim() && med.dosage.trim() && med.frequency.trim()
+                      );
+                      if (!hasValidMedications) {
+                        alert('Please fill in all required medication fields (name, dosage, frequency)');
+                        return;
+                      }
+                      if (!medicationDetails.appointmentDate || !medicationDetails.appointmentTime) {
+                        alert('Please schedule a follow-up appointment before confirming');
+                        return;
+                      }
+                      // Show discharge summary modal for medication pathway
+                      setIsPathwayModalOpen(false);
+                      setIsDischargeSummaryModalOpen(true);
+                    } else if (selectedPathway === 'Discharge') {
+                      // Validation for discharge pathway
+                      if (!transferDetails.reason || !transferDetails.clinicalRationale.trim()) {
+                        alert('Please provide discharge reason and clinical summary before confirming');
+                        return;
+                      }
+                      // Generate and show discharge summary
+                      setIsPathwayModalOpen(false);
+                      setIsDischargeSummaryModalOpen(true);
+                    } else {
+                      // Default validation for other pathways
+                      if (!transferDetails.reason || !transferDetails.clinicalRationale.trim()) {
+                        alert('Please provide reason for transfer and clinical rationale before confirming');
+                        return;
+                      }
+                      // Appointment validation not needed for Radiotherapy
+                      if (selectedPathway !== 'Radiotherapy' && (!appointmentBooking.appointmentDate || !appointmentBooking.appointmentTime)) {
+                        alert('Please schedule a follow-up appointment before confirming');
+                        return;
+                      }
+                      setSuccessMessage(`Patient successfully transferred to ${selectedPathway}`);
+                      setIsPathwayModalOpen(false);
+                      setIsSuccessModalOpen(true);
                     }
+                    
                     // In real app, this would save to backend
                     console.log('Transferring patient to:', selectedPathway);
-                    console.log('Transfer notes:', transferNote);
-                    setSuccessMessage(`Patient successfully transferred to ${selectedPathway}`);
-                    setIsPathwayModalOpen(false);
-                    setIsSuccessModalOpen(true);
+                    console.log('Transfer details:', transferDetails);
+                    console.log('Medication details:', medicationDetails);
+                    console.log('Appointment booking:', appointmentBooking);
+                    console.log('Recurring appointments:', recurringAppointments);
+                    
+                    // Reset all states
                     setSelectedPathway('');
                     setTransferNote('');
+                    setTransferDetails({
+                      reason: '',
+                      priority: 'normal',
+                      clinicalRationale: '',
+                      additionalNotes: ''
+                    });
+                    setMedicationDetails({
+                      medications: [{
+                        id: Date.now(),
+                        name: '',
+                        dosage: '',
+                        frequency: '',
+                        duration: '',
+                        instructions: ''
+                      }],
+                      appointmentDate: '',
+                      appointmentTime: '',
+                      notes: ''
+                    });
+                    setAppointmentBooking({
+                      appointmentDate: '',
+                      appointmentTime: '',
+                      notes: ''
+                    });
+                    setRecurringAppointments({
+                      interval: '3'
+                    });
+                    setMedicationDetails({
+                      medications: [{
+                        id: Date.now(),
+                        name: '',
+                        dosage: '',
+                        frequency: '',
+                        duration: '',
+                        instructions: ''
+                      }],
+                      appointmentDate: '',
+                      appointmentTime: '',
+                      notes: ''
+                    });
                   }}
-                  disabled={!transferNote.trim()}
+                  disabled={
+                    selectedPathway === 'Medication' 
+                      ? !medicationDetails.medications.every(med => med.name.trim() && med.dosage.trim() && med.frequency.trim()) || !medicationDetails.appointmentDate || !medicationDetails.appointmentTime
+                      : selectedPathway === 'Discharge'
+                        ? !transferDetails.reason || !transferDetails.clinicalRationale.trim()
+                        : selectedPathway === 'Radiotherapy'
+                          ? !transferDetails.reason || !transferDetails.clinicalRationale.trim()
+                          : !transferDetails.reason || !transferDetails.clinicalRationale.trim() || !appointmentBooking.appointmentDate || !appointmentBooking.appointmentTime
+                  }
                   className="flex-1 px-4 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 font-medium shadow-lg shadow-green-200 hover:shadow-xl hover:shadow-green-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-green-600 disabled:hover:to-green-700"
                 >
                   Confirm Transfer
@@ -4089,6 +4758,206 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
         </div>
       )}
 
+      {/* Discharge Summary Confirmation Modal */}
+      {isDischargeSummaryModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden transform transition-all flex flex-col">
+            {/* Header */}
+            <div className="relative bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 px-6 pt-6 pb-5">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12"></div>
+              <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/10 rounded-full -ml-10 -mb-10"></div>
+              
+              {/* Success Icon */}
+              <div className="relative flex justify-center mb-3">
+                <div className="relative">
+                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg">
+                    <CheckCircle className="h-7 w-7 text-green-600" strokeWidth={2.5} />
+                  </div>
+                  <div className="absolute inset-0 w-12 h-12 bg-white rounded-full animate-ping opacity-20"></div>
+                </div>
+              </div>
+              
+              {/* Title */}
+              <h3 className="text-xl font-bold text-white text-center mb-1">
+                Discharge Summary Generated
+              </h3>
+              <p className="text-green-50 text-center text-xs">
+                Summary will be sent to GP
+              </p>
+              
+              <button
+                onClick={() => setIsDischargeSummaryModalOpen(false)}
+                className="absolute top-3 right-3 p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-green-900 mb-1">Discharge Summary Generated</h4>
+                    <p className="text-sm text-green-800">
+                      Complete discharge summary has been created and will be distributed to the GP.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Comprehensive Discharge Summary */}
+              <div className="space-y-4">
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h5 className="font-semibold text-gray-900 mb-3 text-center">DISCHARGE SUMMARY</h5>
+                  
+                  {/* Patient Information */}
+                  <div className="mb-4 pb-3 border-b border-gray-200">
+                    <h6 className="font-medium text-gray-900 mb-2">Patient Information</h6>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium">Name:</span> {mockPatient.name}
+                      </div>
+                      <div>
+                        <span className="font-medium">UPI:</span> {mockPatient.id}
+                      </div>
+                      <div>
+                        <span className="font-medium">Age:</span> {calculateAge(mockPatient.dob)} years
+                      </div>
+                      <div>
+                        <span className="font-medium">Phone:</span> {mockPatient.phone}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Discharge Details */}
+                  <div className="mb-4 pb-3 border-b border-gray-200">
+                    <h6 className="font-medium text-gray-900 mb-2">Discharge Information</h6>
+                    <div className="text-sm space-y-2">
+                      <div>
+                        <span className="font-medium">Discharge Date:</span> {new Date().toLocaleDateString('en-AU')}
+                      </div>
+                      <div>
+                        <span className="font-medium">Discharge Reason:</span> {transferDetails.reason || 'Not specified'}
+                      </div>
+                      <div>
+                        <span className="font-medium">Discharge Type:</span> {selectedPathway === 'Discharge' ? 'Final Discharge' : 'Pathway Transfer'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Clinical Summary */}
+                  <div className="mb-4 pb-3 border-b border-gray-200">
+                    <h6 className="font-medium text-gray-900 mb-2">Clinical Summary</h6>
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      {transferDetails.clinicalRationale || 'No clinical summary provided.'}
+                    </p>
+                  </div>
+
+                  {/* Treatment History */}
+                  {selectedPathway === 'Medication' && medicationDetails.medications.length > 0 && (
+                    <div className="mb-4 pb-3 border-b border-gray-200">
+                      <h6 className="font-medium text-gray-900 mb-2">Prescribed Medications</h6>
+                      <div className="space-y-2">
+                        {medicationDetails.medications.map((med, index) => (
+                          <div key={index} className="text-sm bg-gray-50 p-2 rounded">
+                            <div className="font-medium">{med.name}</div>
+                            <div>Dosage: {med.dosage} | Frequency: {med.frequency}</div>
+                            {med.duration && <div>Duration: {med.duration}</div>}
+                            {med.instructions && <div>Instructions: {med.instructions}</div>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Follow-up Instructions */}
+                  <div className="mb-4 pb-3 border-b border-gray-200">
+                    <h6 className="font-medium text-gray-900 mb-2">Follow-up Instructions</h6>
+                    <div className="text-sm text-gray-700 space-y-1">
+                      {selectedPathway === 'Medication' && medicationDetails.appointmentDate && (
+                        <div>
+                          <span className="font-medium">Follow-up Appointment:</span> {new Date(medicationDetails.appointmentDate).toLocaleDateString('en-AU')} at {medicationDetails.appointmentTime}
+                        </div>
+                      )}
+                      {selectedPathway !== 'Medication' && selectedPathway !== 'Discharge' && appointmentBooking.appointmentDate && (
+                        <div>
+                          <span className="font-medium">Follow-up Appointment:</span> {new Date(appointmentBooking.appointmentDate).toLocaleDateString('en-AU')} at {appointmentBooking.appointmentTime}
+                        </div>
+                      )}
+                      {selectedPathway === 'Discharge' && (
+                        <>
+                          <div>• Patient has been discharged from care</div>
+                          <div>• No follow-up appointments required unless complications arise</div>
+                          <div>• Patient should contact GP for any concerns</div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Additional Notes */}
+                  {transferDetails.additionalNotes && (
+                    <div className="mb-4 pb-3 border-b border-gray-200">
+                      <h6 className="font-medium text-gray-900 mb-2">Additional Notes</h6>
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        {transferDetails.additionalNotes}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Signature */}
+                  <div className="text-sm text-gray-600">
+                    <div className="flex justify-between">
+                      <div>
+                        <div className="font-medium">Discharging Physician:</div>
+                        <div>Dr. Sarah Wilson, Urologist</div>
+                      </div>
+                      <div>
+                        <div className="font-medium">Date:</div>
+                        <div>{new Date().toLocaleDateString('en-AU')}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Distribution Information */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h5 className="font-medium text-blue-900 mb-3">Summary Distribution</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
+                    <div className="flex items-center space-x-2">
+                      <User className="h-4 w-4" />
+                      <div>
+                        <div className="font-medium">Patient's GP</div>
+                        <div className="text-xs text-blue-600">Dr. [GP Name]</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <FileText className="h-4 w-4" />
+                      <div>
+                        <div className="font-medium">Medical Records</div>
+                        <div className="text-xs text-blue-600">System Archive</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Fixed Footer */}
+            <div className="flex-shrink-0 p-6 bg-gray-50 border-t border-gray-200">
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setIsDischargeSummaryModalOpen(false)}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 font-medium shadow-lg shadow-green-200 hover:shadow-xl hover:shadow-green-300 text-sm"
+                >
+                  OK, Got it
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PSA Monitoring Modal */}
       {isPSAModalOpen && mockPatient && (

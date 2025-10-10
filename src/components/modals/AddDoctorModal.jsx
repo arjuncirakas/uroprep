@@ -627,3 +627,4 @@ const AddDoctorModal = ({ isOpen, onClose, onDoctorAdded }) => {
 
 export default AddDoctorModal;
 
+

@@ -27,7 +27,8 @@ import {
   CheckCircle,
   TrendingUp,
   Heart,
-  BarChart3
+  BarChart3,
+  Stethoscope
 } from 'lucide-react';
 import BookAppointmentModalWithPatient from '../../components/modals/BookAppointmentModalWithPatient';
 import { usePatientDetails } from '../../contexts/PatientDetailsContext';
@@ -60,7 +61,7 @@ const ActiveSurveillance = () => {
   const { openPatientDetails } = usePatientDetails();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('Patients in Monitoring');
-  const [calendarViewMode, setCalendarViewMode] = useState('calendar'); // week, calendar
+  const [calendarViewMode, setCalendarViewMode] = useState('calendar'); // week, calendar, daily
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [calendarFilter, setCalendarFilter] = useState('All Intervals'); // All Intervals, 3 Month, 6 Month, 9 Month, 12 Month
@@ -1308,6 +1309,152 @@ const ActiveSurveillance = () => {
     );
   };
 
+  const renderDailyView = () => {
+    const selectedDateObj = new Date(selectedDate);
+    const filteredAppointments = getFilteredAppointments();
+    const dayAppointments = filteredAppointments.filter(apt => apt.date === selectedDate);
+    
+    // Sort appointments by time
+    const sortedAppointments = dayAppointments.sort((a, b) => {
+      const timeA = a.time.replace(/[^\d]/g, '');
+      const timeB = b.time.replace(/[^\d]/g, '');
+      return timeA.localeCompare(timeB);
+    });
+
+    const navigateDay = (direction) => {
+      const newDate = new Date(selectedDateObj);
+      newDate.setDate(newDate.getDate() + direction);
+      setSelectedDate(newDate.toISOString().split('T')[0]);
+    };
+    
+    return (
+      <div className="p-6">
+        {/* Daily Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => navigateDay(-1)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <h3 className="text-xl font-semibold text-gray-900">
+              {selectedDateObj.toLocaleDateString('en-AU', { 
+                weekday: 'long',
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric' 
+              })}
+            </h3>
+            <button
+              onClick={() => navigateDay(1)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Daily Schedule */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          {sortedAppointments.length > 0 ? (
+            <div className="divide-y divide-gray-200">
+              {sortedAppointments.map((appointment, index) => (
+                <div
+                  key={appointment.id}
+                  onClick={() => handleAppointmentSelect(appointment)}
+                  className={`p-6 hover:bg-gray-50 transition-colors duration-200 cursor-pointer ${
+                    index % 2 === 0 ? 'bg-white' : 'bg-gray-25'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      {/* Time */}
+                      <div className="flex-shrink-0">
+                        <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center border border-blue-200">
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-blue-900">{appointment.time}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Appointment Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h4 className="text-lg font-semibold text-gray-900 truncate">
+                            {appointment.patientName}
+                          </h4>
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            {appointment.upi}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-4 mb-2">
+                          <div className="flex items-center space-x-2">
+                            <div className={`w-3 h-3 rounded-full ${
+                              appointment.interval === 3 ? 'bg-blue-500' :
+                              appointment.interval === 6 ? 'bg-green-500' :
+                              appointment.interval === 9 ? 'bg-yellow-500' :
+                              'bg-purple-500'
+                            }`}></div>
+                            <span className="text-sm font-medium text-gray-700">{appointment.title}</span>
+                          </div>
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                            {appointment.status}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center space-x-6 text-sm text-gray-600">
+                          <div className="flex items-center space-x-1">
+                            <Stethoscope className="h-4 w-4" />
+                            <span>{appointment.assignedDoctor}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Clock className="h-4 w-4" />
+                            <span>{appointment.interval} months</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center space-x-2">
+                      <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                        {appointment.interval}M
+                      </span>
+                      <div className="w-8 h-8 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
+                        <span className="text-white font-semibold text-xs">
+                          {appointment.patientName.split(' ').map(n => n[0]).join('')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <div className="mx-auto w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-6">
+                <Calendar className="h-12 w-12 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                No appointments scheduled
+              </h3>
+              <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                There are no surveillance appointments scheduled for {selectedDateObj.toLocaleDateString('en-AU', { 
+                  weekday: 'long',
+                  day: 'numeric', 
+                  month: 'long', 
+                  year: 'numeric' 
+                })}.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Custom scrollbar styles */}
@@ -1550,6 +1697,17 @@ const ActiveSurveillance = () => {
                 {/* View Mode Tabs */}
                 <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
                   <button
+                    onClick={() => setCalendarViewMode('daily')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                      calendarViewMode === 'daily' 
+                        ? 'bg-gradient-to-r from-green-800 to-black text-white shadow-md' 
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+                    }`}
+                    title="Daily View"
+                  >
+                    Day
+                  </button>
+                  <button
                     onClick={() => setCalendarViewMode('week')}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                       calendarViewMode === 'week' 
@@ -1575,7 +1733,7 @@ const ActiveSurveillance = () => {
               </div>
             </div>
             
-            {calendarViewMode === 'week' ? renderWeekView() : renderCalendarView()}
+            {calendarViewMode === 'daily' ? renderDailyView() : calendarViewMode === 'week' ? renderWeekView() : renderCalendarView()}
           </div>
         </div>
       )}

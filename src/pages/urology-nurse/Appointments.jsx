@@ -32,7 +32,7 @@ const Appointments = () => {
   const dispatch = useDispatch();
   const { appointments } = useSelector(state => state.appointments);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [viewMode, setViewMode] = useState('calendar'); // week, calendar
+  const [viewMode, setViewMode] = useState('calendar'); // week, calendar, daily
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [activeFilter, setActiveFilter] = useState('All Appointments');
   const [searchTerm, setSearchTerm] = useState('');
@@ -873,6 +873,17 @@ const Appointments = () => {
           {/* View Mode Tabs */}
           <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
             <button
+              onClick={() => setViewMode('daily')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                viewMode === 'daily' 
+                  ? 'bg-gradient-to-r from-green-800 to-black text-white shadow-md' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+              }`}
+              title="Daily View"
+            >
+              Day
+            </button>
+            <button
               onClick={() => setViewMode('week')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                 viewMode === 'week' 
@@ -1026,6 +1037,17 @@ const Appointments = () => {
           {/* View Mode Tabs */}
           <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
             <button
+              onClick={() => setViewMode('daily')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                viewMode === 'daily' 
+                  ? 'bg-gradient-to-r from-green-800 to-black text-white shadow-md' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+              }`}
+              title="Daily View"
+            >
+              Day
+            </button>
+            <button
               onClick={() => setViewMode('week')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                 viewMode === 'week' 
@@ -1131,7 +1153,197 @@ const Appointments = () => {
     );
   };
 
+  const renderDailyView = () => {
+    const selectedDateObj = new Date(selectedDate);
+    const dayAppointments = filteredAppointments.filter(apt => apt.date === selectedDate);
+    
+    // Sort appointments by time
+    const sortedAppointments = dayAppointments.sort((a, b) => {
+      const timeA = a.time.replace(/[^\d]/g, '');
+      const timeB = b.time.replace(/[^\d]/g, '');
+      return timeA.localeCompare(timeB);
+    });
 
+    const navigateDay = (direction) => {
+      const newDate = new Date(selectedDateObj);
+      newDate.setDate(newDate.getDate() + direction);
+      setSelectedDate(newDate.toISOString().split('T')[0]);
+    };
+    
+    return (
+      <div className="p-6">
+        {/* Daily Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => navigateDay(-1)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <h3 className="text-xl font-semibold text-gray-900">
+              {selectedDateObj.toLocaleDateString('en-AU', { 
+                weekday: 'long',
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric' 
+              })}
+            </h3>
+            <button
+              onClick={() => navigateDay(1)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+          {/* View Mode Tabs */}
+          <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('daily')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                viewMode === 'daily' 
+                  ? 'bg-gradient-to-r from-green-800 to-black text-white shadow-md' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+              }`}
+              title="Daily View"
+            >
+              Day
+            </button>
+            <button
+              onClick={() => setViewMode('week')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                viewMode === 'week' 
+                  ? 'bg-gradient-to-r from-green-800 to-black text-white shadow-md' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+              }`}
+              title="Week View"
+            >
+              Week
+            </button>
+            <button
+              onClick={() => setViewMode('calendar')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                viewMode === 'calendar' 
+                  ? 'bg-gradient-to-r from-green-800 to-black text-white shadow-md' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+              }`}
+              title="Month View"
+            >
+              Month
+            </button>
+          </div>
+        </div>
+
+        {/* Color Legend */}
+        <div className="mb-4 flex items-center justify-center space-x-6">
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-blue-500 rounded"></div>
+            <span className="text-sm font-medium text-gray-700">Appointment for Investigation</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-green-500 rounded"></div>
+            <span className="text-sm font-medium text-gray-700">Appointment for Urologist</span>
+          </div>
+        </div>
+
+        {/* Daily Schedule */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          {sortedAppointments.length > 0 ? (
+            <div className="divide-y divide-gray-200">
+              {sortedAppointments.map((appointment, index) => (
+                <div
+                  key={appointment.id}
+                  onClick={() => handleAppointmentSelect(appointment)}
+                  className={`p-6 hover:bg-gray-50 transition-colors duration-200 cursor-pointer ${
+                    index % 2 === 0 ? 'bg-white' : 'bg-gray-25'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      {/* Time */}
+                      <div className="flex-shrink-0">
+                        <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center border border-blue-200">
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-blue-900">{appointment.time}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Appointment Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h4 className="text-lg font-semibold text-gray-900 truncate">
+                            {appointment.patientName}
+                          </h4>
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            {appointment.upi}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-4 mb-2">
+                          <div className="flex items-center space-x-2">
+                            <div className={`w-3 h-3 rounded-full ${
+                              (appointment.type === 'OPD' || appointment.type === 'Surgery') ? 'bg-blue-500' :
+                              (appointment.type === 'Follow-up' || appointment.type === 'Surveillance') ? 'bg-green-500' :
+                              'bg-gray-500'
+                            }`}></div>
+                            <span className="text-sm font-medium text-gray-700">{appointment.title}</span>
+                          </div>
+                          <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(appointment.status)}`}>
+                            {appointment.status}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center space-x-6 text-sm text-gray-600">
+                          <div className="flex items-center space-x-1">
+                            <Stethoscope className="h-4 w-4" />
+                            <span>{appointment.doctor}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Clock className="h-4 w-4" />
+                            <span>{appointment.duration} min</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center space-x-2">
+                      <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(appointment.priority)}`}>
+                        {appointment.priority}
+                      </span>
+                      <div className="w-8 h-8 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
+                        <span className="text-white font-semibold text-xs">
+                          {appointment.patientName.split(' ').map(n => n[0]).join('')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <div className="mx-auto w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-6">
+                <Calendar className="h-12 w-12 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                No appointments scheduled
+              </h3>
+              <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                There are no appointments scheduled for {selectedDateObj.toLocaleDateString('en-AU', { 
+                  weekday: 'long',
+                  day: 'numeric', 
+                  month: 'long', 
+                  year: 'numeric' 
+                })}.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -1161,7 +1373,7 @@ const Appointments = () => {
       
       {/* Appointments Container */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        {viewMode === 'week' ? renderWeekView() : renderCalendarView()}
+        {viewMode === 'daily' ? renderDailyView() : viewMode === 'week' ? renderWeekView() : renderCalendarView()}
       </div>
 
       {/* Reschedule Confirmation Modal */}

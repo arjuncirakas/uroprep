@@ -23,7 +23,7 @@ import PatientDetailsModal from '../../components/modals/PatientDetailsModal';
 import NewReferralModal from '../../components/modals/NewReferralModal';
 
 const ReferralStatus = () => {
-  const [activeFilter, setActiveFilter] = useState('Triage Pending');
+  const [activeFilter, setActiveFilter] = useState('Patient Awaiting Consultation');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
@@ -486,7 +486,7 @@ const ReferralStatus = () => {
     }
   ];
 
-  const filters = ['Triage Pending', 'Active Monitoring', 'Surgical Pathway', 'Post-Op Follow-up', 'Discharged'];
+  const filters = ['Patient Awaiting Consultation', 'Active Monitoring', 'Surgical Pathway', 'Post-Op Follow-up', 'Discharged'];
 
   // Filter referrals by status and search query
   const filteredReferrals = mockReferrals.filter(ref => {
@@ -497,8 +497,8 @@ const ReferralStatus = () => {
     
     // Status filter
     let statusMatch;
-    if (activeFilter === 'Triage Pending') {
-      // Triage Pending includes referrals with 'Pending' status
+    if (activeFilter === 'Patient Awaiting Consultation') {
+      // Patient Awaiting Consultation includes referrals with 'Pending' status
       statusMatch = ref.status === 'Pending';
     } else if (activeFilter === 'Active Monitoring') {
       // Active Monitoring includes referrals with 'Active Surveillance' status
@@ -571,37 +571,6 @@ const ReferralStatus = () => {
     return new Date(dateString).toLocaleDateString('en-AU');
   };
 
-  // Function to format wait time with highlighting for urgent cases
-  const formatWaitTime = (days, status) => {
-    // Only show wait time for Triage Pending (which maps to 'Pending' status)
-    if (status !== 'Pending') {
-      return {
-        text: null,
-        isUrgent: false,
-        className: ''
-      };
-    }
-    
-    if (days > 10) {
-      return {
-        text: `${days} days - URGENT`,
-        isUrgent: true,
-        className: 'text-red-600 font-medium'
-      };
-    } else if (days > 7) {
-      return {
-        text: `${days} days - Review needed`,
-        isUrgent: false,
-        className: 'text-amber-600 font-medium'
-      };
-    } else {
-      return {
-        text: `${days} days ago`,
-        isUrgent: false,
-        className: 'text-gray-400'
-      };
-    }
-  };
 
 
   const getStatusColor = (status) => {
@@ -722,8 +691,8 @@ const ReferralStatus = () => {
           <div className="flex flex-wrap gap-2">
             {filters.map((filter) => {
               let count;
-              if (filter === 'Triage Pending') {
-                // Triage Pending includes referrals with 'Pending' status
+              if (filter === 'Patient Awaiting Consultation') {
+                // Patient Awaiting Consultation includes referrals with 'Pending' status
                 count = mockReferrals.filter(ref => ref.status === 'Pending').length;
               } else if (filter === 'Active Monitoring') {
                 // Active Monitoring includes referrals with 'Active Surveillance' status
@@ -785,49 +754,35 @@ const ReferralStatus = () => {
         {/* Table */}
         <div className="overflow-x-auto border border-gray-200 rounded-lg">
           {filteredReferrals.length > 0 ? (
-            <table className="w-full min-w-[1000px]">
+            <table className="w-full min-w-[1200px]">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider w-[200px] min-w-[200px]">Patient</th>
                   <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider w-[140px] min-w-[140px]">UPI</th>
                   <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider w-[180px] min-w-[180px]">Status</th>
+                  <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider w-[140px] min-w-[140px]">Consultation Date</th>
                   <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider w-[160px] min-w-[160px]">Latest PSA</th>
                   <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider w-[140px] min-w-[140px]">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {currentReferrals.map((referral, index) => {
-                  const waitTimeInfo = formatWaitTime(referral.daysSinceReferral, referral.status);
                   return (
-                    <tr key={referral.id} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'} ${waitTimeInfo.isUrgent ? 'bg-red-50/30 border-l-4 border-red-500' : ''}`}>
+                    <tr key={referral.id} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
                       <td className="py-4 px-4 w-[200px] min-w-[200px]">
                         <div className="flex items-center space-x-3">
                           <div className="relative flex-shrink-0">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-sm ${waitTimeInfo.isUrgent ? 'bg-gradient-to-br from-red-600 to-red-800' : 'bg-gradient-to-br from-green-800 to-black'}`}>
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-green-800 to-black">
                               <span className="text-white font-semibold text-sm">
                                 {referral.patientName.split(' ').map(n => n[0]).join('')}
                               </span>
                             </div>
-                            {referral.priority === 'High' && (
-                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
-                            )}
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center space-x-2">
                               <p className="font-semibold text-gray-900 text-sm leading-tight">{referral.patientName}</p>
-                              {waitTimeInfo.isUrgent && (
-                                <div className="flex items-center space-x-1 bg-red-100 px-2 py-1 rounded-full">
-                                  <AlertTriangle className="w-3 h-3 text-red-600" />
-                                  <span className="text-xs font-medium text-red-600">URGENT</span>
-                                </div>
-                              )}
                             </div>
                             <p className="text-xs text-gray-500 leading-tight">ID: {referral.id}</p>
-                            {waitTimeInfo.text && (
-                              <p className={`text-xs leading-tight ${waitTimeInfo.className}`}>
-                                {waitTimeInfo.text}
-                              </p>
-                            )}
                           </div>
                         </div>
                       </td>
@@ -851,6 +806,21 @@ const ReferralStatus = () => {
                         )}
                         {referral.status === 'Discharged' && referral.dischargeReason && (
                           <p className="text-xs text-gray-400 leading-tight italic">{referral.dischargeReason}</p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 w-[140px] min-w-[140px]">
+                      <div className="space-y-1">
+                        {referral.nextAppointment ? (
+                          <>
+                            <p className="text-sm font-medium text-gray-900">{formatDate(referral.nextAppointment)}</p>
+                            <p className="text-xs text-gray-500">Scheduled</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm font-medium text-gray-400">Not scheduled</p>
+                            <p className="text-xs text-gray-400">Awaiting booking</p>
+                          </>
                         )}
                       </div>
                     </td>

@@ -783,35 +783,49 @@ const ReferralTriage = () => {
                 <div className="bg-gradient-to-r from-green-50 to-gray-50 border border-gray-200 rounded-lg px-4 py-3">
                   <div className="flex items-center justify-between">
                     {/* Left side - Patient Information */}
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
+                    <div className="flex items-start space-x-4">
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-white font-semibold text-sm">
                           {selectedReferral.patientName.split(' ').map(n => n[0]).join('')}
                         </span>
                       </div>
-                      <div>
-                        <h1 className="text-lg font-semibold text-gray-900">{selectedReferral.patientName}</h1>
-                        <p className="text-xs text-gray-600">Referral ID: {selectedReferral.id}</p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md ${getStatusColor(selectedReferral.status)}`}>
-                            {selectedReferral.status.replace('_', ' ')}
-                          </span>
-                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md bg-green-100 text-green-800">
-                            Age: {selectedReferral.age} years
-                          </span>
-                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md bg-blue-100 text-blue-800">
-                            {selectedReferral.gender}
-                          </span>
+                      <div className="flex-1">
+                        <div>
+                          <h1 className="text-lg font-semibold text-gray-900">{selectedReferral.patientName}</h1>
+                          <p className="text-xs text-gray-600">Referral ID: {selectedReferral.id}</p>
+                          <div className="flex items-center space-x-2 mt-2">
+                            <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md ${getStatusColor(selectedReferral.status)}`}>
+                              {selectedReferral.status.replace('_', ' ')}
+                            </span>
+                            <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md bg-green-100 text-green-800">
+                              Age: {selectedReferral.age} years
+                            </span>
+                            <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md bg-blue-100 text-blue-800">
+                              {selectedReferral.gender}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Right side - GP Information */}
-                    <div className="text-right">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-1">Referring GP</h3>
-                      <p className="text-sm font-medium text-gray-900">{selectedReferral.referringGP}</p>
-                      <p className="text-xs text-gray-600">{selectedReferral.practice}</p>
-                      <p className="text-xs text-gray-500 mt-1">Referral Date: {selectedReferral.referralDate}</p>
+                    {/* Right side - PSA Data */}
+                    <div className="flex items-center space-x-6">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-900">{selectedReferral.lastPSA}</div>
+                        <div className="text-xs text-blue-700">ng/mL</div>
+                        <div className="text-xs text-blue-600 mt-1">Latest PSA</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-semibold text-purple-900">{selectedReferral.lastPSADate}</div>
+                        <div className="text-xs text-purple-700">Test Date</div>
+                      </div>
+                      <button
+                        onClick={() => setShowPSAHistoryModal(true)}
+                        className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                      >
+                        <TrendingUp className="h-4 w-4 mr-1" />
+                        View PSA History
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -822,66 +836,6 @@ const ReferralTriage = () => {
               <div className="bg-white flex flex-col flex-1 min-h-0">
                 <div className="p-4 flex-1 overflow-y-auto">
 
-                  {/* PSA Data Section */}
-                  <div className="space-y-4 mb-6">
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-base font-semibold text-gray-900">PSA Data & Criteria</h2>
-                        <button
-                          onClick={() => setShowPSAHistoryModal(true)}
-                          className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
-                        >
-                          <TrendingUp className="h-4 w-4 mr-1" />
-                          View PSA History
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-                          <div className="text-3xl font-bold text-blue-900">{selectedReferral.lastPSA}</div>
-                          <div className="text-sm text-blue-700">ng/mL</div>
-                          <div className="text-xs text-blue-600 mt-1">Latest PSA</div>
-                        </div>
-                        <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
-                          <div className="text-lg font-semibold text-green-900">{selectedReferral.psaCriteria}</div>
-                          <div className="text-sm text-green-700">PSA Criteria</div>
-                        </div>
-                        <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
-                          <div className="text-lg font-semibold text-purple-900">{selectedReferral.lastPSADate}</div>
-                          <div className="text-sm text-purple-700">Test Date</div>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Comorbidities</h3>
-                          <div className="space-y-2">
-                            {selectedReferral.comorbidities.map((comorbidity, index) => (
-                              <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                {comorbidity}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Current Medications</h3>
-                          <div className="space-y-2">
-                            {selectedReferral.medications.map((medication, index) => (
-                              <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {medication}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-4">
-                        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Family History</h3>
-                        <div className="bg-gray-50 rounded-lg p-3">
-                          <p className="text-sm text-gray-700">{selectedReferral.familyHistory}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
 
 
                   {/* Patient Assessment Section */}
