@@ -319,8 +319,8 @@ const Nurses = () => {
       {/* View Nurse Details Modal */}
       {isViewModalOpen && selectedNurse && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
-          <div className="relative mx-auto w-full max-w-5xl">
-            <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+          <div className="relative mx-auto w-full max-w-5xl max-h-[95vh]">
+            <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden h-full flex flex-col">
               {/* Header */}
               <div className="bg-gradient-to-r from-green-800 to-black px-8 py-6">
                 <div className="flex items-center justify-between">
@@ -348,7 +348,7 @@ const Nurses = () => {
               </div>
 
               {/* Content */}
-              <div className="p-8 max-h-[75vh] overflow-y-auto">
+              <div className="p-8 flex-1 overflow-y-auto">
                 <div className="space-y-6">
                   {/* Status and Quick Info */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -554,7 +554,7 @@ const Nurses = () => {
               </div>
 
               {/* Footer */}
-              <div className="px-8 py-4 bg-gray-50 border-t border-gray-200">
+              <div className="px-8 py-4 bg-gray-50 border-t border-gray-200 flex-shrink-0">
                 <div className="flex justify-end">
                   <button
                     onClick={() => {
