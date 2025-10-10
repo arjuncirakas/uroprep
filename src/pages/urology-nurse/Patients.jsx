@@ -383,10 +383,23 @@ const Patients = () => {
                     <td className="py-5 px-6">
                       <button 
                         onClick={() => handleBookAppointment(patient)}
-                        className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-800 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                        className={`inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
+                          (patient.pathway === 'Active Surveillance' || patient.pathway === 'Post-Op Follow-up')
+                            ? 'bg-white border border-gray-300 text-gray-800 hover:bg-gray-50 hover:border-gray-400 focus:ring-gray-500'
+                            : patient.nextAppointment && patient.nextAppointment !== null
+                              ? 'bg-white border border-gray-300 text-gray-800 hover:bg-gray-50 hover:border-gray-400 focus:ring-gray-500'
+                              : 'bg-gradient-to-r from-green-600 to-green-800 border border-green-600 text-white hover:from-green-700 hover:to-green-900 focus:ring-green-500'
+                        }`}
                       >
                         <Calendar className="h-3 w-3 mr-1" />
-                        <span>Book Appointment</span>
+                        <span>
+                          {(patient.pathway === 'Active Surveillance' || patient.pathway === 'Post-Op Follow-up')
+                            ? 'Update Appointment'
+                            : patient.nextAppointment && patient.nextAppointment !== null 
+                              ? 'Update Appointment' 
+                              : 'Book Appointment'
+                          }
+                        </span>
                       </button>
                     </td>
                     <td className="py-5 px-6">
@@ -446,9 +459,21 @@ const Patients = () => {
               <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-6 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-2xl font-bold text-gray-900">Book Appointment</h3>
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      {(selectedPatient.pathway === 'Active Surveillance' || selectedPatient.pathway === 'Post-Op Follow-up')
+                        ? 'Update Appointment'
+                        : selectedPatient.nextAppointment && selectedPatient.nextAppointment !== null 
+                          ? 'Update Appointment' 
+                          : 'Book Appointment'
+                      }
+                    </h3>
                     <p className="text-sm text-gray-600 mt-1">
-                      Schedule appointment for {selectedPatient.name}
+                      {(selectedPatient.pathway === 'Active Surveillance' || selectedPatient.pathway === 'Post-Op Follow-up')
+                        ? `Modify scheduled appointment for ${selectedPatient.name}`
+                        : selectedPatient.nextAppointment && selectedPatient.nextAppointment !== null 
+                          ? `Modify appointment for ${selectedPatient.name}`
+                          : `Schedule appointment for ${selectedPatient.name}`
+                      }
                     </p>
                   </div>
                   <button
@@ -594,7 +619,12 @@ const Patients = () => {
                     className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold py-3 px-6 rounded-lg hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
                     <Calendar className="h-4 w-4 mr-2 inline" />
-                    Confirm Appointment
+                    {(selectedPatient.pathway === 'Active Surveillance' || selectedPatient.pathway === 'Post-Op Follow-up')
+                      ? 'Update Appointment'
+                      : selectedPatient.nextAppointment && selectedPatient.nextAppointment !== null 
+                        ? 'Update Appointment' 
+                        : 'Confirm Appointment'
+                    }
                   </button>
                   <button
                     onClick={cancelAppointmentBooking}
@@ -621,8 +651,18 @@ const Patients = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-white">Appointment Booked!</h3>
-                <p className="text-green-100 text-sm mt-2">Appointment has been successfully scheduled</p>
+                <h3 className="text-xl font-bold text-white">
+                  {(selectedPatient.pathway === 'Active Surveillance' || selectedPatient.pathway === 'Post-Op Follow-up')
+                    ? 'Appointment Updated!'
+                    : 'Appointment Booked!'
+                  }
+                </h3>
+                <p className="text-green-100 text-sm mt-2">
+                  {(selectedPatient.pathway === 'Active Surveillance' || selectedPatient.pathway === 'Post-Op Follow-up')
+                    ? 'Appointment has been successfully updated'
+                    : 'Appointment has been successfully scheduled'
+                  }
+                </p>
               </div>
               
               {/* Content */}

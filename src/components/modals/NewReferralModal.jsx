@@ -15,13 +15,7 @@ const NewReferralModal = ({ isOpen, onClose }) => {
     contactNumber: '',
     email: '',
     address: '',
-    idProof: null,
-    insuranceInfo: null,
     
-    // Referral Type
-    referralType: 'cpc', // 'cpc' or 'clinical-override'
-    cpcCriteria: '',
-    clinicalOverrideReason: '',
     
     // PSA Details
     psaValue: '',
@@ -36,23 +30,12 @@ const NewReferralModal = ({ isOpen, onClose }) => {
     
     // GP Details (auto-filled)
     gpName: user?.name || '',
-    providerNumber: user?.providerNumber || ''
+    phoneNumber: user?.phoneNumber || '+61 3 9876 5432'
   })
 
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // CPC Criteria options
-  const cpcCriteriaOptions = [
-    'PSA > 3.0 ng/mL',
-    'PSA > 4.0 ng/mL',
-    'Abnormal DRE',
-    'Family history of prostate cancer',
-    'Rising PSA trend',
-    'PSA velocity > 0.35 ng/mL/year',
-    'Age-specific PSA elevation',
-    'Previous negative biopsy with persistent elevation'
-  ]
 
   // Comorbidity options
   const comorbidityOptions = [
@@ -108,13 +91,6 @@ const NewReferralModal = ({ isOpen, onClose }) => {
     if (!formData.medicareNumber.trim()) newErrors.medicareNumber = 'Medicare number is required'
     if (!formData.contactNumber.trim()) newErrors.contactNumber = 'Contact number is required'
     
-    // Referral Type validation
-    if (formData.referralType === 'cpc' && !formData.cpcCriteria) {
-      newErrors.cpcCriteria = 'CPC criteria is required'
-    }
-    if (formData.referralType === 'clinical-override' && !formData.clinicalOverrideReason.trim()) {
-      newErrors.clinicalOverrideReason = 'Clinical override reason is required'
-    }
     
     // PSA Details validation
     if (!formData.psaValue) newErrors.psaValue = 'PSA value is required'
@@ -181,7 +157,7 @@ const NewReferralModal = ({ isOpen, onClose }) => {
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">New Referral</h1>
-            <p className="text-gray-600">CPC or Clinical Override Entry</p>
+            <p className="text-gray-600">New Patient Referral Entry</p>
           </div>
           <button
             onClick={handleClose}
@@ -309,120 +285,9 @@ const NewReferralModal = ({ isOpen, onClose }) => {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label htmlFor="modal-idProof" className="block text-sm font-medium text-gray-700">
-                      ID Proof (Optional)
-                    </label>
-                    <input
-                      id="modal-idProof"
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) => handleFileUpload('idProof', e.target.files[0])}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors file:mr-3 file:py-1 file:px-3 file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label htmlFor="modal-insuranceInfo" className="block text-sm font-medium text-gray-700">
-                      Insurance Information (Optional)
-                    </label>
-                    <input
-                      id="modal-insuranceInfo"
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) => handleFileUpload('insuranceInfo', e.target.files[0])}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors file:mr-3 file:py-1 file:px-3 file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
-                    />
-                  </div>
-                </div>
               </div>
             </div>
 
-            {/* Referral Type Section */}
-            <div className="bg-white border border-gray-200 rounded-lg">
-              <div className="px-6 py-4 border-b border-gray-100">
-                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2.5">
-                  <FileText className="w-5 h-5 text-gray-600" />
-                  Referral Type
-                  <span className="text-red-500 text-sm">*</span>
-                </h2>
-              </div>
-              <div className="p-6 space-y-6">
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">Select Referral Type</label>
-                  <div className="flex gap-6">
-                    <label className="flex items-center space-x-2.5 cursor-pointer">
-                      <input
-                        type="radio"
-                        value="cpc"
-                        checked={formData.referralType === 'cpc'}
-                        onChange={(e) => handleInputChange('referralType', e.target.value)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                      />
-                      <span className="text-sm text-gray-700">CPC Criteria</span>
-                    </label>
-                    <label className="flex items-center space-x-2.5 cursor-pointer">
-                      <input
-                        type="radio"
-                        value="clinical-override"
-                        checked={formData.referralType === 'clinical-override'}
-                        onChange={(e) => handleInputChange('referralType', e.target.value)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                      />
-                      <span className="text-sm text-gray-700">Clinical Override</span>
-                    </label>
-                  </div>
-                </div>
-                
-                {formData.referralType === 'cpc' && (
-                  <div className="space-y-2">
-                    <label htmlFor="modal-cpcCriteria" className="block text-sm font-medium text-gray-700">
-                      CPC Criteria <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      id="modal-cpcCriteria"
-                      value={formData.cpcCriteria}
-                      onChange={(e) => handleInputChange('cpcCriteria', e.target.value)}
-                      className={`w-full px-3 py-2.5 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                        errors.cpcCriteria ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">Select CPC criteria</option>
-                      {cpcCriteriaOptions.map((criteria) => (
-                        <option key={criteria} value={criteria}>
-                          {criteria}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.cpcCriteria && (
-                      <p className="text-red-500 text-xs mt-1">{errors.cpcCriteria}</p>
-                    )}
-                  </div>
-                )}
-                
-                {formData.referralType === 'clinical-override' && (
-                  <div className="space-y-2">
-                    <label htmlFor="modal-clinicalOverrideReason" className="block text-sm font-medium text-gray-700">
-                      Clinical Override Reason <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      id="modal-clinicalOverrideReason"
-                      value={formData.clinicalOverrideReason}
-                      onChange={(e) => handleInputChange('clinicalOverrideReason', e.target.value)}
-                      className={`w-full px-3 py-2.5 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none ${
-                        errors.clinicalOverrideReason ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                      }`}
-                      placeholder="Provide detailed clinical reasoning for override"
-                      rows={4}
-                    />
-                    {errors.clinicalOverrideReason && (
-                      <p className="text-red-500 text-xs mt-1">{errors.clinicalOverrideReason}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
 
             {/* PSA Details Section */}
             <div className="bg-white border border-gray-200 rounded-lg">
@@ -478,13 +343,47 @@ const NewReferralModal = ({ isOpen, onClose }) => {
                   <label htmlFor="modal-labReport" className="block text-sm font-medium text-gray-700">
                     Upload Lab Report (PDF or Image)
                   </label>
-                  <input
-                    id="modal-labReport"
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) => handleFileUpload('labReport', e.target.files[0])}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors file:mr-3 file:py-1 file:px-3 file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
-                  />
+                  <div className="relative">
+                    <input
+                      id="modal-labReport"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => handleFileUpload('labReport', e.target.files[0])}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <div className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 cursor-pointer group">
+                      <div className="flex flex-col items-center space-y-2">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-gray-900">
+                            <span className="text-blue-600">Click to upload</span> or drag and drop
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">PDF, JPG, PNG up to 10MB</p>
+                        </div>
+                      </div>
+                    </div>
+                    {formData.labReport && (
+                      <div className="mt-2 flex items-center space-x-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-sm text-green-800 font-medium">{formData.labReport.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleFileUpload('labReport', null)}
+                          className="ml-auto text-green-600 hover:text-green-800"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -566,13 +465,47 @@ const NewReferralModal = ({ isOpen, onClose }) => {
                   <label htmlFor="modal-imaging" className="block text-sm font-medium text-gray-700">
                     Upload Imaging (MRI/US if available)
                   </label>
-                  <input
-                    id="modal-imaging"
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.dcm"
-                    onChange={(e) => handleFileUpload('imaging', e.target.files[0])}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors file:mr-3 file:py-1 file:px-3 file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
-                  />
+                  <div className="relative">
+                    <input
+                      id="modal-imaging"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.dcm"
+                      onChange={(e) => handleFileUpload('imaging', e.target.files[0])}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <div className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 cursor-pointer group">
+                      <div className="flex flex-col items-center space-y-2">
+                        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                          <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-gray-900">
+                            <span className="text-purple-600">Click to upload</span> or drag and drop
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">PDF, JPG, PNG, DCM up to 10MB</p>
+                        </div>
+                      </div>
+                    </div>
+                    {formData.imaging && (
+                      <div className="mt-2 flex items-center space-x-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-sm text-green-800 font-medium">{formData.imaging.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleFileUpload('imaging', null)}
+                          className="ml-auto text-green-600 hover:text-green-800"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -602,13 +535,13 @@ const NewReferralModal = ({ isOpen, onClose }) => {
                   </div>
                   
                   <div className="space-y-2">
-                    <label htmlFor="modal-providerNumber" className="block text-sm font-medium text-gray-700">
-                      Provider Number
+                    <label htmlFor="modal-phoneNumber" className="block text-sm font-medium text-gray-700">
+                      Phone Number
                     </label>
                     <input
-                      id="modal-providerNumber"
+                      id="modal-phoneNumber"
                       type="text"
-                      value={formData.providerNumber}
+                      value={formData.phoneNumber}
                       readOnly
                       className="w-full px-3 py-2.5 border border-gray-200 rounded-md text-sm bg-gray-50 text-gray-600 cursor-not-allowed"
                     />

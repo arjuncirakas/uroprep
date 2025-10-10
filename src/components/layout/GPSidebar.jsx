@@ -20,7 +20,7 @@ const GPSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
   const { user, role } = useSelector((state) => state.auth);
   
   const navigationItems = [
-    { path: '/gp/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    // { path: '/gp/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/gp/referral-status', label: 'Referral Status', icon: ClipboardList, relatedPaths: ['/gp/referral-details', '/gp/patient-details'] },
   ];
 

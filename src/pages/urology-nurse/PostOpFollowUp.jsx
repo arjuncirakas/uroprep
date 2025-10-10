@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { 
   Heart, 
   Search, 
@@ -19,16 +20,46 @@ import {
   TrendingUp,
   Download,
   Clock,
-  AlertCircle
+  AlertCircle,
+  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+  GripVertical,
+  MessageSquare,
+  Edit,
+  CheckCircle
 } from 'lucide-react';
 import BookAppointmentModalWithPatient from '../../components/modals/BookAppointmentModalWithPatient';
 import { usePatientDetails } from '../../contexts/PatientDetailsContext';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Bar, Line } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const PostOpFollowUp = () => {
   const navigate = useNavigate();
   const { openPatientDetails } = usePatientDetails();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilter, setActiveFilter] = useState('Recovery');
+  const [statusFilter, setStatusFilter] = useState('Recovery');
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [selectedPatientForSchedule, setSelectedPatientForSchedule] = useState(null);
@@ -41,6 +72,64 @@ const PostOpFollowUp = () => {
   });
   const [isBookAppointmentModalOpen, setIsBookAppointmentModalOpen] = useState(false);
   const [selectedPatientForAppointment, setSelectedPatientForAppointment] = useState(null);
+  
+  // Calendar view states
+  const [activeFilter, setActiveFilter] = useState('Post-Op Patients');
+  const [calendarViewMode, setCalendarViewMode] = useState('calendar');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  
+  // PSA monitoring states
+  const [showPSAMonitoringModal, setShowPSAMonitoringModal] = useState(false);
+  const [selectedPatientForPSAMonitoring, setSelectedPatientForPSAMonitoring] = useState(null);
+  const [psaChartFilter, setPsaChartFilter] = useState('6months');
+  const [psaChartType, setPsaChartType] = useState('line');
+  const [hoveredPSA, setHoveredPSA] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  
+  // PSA entry modal states
+  const [isPSAModalOpen, setIsPSAModalOpen] = useState(false);
+  const [selectedPatientForPSA, setSelectedPatientForPSA] = useState(null);
+  const [psaForm, setPsaForm] = useState({
+    date: '',
+    value: '',
+    notes: ''
+  });
+  
+  // Drag and drop states
+  const [draggedAppointment, setDraggedAppointment] = useState(null);
+  const [dragOverDate, setDragOverDate] = useState(null);
+  const [rescheduleData, setRescheduleData] = useState(null);
+  
+  // Edit and notes states
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({});
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  
+  // Local appointments state for drag and drop updates
+  const [localAppointments, setLocalAppointments] = useState([]);
+
+  // Initialize local appointments state
+  useEffect(() => {
+    const allAppointments = [];
+    mockPostOpPatients.forEach(patient => {
+      if (patient.appointmentScheduled) {
+        allAppointments.push({
+          ...patient,
+          id: `${patient.id}-${patient.scheduledDate}-${patient.scheduledTime}`,
+          date: patient.scheduledDate,
+          time: patient.scheduledTime,
+          title: 'Follow-up',
+          interval: 3, // Default interval for post-op patients
+          status: 'Scheduled',
+          assignedDoctor: patient.assignedDoctor
+        });
+      }
+    });
+    setLocalAppointments(allAppointments);
+  }, []);
 
   // Available doctors list
   const availableDoctors = [
@@ -71,7 +160,7 @@ const PostOpFollowUp = () => {
       lastPSADate: '2024-01-10',
       nextFollowUp: '2024-02-20',
       appointmentScheduled: true,
-      scheduledDate: '2024-02-20',
+      scheduledDate: '2025-10-15',
       scheduledTime: '10:00',
       assignedDoctor: 'Dr. Sarah Wilson',
       histopathology: {
@@ -95,7 +184,15 @@ const PostOpFollowUp = () => {
       },
       riskAssessment: 'Low Risk',
       notes: 'Excellent recovery, PSA undetectable',
-      dischargeReady: false
+      dischargeReady: false,
+      psaHistory: [
+        { date: '2023-12-15', value: 6.8, notes: 'Pre-surgical PSA level' },
+        { date: '2024-01-10', value: 0.02, notes: 'Post-operative PSA, excellent response' },
+        { date: '2024-01-25', value: 0.02, notes: 'Follow-up PSA, stable' },
+        { date: '2024-04-15', value: 0.01, notes: '3-month follow-up, PSA undetectable' },
+        { date: '2024-07-15', value: 0.02, notes: '6-month follow-up, minimal PSA' },
+        { date: '2024-10-15', value: 0.01, notes: '9-month follow-up, excellent control' }
+      ]
     },
     {
       id: 'POSTOP002',
@@ -115,7 +212,7 @@ const PostOpFollowUp = () => {
       lastPSADate: '2024-01-12',
       nextFollowUp: '2024-04-15',
       appointmentScheduled: true,
-      scheduledDate: '2024-04-15',
+      scheduledDate: '2025-10-20',
       scheduledTime: '14:30',
       assignedDoctor: 'Dr. Michael Chen',
       histopathology: {
@@ -139,7 +236,12 @@ const PostOpFollowUp = () => {
       },
       riskAssessment: 'Low Risk',
       notes: 'Ready for discharge to GP care',
-      dischargeReady: true
+      dischargeReady: true,
+      psaHistory: [
+        { date: '2023-11-20', value: 5.2, notes: 'Pre-operative baseline' },
+        { date: '2024-01-12', value: 0.05, notes: 'Post-surgery PSA, good response' },
+        { date: '2024-01-25', value: 0.05, notes: 'Stable post-operative level' }
+      ]
     },
     {
       id: 'POSTOP003',
@@ -158,7 +260,10 @@ const PostOpFollowUp = () => {
       lastPSA: 0.3,
       lastPSADate: '2024-01-14',
       nextFollowUp: '2024-02-10',
-      appointmentScheduled: false,
+      appointmentScheduled: true,
+      scheduledDate: '2025-10-25',
+      scheduledTime: '11:30',
+      assignedDoctor: 'Dr. Sarah Wilson',
       histopathology: {
         gleasonScore: '4+3',
         marginStatus: 'Positive',
@@ -180,7 +285,12 @@ const PostOpFollowUp = () => {
       },
       riskAssessment: 'High Risk',
       notes: 'Positive margins, possible biochemical recurrence',
-      dischargeReady: false
+      dischargeReady: false,
+      psaHistory: [
+        { date: '2023-12-05', value: 8.1, notes: 'High pre-surgical PSA' },
+        { date: '2024-01-14', value: 0.3, notes: 'Post-surgery PSA, moderate response' },
+        { date: '2024-01-28', value: 0.3, notes: 'Consistent post-operative level' }
+      ]
     },
     {
       id: 'POSTOP004',
@@ -199,7 +309,10 @@ const PostOpFollowUp = () => {
       lastPSA: 0.08,
       lastPSADate: '2024-01-08',
       nextFollowUp: '2024-02-05',
-      appointmentScheduled: false,
+      appointmentScheduled: true,
+      scheduledDate: '2025-11-05',
+      scheduledTime: '09:15',
+      assignedDoctor: 'Dr. Michael Chen',
       histopathology: {
         gleasonScore: '3+4',
         marginStatus: 'Negative',
@@ -221,7 +334,12 @@ const PostOpFollowUp = () => {
       },
       riskAssessment: 'Intermediate Risk',
       notes: 'Good recovery, monitoring PSA levels',
-      dischargeReady: false
+      dischargeReady: false,
+      psaHistory: [
+        { date: '2023-12-10', value: 7.2, notes: 'Pre-surgical PSA level' },
+        { date: '2024-01-08', value: 0.08, notes: 'Post-operative PSA, good response' },
+        { date: '2024-01-22', value: 0.08, notes: 'Stable post-surgical level' }
+      ]
     },
     {
       id: 'POSTOP005',
@@ -241,7 +359,7 @@ const PostOpFollowUp = () => {
       lastPSADate: '2024-02-01',
       nextFollowUp: '2024-02-28',
       appointmentScheduled: true,
-      scheduledDate: '2024-02-28',
+      scheduledDate: '2025-11-12',
       scheduledTime: '11:00',
       assignedDoctor: 'Dr. Emma Wilson',
       histopathology: {
@@ -285,7 +403,7 @@ const PostOpFollowUp = () => {
       lastPSADate: '2024-01-25',
       nextFollowUp: '2024-04-22',
       appointmentScheduled: true,
-      scheduledDate: '2024-04-22',
+      scheduledDate: '2025-11-18',
       scheduledTime: '09:30',
       assignedDoctor: 'Dr. James Brown',
       histopathology: {
@@ -328,7 +446,10 @@ const PostOpFollowUp = () => {
       lastPSA: 0.4,
       lastPSADate: '2024-01-20',
       nextFollowUp: '2024-02-18',
-      appointmentScheduled: false,
+      appointmentScheduled: true,
+      scheduledDate: '2025-11-22',
+      scheduledTime: '14:45',
+      assignedDoctor: 'Dr. Lisa Davis',
       histopathology: {
         gleasonScore: '4+4',
         marginStatus: 'Positive',
@@ -370,7 +491,7 @@ const PostOpFollowUp = () => {
       lastPSADate: '2024-02-02',
       nextFollowUp: '2024-02-28',
       appointmentScheduled: true,
-      scheduledDate: '2024-02-28',
+      scheduledDate: '2025-11-28',
       scheduledTime: '14:00',
       assignedDoctor: 'Dr. Michael Chen',
       histopathology: {
@@ -429,6 +550,86 @@ const PostOpFollowUp = () => {
     }
   };
 
+  // PSA reference values based on age and gender
+  const getPSABaselineInfo = (gender, age) => {
+    if (gender === 'Male') {
+      if (age >= 70) {
+        return {
+          normal: '0-6.5 ng/mL',
+          borderline: '6.5-15.0 ng/mL', 
+          elevated: '>15.0 ng/mL',
+          description: 'Male PSA Reference Ranges (70+ years):'
+        };
+      } else if (age >= 60) {
+        return {
+          normal: '0-4.5 ng/mL',
+          borderline: '4.5-10.0 ng/mL', 
+          elevated: '>10.0 ng/mL',
+          description: 'Male PSA Reference Ranges (60-69 years):'
+        };
+      } else if (age >= 50) {
+        return {
+          normal: '0-3.5 ng/mL',
+          borderline: '3.5-7.0 ng/mL', 
+          elevated: '>7.0 ng/mL',
+          description: 'Male PSA Reference Ranges (50-59 years):'
+        };
+      } else {
+        return {
+          normal: '0-2.5 ng/mL',
+          borderline: '2.5-4.0 ng/mL', 
+          elevated: '>4.0 ng/mL',
+          description: 'Male PSA Reference Ranges (<50 years):'
+        };
+      }
+    } else if (gender === 'Female') {
+      if (age >= 70) {
+        return {
+          normal: '0-1.2 ng/mL',
+          borderline: '1.2-2.0 ng/mL', 
+          elevated: '>2.0 ng/mL',
+          description: 'Female PSA Reference Ranges (70+ years):'
+        };
+      } else if (age >= 60) {
+        return {
+          normal: '0-0.8 ng/mL',
+          borderline: '0.8-1.5 ng/mL', 
+          elevated: '>1.5 ng/mL',
+          description: 'Female PSA Reference Ranges (60-69 years):'
+        };
+      } else if (age >= 50) {
+        return {
+          normal: '0-0.6 ng/mL',
+          borderline: '0.6-1.0 ng/mL', 
+          elevated: '>1.0 ng/mL',
+          description: 'Female PSA Reference Ranges (50-59 years):'
+        };
+      } else {
+        return {
+          normal: '0-0.5 ng/mL',
+          borderline: '0.5-0.8 ng/mL', 
+          elevated: '>0.8 ng/mL',
+          description: 'Female PSA Reference Ranges (<50 years):'
+        };
+      }
+    }
+    return null;
+  };
+
+  // Handle PSA hover for tooltip positioning
+  const handlePSAHover = (event, patient) => {
+    const rect = event.target.getBoundingClientRect();
+    setTooltipPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    });
+    setHoveredPSA(patient);
+  };
+
+  const handlePSALeave = () => {
+    setHoveredPSA(null);
+  };
+
   const filteredPatients = mockPostOpPatients.filter(patient => {
     const searchMatch = searchTerm === '' || 
       patient.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -437,9 +638,9 @@ const PostOpFollowUp = () => {
     
     // Status filter based on active tab
     const statusMatch = 
-      (activeFilter === 'Recovery' && patient.status === 'Recovery') ||
-      (activeFilter === 'Follow-up' && patient.status === 'Follow-up') ||
-      (activeFilter === 'High Risk' && patient.status === 'High Risk');
+      (statusFilter === 'Recovery' && patient.status === 'Recovery') ||
+      (statusFilter === 'Follow-up' && patient.status === 'Follow-up') ||
+      (statusFilter === 'High Risk' && patient.status === 'High Risk');
     
     return searchMatch && statusMatch;
   });
@@ -559,19 +760,671 @@ const PostOpFollowUp = () => {
     setSelectedPatientForAppointment(null);
   };
 
-  return (
-    <div className="space-y-6">
+  // PSA monitoring functions
+  const handlePSAMonitoring = (patient) => {
+    setSelectedPatientForPSAMonitoring(patient);
+    setShowPSAMonitoringModal(true);
+  };
 
-      {/* Post-Op Patients Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">Post-Op Follow-Up</h2>
-              <p className="text-sm text-gray-600 mt-1">Manage recovery and discharge planning</p>
-            </div>
+  const closePSAMonitoringModal = () => {
+    setShowPSAMonitoringModal(false);
+    setSelectedPatientForPSAMonitoring(null);
+  };
+
+  // PSA Entry handlers
+  const handlePSAEntry = (patientId) => {
+    const patient = mockPostOpPatients.find(p => p.id === patientId);
+    setSelectedPatientForPSA(patient);
+    setIsPSAModalOpen(true);
+  };
+
+  const handlePSAFormChange = (e) => {
+    const { name, value } = e.target;
+    setPsaForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleAddPSA = (e) => {
+    e.preventDefault();
+    // In a real app, this would save to the backend
+    console.log('Adding PSA value for patient:', selectedPatientForPSA?.id, psaForm);
+    
+    // Reset form and close modal
+    setPsaForm({
+      date: '',
+      value: '',
+      notes: ''
+    });
+    setSelectedPatientForPSA(null);
+    setIsPSAModalOpen(false);
+  };
+
+  const closePSAModal = () => {
+    setIsPSAModalOpen(false);
+    setSelectedPatientForPSA(null);
+    setPsaForm({
+      date: '',
+      value: '',
+      notes: ''
+    });
+  };
+
+  // PSA Chart configuration
+  const getPSAChartData = (patient, chartType) => {
+    if (!patient?.psaHistory) return { labels: [], datasets: [] };
+    
+    const history = patient.psaHistory;
+    const labels = history.map(psa => new Date(psa.date).toLocaleDateString('en-AU'));
+    const data = history.map(psa => psa.value);
+    
+    const colors = data.map(value => {
+      if (value > 10) return '#ef4444';
+      if (value > 4) return '#f59e0b';
+      return '#10b981';
+    });
+
+    if (chartType === 'line') {
+      return {
+        labels,
+        datasets: [{
+          label: 'PSA Levels (ng/mL)',
+          data,
+          borderColor: '#8b5cf6',
+          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+          borderWidth: 3,
+          pointBackgroundColor: colors,
+          pointBorderColor: colors,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          tension: 0.4
+        }]
+      };
+    } else {
+      return {
+        labels,
+        datasets: [{
+          label: 'PSA Levels (ng/mL)',
+          data,
+          backgroundColor: colors,
+          borderColor: colors,
+          borderWidth: 1
+        }]
+      };
+    }
+  };
+
+  const getPSAChartConfig = (patient, chartType) => {
+    return getPSAChartData(patient, chartType);
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          usePointStyle: true,
+          padding: 20
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: 'white',
+        bodyColor: 'white',
+        borderColor: '#8b5cf6',
+        borderWidth: 1,
+        cornerRadius: 8,
+        displayColors: false,
+        callbacks: {
+          title: function(context) {
+            return `PSA Reading - ${context[0].label}`;
+          },
+          label: function(context) {
+            const value = context.parsed.y;
+            let status = 'Normal';
+            if (value > 10) status = 'High Risk';
+            else if (value > 4) status = 'Borderline';
+            return `${value} ng/mL (${status})`;
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.05)'
+        },
+        ticks: {
+          callback: function(value) {
+            return value + ' ng/mL';
+          }
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        }
+      }
+    },
+    interaction: {
+      intersect: false,
+      mode: 'index'
+    }
+  };
+
+  // Calendar functions
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    
+    const days = [];
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+    
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(new Date(year, month, day));
+    }
+    
+    return days;
+  };
+
+  const getAppointmentsForDate = (date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return mockPostOpPatients.filter(patient => 
+      patient.appointmentScheduled && patient.scheduledDate === dateStr
+    );
+  };
+
+  const navigateMonth = (direction) => {
+    setCurrentMonth(prev => {
+      const newMonth = new Date(prev);
+      newMonth.setMonth(prev.getMonth() + direction);
+      return newMonth;
+    });
+  };
+
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('en-AU');
+  };
+
+  // Get all appointments for calendar view from local state
+  const getAllAppointments = () => {
+    return localAppointments;
+  };
+
+  // Calendar helper functions
+  function getWeekDates(date) {
+    const week = [];
+    const start = new Date(date);
+    start.setDate(date.getDate() - date.getDay());
+    
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(start);
+      day.setDate(start.getDate() + i);
+      week.push(day);
+    }
+    return week;
+  }
+
+  const getSurveillanceIntervalColor = (interval) => {
+    switch (interval) {
+      case 3: return { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200' };
+      case 6: return { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-200' };
+      case 9: return { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-200' };
+      case 12: return { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-200' };
+      default: return { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-200' };
+    }
+  };
+
+  // Calendar view rendering functions
+  const renderWeekView = () => {
+    const weekDates = getWeekDates(new Date(selectedDate));
+    const allAppointments = getAllAppointments();
+    
+    const getAppointmentsForDate = (date) => {
+      const dateStr = date.toISOString().split('T')[0];
+      return allAppointments.filter(apt => apt.date === dateStr);
+    };
+
+    return (
+      <div className="p-6">
+        {/* Week Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => {
+                const newDate = new Date(selectedDate);
+                newDate.setDate(newDate.getDate() - 7);
+                setSelectedDate(newDate.toISOString().split('T')[0]);
+              }}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <h3 className="text-xl font-semibold text-gray-900">
+              {weekDates[0].toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} - {weekDates[6].toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </h3>
+            <button
+              onClick={() => {
+                const newDate = new Date(selectedDate);
+                newDate.setDate(newDate.getDate() + 7);
+                setSelectedDate(newDate.toISOString().split('T')[0]);
+              }}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
           </div>
         </div>
+
+        {/* Week Grid */}
+        <div className="grid grid-cols-7 gap-1">
+          {/* Day Headers */}
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+            <div key={day} className="p-3 text-center text-sm font-medium text-gray-500 bg-gray-50 rounded-lg">
+              {day}
+            </div>
+          ))}
+          
+          {/* Week Days */}
+          {weekDates.map((day, index) => {
+            const isToday = day.toDateString() === new Date().toDateString();
+            const dayAppointments = getAppointmentsForDate(day);
+            const isDragOver = dragOverDate && dragOverDate.toDateString() === day.toDateString();
+            
+            return (
+              <div
+                key={index}
+                className={`min-h-[200px] max-h-[400px] p-2 border border-gray-200 rounded-lg transition-all duration-200 flex flex-col ${
+                  isToday ? 'ring-2 ring-green-500 bg-green-50' : 'bg-white'
+                } ${
+                  isDragOver ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-400' : ''
+                }`}
+                onDragOver={(e) => handleDragOver(e, day)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, day)}
+              >
+                <div className={`text-sm font-medium mb-2 flex-shrink-0 ${
+                  isToday ? 'text-green-600' : 'text-gray-900'
+                }`}>
+                  {day.getDate()}
+                </div>
+                <div className="flex-1 overflow-y-auto space-y-1">
+                  {dayAppointments.map(appointment => {
+                    const colors = getSurveillanceIntervalColor(appointment.interval);
+                    return (
+                      <div
+                        key={appointment.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, appointment)}
+                        onDragEnd={handleDragEnd}
+                        className={`text-xs p-1 rounded cursor-move transition-all duration-200 flex-shrink-0 ${
+                          appointment.interval === 3 ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' :
+                          appointment.interval === 6 ? 'bg-green-100 text-green-800 hover:bg-green-200' :
+                          appointment.interval === 9 ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' :
+                          'bg-purple-100 text-purple-800 hover:bg-purple-200'
+                        } hover:shadow-md hover:scale-105`}
+                        onClick={() => handleViewAppointment(appointment)}
+                        title="Drag to reschedule"
+                      >
+                        <div className="font-medium flex items-center justify-between">
+                          <span>{appointment.time}</span>
+                          <span className="text-xs opacity-60">⋮⋮</span>
+                        </div>
+                        <div className="truncate">{appointment.patientName}</div>
+                      </div>
+                    );
+                  })}
+                  {dayAppointments.length === 0 && (
+                    <div className="text-xs text-gray-400 text-center py-2">
+                      No appointments
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderCalendarView = () => {
+    const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+    const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+    const startDate = new Date(monthStart);
+    startDate.setDate(startDate.getDate() - startDate.getDay());
+    
+    const calendarDays = [];
+    const currentDate = new Date(startDate);
+    
+    for (let i = 0; i < 42; i++) {
+      calendarDays.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    const allAppointments = getAllAppointments();
+    const getAppointmentsForDate = (date) => {
+      const dateStr = date.toISOString().split('T')[0];
+      return allAppointments.filter(apt => apt.date === dateStr);
+    };
+    
+    const navigateMonth = (direction) => {
+      const newMonth = new Date(currentMonth);
+      newMonth.setMonth(newMonth.getMonth() + direction);
+      setCurrentMonth(newMonth);
+    };
+    
+    return (
+      <div className="p-6">
+        {/* Calendar Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => navigateMonth(-1)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <h3 className="text-xl font-semibold text-gray-900">
+              {currentMonth.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
+            </h3>
+            <button
+              onClick={() => navigateMonth(1)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+        
+        {/* Calendar Grid */}
+        <div className="grid grid-cols-7 gap-1">
+          {/* Day Headers */}
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+            <div key={day} className="p-3 text-center text-sm font-medium text-gray-500 bg-gray-50 rounded-lg">
+              {day}
+            </div>
+          ))}
+          
+          {/* Calendar Days */}
+          {calendarDays.map((day, index) => {
+            const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
+            const isToday = day.toDateString() === new Date().toDateString();
+            const dayAppointments = getAppointmentsForDate(day);
+            const isDragOver = dragOverDate && dragOverDate.toDateString() === day.toDateString();
+            
+            return (
+              <div
+                key={index}
+                className={`min-h-[120px] max-h-[200px] p-2 border border-gray-200 rounded-lg transition-all duration-200 flex flex-col ${
+                  isCurrentMonth ? 'bg-white' : 'bg-gray-50'
+                } ${isToday ? 'ring-2 ring-green-500' : ''} ${
+                  isDragOver ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-400' : ''
+                }`}
+                onDragOver={(e) => handleDragOver(e, day)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, day)}
+              >
+                <div className={`text-sm font-medium mb-2 flex-shrink-0 ${
+                  isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
+                } ${isToday ? 'text-green-600' : ''}`}>
+                  {day.getDate()}
+                </div>
+                <div className="flex-1 overflow-y-auto space-y-1">
+                  {dayAppointments.map(appointment => {
+                    const colors = getSurveillanceIntervalColor(appointment.interval);
+                    return (
+                      <div
+                        key={appointment.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, appointment)}
+                        onDragEnd={handleDragEnd}
+                        className={`text-xs p-1 rounded cursor-move transition-all duration-200 flex-shrink-0 ${
+                          appointment.interval === 3 ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' :
+                          appointment.interval === 6 ? 'bg-green-100 text-green-800 hover:bg-green-200' :
+                          appointment.interval === 9 ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' :
+                          'bg-purple-100 text-purple-800 hover:bg-purple-200'
+                        } hover:shadow-md hover:scale-105`}
+                        onClick={() => handleViewAppointment(appointment)}
+                        title="Drag to reschedule"
+                      >
+                        <div className="font-medium flex items-center justify-between">
+                          <span>{appointment.time}</span>
+                          <span className="text-xs opacity-60">⋮⋮</span>
+                        </div>
+                        <div className="truncate">{appointment.patientName}</div>
+                      </div>
+                    );
+                  })}
+                  {dayAppointments.length === 0 && (
+                    <div className="text-xs text-gray-400 text-center py-2">
+                      No appointments
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // Drag and drop functions
+  const handleDragStart = (e, appointment) => {
+    setDraggedAppointment(appointment);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', e.target.outerHTML);
+    e.target.style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e) => {
+    e.target.style.opacity = '1';
+    setDraggedAppointment(null);
+    setDragOverDate(null);
+  };
+
+  const handleDragOver = (e, date) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverDate(date);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setDragOverDate(null);
+  };
+
+  const handleDrop = (e, targetDate) => {
+    e.preventDefault();
+    setDragOverDate(null);
+    
+    if (draggedAppointment && targetDate) {
+      const targetDateStr = targetDate.toISOString().split('T')[0];
+      const originalDateStr = draggedAppointment.date;
+      
+      // Don't allow dropping on the same date
+      if (targetDateStr === originalDateStr) {
+        return;
+      }
+      
+      // Show confirmation modal
+      setRescheduleData({
+        appointment: draggedAppointment,
+        originalDate: originalDateStr,
+        newDate: targetDateStr,
+        newDateFormatted: targetDate.toLocaleDateString('en-AU')
+      });
+      setShowRescheduleModal(true);
+    }
+  };
+
+  const confirmReschedule = () => {
+    if (rescheduleData) {
+      console.log('Before reschedule:', localAppointments.filter(apt => apt.patientName === rescheduleData.appointment.patientName));
+      
+      // Update the appointment date in the local state - only the specific dragged appointment
+      const updatedAppointments = localAppointments.map(apt => {
+        // Match by multiple criteria to ensure we're updating the right appointment
+        if (apt.id === rescheduleData.appointment.id && 
+            apt.patientName === rescheduleData.appointment.patientName &&
+            apt.date === rescheduleData.originalDate &&
+            apt.time === rescheduleData.appointment.time) {
+          console.log(`Updating appointment: ${apt.patientName} at ${apt.time} from ${apt.date} to ${rescheduleData.newDate}`);
+          return { ...apt, date: rescheduleData.newDate };
+        }
+        return apt;
+      });
+      
+      setLocalAppointments(updatedAppointments);
+      
+      console.log('After reschedule:', updatedAppointments.filter(apt => apt.patientName === rescheduleData.appointment.patientName));
+      
+      // Close modal and reset states
+      setShowRescheduleModal(false);
+      setRescheduleData(null);
+      setDraggedAppointment(null);
+    }
+  };
+
+  const cancelReschedule = () => {
+    setShowRescheduleModal(false);
+    setRescheduleData(null);
+    setDraggedAppointment(null);
+  };
+
+  // Modal handlers
+  const handleViewAppointment = (appointment) => {
+    setSelectedAppointment(appointment);
+    setShowAppointmentModal(true);
+  };
+
+  const closeAppointmentModal = () => {
+    setShowAppointmentModal(false);
+    setSelectedAppointment(null);
+  };
+
+  const handleEditAppointment = (appointment) => {
+    setEditFormData({
+      id: appointment.id,
+      date: appointment.scheduledDate,
+      time: appointment.scheduledTime,
+      type: 'followup',
+      doctor: appointment.assignedDoctor,
+      notes: ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = (e) => {
+    e.preventDefault();
+    console.log('Edit appointment:', editFormData);
+    setShowEditModal(false);
+    setEditFormData({});
+  };
+
+  const closeEditModal = () => {
+    setShowEditModal(false);
+    setEditFormData({});
+  };
+
+  const handleNotesClick = (appointment) => {
+    setEditFormData({
+      id: appointment.id,
+      notes: appointment.notes || ''
+    });
+    setShowNotesModal(true);
+  };
+
+  const handleNotesSubmit = (e) => {
+    e.preventDefault();
+    console.log('Update notes:', editFormData);
+    setShowNotesModal(false);
+    setEditFormData({});
+  };
+
+  const closeNotesModal = () => {
+    setShowNotesModal(false);
+    setEditFormData({});
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Custom scrollbar styles */}
+      <style jsx>{`
+        .scrollbar-thin {
+          scrollbar-width: thin;
+        }
+        .scrollbar-thin::-webkit-scrollbar {
+          width: 4px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 2px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 2px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+      `}</style>
+      
+      {/* Header with Simple Tabs */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Post-Op Follow-Up</h2>
+            <p className="text-sm text-gray-600 mt-1">Manage recovery and discharge planning</p>
+          </div>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="px-6 py-4">
+          <nav className="flex space-x-2" aria-label="Tabs">
+            {['Post-Op Patients', 'Calendar'].map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setActiveFilter(filter)}
+                className={`px-4 py-2 rounded-full font-medium text-sm transition-all duration-200 ${
+                  activeFilter === filter
+                    ? 'bg-gradient-to-r from-green-600 to-green-700 text-white'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <span>{filter}</span>
+                  <span className={`py-0.5 px-2 rounded-full text-xs font-semibold transition-colors ${
+                    activeFilter === filter
+                      ? 'bg-white/20 text-white'
+                      : 'bg-gray-200 text-gray-700'
+                  }`}>
+                    {filter === 'Post-Op Patients' ? mockPostOpPatients.length : getAllAppointments().length}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </nav>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      {activeFilter === 'Post-Op Patients' ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
 
         {/* Search Bar */}
         <div className="px-6 py-4 border-b border-gray-200">
@@ -637,9 +1490,26 @@ const PostOpFollowUp = () => {
                       </div>
                     </td>
                     <td className="py-5 px-6">
-                      <div>
-                        <p className="font-medium text-gray-900">{patient.lastPSA} ng/mL</p>
-                        <p className="text-xs text-gray-400">Next: {patient.nextFollowUp}</p>
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-2 h-2 rounded-full ${
+                          patient.lastPSA > 10 ? 'bg-red-500' : 
+                          patient.lastPSA > 4 ? 'bg-amber-500' : 
+                          'bg-green-500'
+                        }`}></div>
+                        <div>
+                          <span 
+                            className={`text-sm font-semibold cursor-help ${
+                              patient.lastPSA > 10 ? 'text-red-600' : 
+                              patient.lastPSA > 4 ? 'text-amber-600' : 
+                              'text-green-600'
+                            }`}
+                            onMouseEnter={(e) => handlePSAHover(e, patient)}
+                            onMouseLeave={handlePSALeave}
+                          >
+                            {patient.lastPSA} ng/mL
+                          </span>
+                          <p className="text-xs text-gray-400">Next: {patient.nextFollowUp}</p>
+                        </div>
                       </div>
                     </td>
                     <td className="py-5 px-6">
@@ -652,24 +1522,30 @@ const PostOpFollowUp = () => {
                       </button>
                     </td>
                     <td className="py-5 px-6">
-                      <div className="flex flex-col space-y-1">
-                        {!patient.appointmentScheduled ? (
-                          <button 
-                            onClick={() => handleBookAppointment(patient)}
-                            className="inline-flex items-center justify-center w-40 px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                          >
-                            <Calendar className="h-3 w-3 mr-1" />
-                            <span>Book Follow-up</span>
-                          </button>
-                        ) : (
-                          <button 
-                            onClick={() => handleBookAppointment(patient)}
-                            className="inline-flex items-center justify-center w-40 px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                          >
-                            <Clock className="h-3 w-3 mr-1" />
-                            <span>Update Follow-up</span>
-                          </button>
-                        )}
+                      <div className="flex space-x-2">
+                        <button 
+                          onClick={() => handlePSAMonitoring(patient)}
+                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 border border-purple-600 rounded-lg shadow-sm hover:from-purple-700 hover:to-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
+                        >
+                          <BarChart3 className="h-3 w-3 mr-1" />
+                          <span>PSA Monitoring</span>
+                        </button>
+                        
+                        <button 
+                          onClick={() => handlePSAEntry(patient.id)}
+                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          <span>Add PSA</span>
+                        </button>
+                        
+                        <button 
+                          onClick={() => handleBookAppointment(patient)}
+                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                        >
+                          <Clock className="h-3 w-3 mr-1" />
+                          <span>Update Review</span>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -710,6 +1586,54 @@ const PostOpFollowUp = () => {
           )}
         </div>
       </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          {/* Calendar view with internal filtering */}
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Follow-up Calendar
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  View scheduled follow-up appointments by interval
+                </p>
+              </div>
+
+              {/* Calendar Controls */}
+              <div className="flex items-center space-x-4">
+                {/* View Mode Tabs */}
+                <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setCalendarViewMode('week')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                      calendarViewMode === 'week' 
+                        ? 'bg-gradient-to-r from-green-800 to-black text-white shadow-md' 
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+                    }`}
+                    title="Week View"
+                  >
+                    Week
+                  </button>
+                  <button
+                    onClick={() => setCalendarViewMode('calendar')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                      calendarViewMode === 'calendar' 
+                        ? 'bg-gradient-to-r from-green-800 to-black text-white shadow-md' 
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+                    }`}
+                    title="Month View"
+                  >
+                    Month
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            {calendarViewMode === 'week' ? renderWeekView() : renderCalendarView()}
+          </div>
+        </div>
+      )}
 
       {/* Schedule Follow-up Modal */}
       {showScheduleModal && selectedPatientForSchedule && (
@@ -943,6 +1867,620 @@ const PostOpFollowUp = () => {
         onAppointmentBooked={handleAppointmentBooked}
         selectedPatientData={selectedPatientForAppointment}
       />
+
+      {/* PSA Monitoring Modal */}
+      {showPSAMonitoringModal && selectedPatientForPSAMonitoring && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white max-w-6xl w-full max-h-[90vh] flex flex-col border border-gray-200 rounded-xl shadow-2xl">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-purple-50 to-gray-50 border-b border-gray-200 px-6 py-4 flex-shrink-0 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-purple-800 rounded-full flex items-center justify-center">
+                    <BarChart3 className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      PSA Monitoring - {selectedPatientForPSAMonitoring.patientName}
+                    </h3>
+                    <p className="text-sm text-gray-600">PSA Level Trends and Analysis</p>
+                  </div>
+                </div>
+                <button
+                  onClick={closePSAMonitoringModal}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50">
+              {/* Key Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <Heart className="h-4 w-4 text-red-600" />
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Current PSA</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-2xl font-bold text-gray-900">{selectedPatientForPSAMonitoring.lastPSA}</p>
+                    <p className="text-sm text-gray-600">ng/mL</p>
+                    <div className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                      selectedPatientForPSAMonitoring.lastPSA > 10 ? 'bg-red-50 text-red-700 border border-red-200' :
+                      selectedPatientForPSAMonitoring.lastPSA > 4 ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                      'bg-green-50 text-green-700 border border-green-200'
+                    }`}>
+                      {selectedPatientForPSAMonitoring.lastPSA > 10 ? 'High Risk' :
+                       selectedPatientForPSAMonitoring.lastPSA > 4 ? 'Borderline' : 'Normal'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <TrendingUp className="h-4 w-4 text-blue-600" />
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Surgery Date</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-lg font-bold text-gray-900">{selectedPatientForPSAMonitoring.surgeryDate}</p>
+                    <p className="text-sm text-gray-600">{selectedPatientForPSAMonitoring.surgeryType}</p>
+                    <div className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                      {selectedPatientForPSAMonitoring.surgeon}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <Activity className="h-4 w-4 text-green-600" />
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Risk Category</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className={`inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full ${getRiskColor(selectedPatientForPSAMonitoring.riskAssessment)}`}>
+                      {selectedPatientForPSAMonitoring.riskAssessment}
+                    </span>
+                    <p className="text-xs text-gray-600">Gleason: {selectedPatientForPSAMonitoring.histopathology?.gleasonScore}</p>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <Calendar className="h-4 w-4 text-purple-600" />
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Next Review</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-lg font-bold text-gray-900">{selectedPatientForPSAMonitoring.nextFollowUp}</p>
+                    <p className="text-sm text-gray-600">Follow-up</p>
+                    <div className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                      selectedPatientForPSAMonitoring.dischargeReady ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                    }`}>
+                      {selectedPatientForPSAMonitoring.dischargeReady ? 'Ready for Discharge' : 'In Progress'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* PSA Reference Ranges */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <AlertCircle className="h-5 w-5 mr-2 text-blue-600" />
+                  PSA Reference Ranges
+                </h4>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="font-semibold mb-2 text-blue-900">
+                    {getPSABaselineInfo(selectedPatientForPSAMonitoring.gender, selectedPatientForPSAMonitoring.age)?.description}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-blue-800">Normal:</span>
+                      <span className="text-blue-700">{getPSABaselineInfo(selectedPatientForPSAMonitoring.gender, selectedPatientForPSAMonitoring.age)?.normal}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-blue-800">Borderline:</span>
+                      <span className="text-blue-700">{getPSABaselineInfo(selectedPatientForPSAMonitoring.gender, selectedPatientForPSAMonitoring.age)?.borderline}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-blue-800">Elevated:</span>
+                      <span className="text-blue-700">{getPSABaselineInfo(selectedPatientForPSAMonitoring.gender, selectedPatientForPSAMonitoring.age)?.elevated}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chart Controls */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <BarChart3 className="h-5 w-5 mr-2 text-purple-600" />
+                    PSA Trend Analysis
+                  </h4>
+                  <div className="flex items-center space-x-4">
+                    {/* Chart Type Toggle */}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-700">View:</span>
+                      <div className="flex bg-gray-100 rounded-lg p-1">
+                        <button
+                          onClick={() => setPsaChartType('line')}
+                          className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                            psaChartType === 'line' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          Line
+                        </button>
+                        <button
+                          onClick={() => setPsaChartType('bar')}
+                          className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                            psaChartType === 'bar' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          Bar
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Time Filter */}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-700">Period:</span>
+                      <select
+                        value={psaChartFilter}
+                        onChange={(e) => setPsaChartFilter(e.target.value)}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      >
+                        <option value="3months">3 Months</option>
+                        <option value="6months">6 Months</option>
+                        <option value="1year">1 Year</option>
+                        <option value="all">All Time</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chart */}
+                <div className="h-80">
+                  {selectedPatientForPSAMonitoring.psaHistory && selectedPatientForPSAMonitoring.psaHistory.length > 0 ? (
+                    psaChartType === 'line' ? (
+                      <Line data={getPSAChartConfig(selectedPatientForPSAMonitoring, 'line')} options={chartOptions} />
+                    ) : (
+                      <Bar data={getPSAChartConfig(selectedPatientForPSAMonitoring, 'bar')} options={chartOptions} />
+                    )
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-500">
+                      <div className="text-center">
+                        <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>No PSA history available</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* PSA History Table */}
+              {selectedPatientForPSAMonitoring.psaHistory && selectedPatientForPSAMonitoring.psaHistory.length > 0 && (
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <FileText className="h-5 w-5 mr-2 text-green-600" />
+                    PSA History
+                  </h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">Date</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">PSA Value</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">Status</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">Change</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">Notes</th>
+                      </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {selectedPatientForPSAMonitoring.psaHistory.map((psa, index) => {
+                          const previousPSA = index > 0 ? selectedPatientForPSAMonitoring.psaHistory[index - 1].value : null;
+                          const change = previousPSA ? (psa.value - previousPSA).toFixed(1) : null;
+                          const changePercent = previousPSA ? (((psa.value - previousPSA) / previousPSA) * 100).toFixed(1) : null;
+
+                          return (
+                            <tr key={index} className="hover:bg-gray-50">
+                              <td className="py-3 px-4 text-sm text-gray-900">
+                                {new Date(psa.date).toLocaleDateString('en-AU')}
+                              </td>
+                              <td className="py-3 px-4">
+                                <div className="flex items-center space-x-2">
+                                  <div className={`w-2 h-2 rounded-full ${
+                                    psa.value > 10 ? 'bg-red-500' :
+                                    psa.value > 4 ? 'bg-amber-500' :
+                                    'bg-green-500'
+                                  }`}></div>
+                                  <span className={`text-sm font-semibold ${
+                                    psa.value > 10 ? 'text-red-600' :
+                                    psa.value > 4 ? 'text-amber-600' :
+                                    'text-green-600'
+                                  }`}>
+                                    {psa.value} ng/mL
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+                                  psa.value > 10 ? 'bg-red-100 text-red-800' :
+                                  psa.value > 4 ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-green-100 text-green-800'
+                                }`}>
+                                  {psa.value > 10 ? 'High Risk' :
+                                   psa.value > 4 ? 'Borderline' : 'Normal'}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-sm">
+                                {change !== null ? (
+                                  <div className={`flex items-center space-x-1 ${
+                                    parseFloat(change) > 0 ? 'text-red-600' : 
+                                    parseFloat(change) < 0 ? 'text-green-600' : 'text-gray-600'
+                                  }`}>
+                                    <span>{parseFloat(change) > 0 ? '+' : ''}{change} ng/mL</span>
+                                    <span className="text-xs">({changePercent}%)</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-4 text-sm text-gray-600">
+                                {psa.notes || <span className="text-gray-400 italic">No notes</span>}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 rounded-b-xl">
+              <div className="flex items-center justify-end">
+                <button
+                  onClick={closePSAMonitoringModal}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reschedule Confirmation Modal */}
+      {showRescheduleModal && rescheduleData && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200 rounded-t-xl">
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Clock className="h-5 w-5 text-blue-600" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Reschedule Appointment</h3>
+                  <p className="text-sm text-gray-600">Confirm the appointment rescheduling</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-6 py-6">
+              <div className="space-y-4">
+                {/* Patient Info */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
+                      <span className="text-white font-semibold text-sm">
+                        {rescheduleData.appointment.patientName.split(' ').map(n => n[0]).join('')}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{rescheduleData.appointment.patientName}</h4>
+                      <p className="text-sm text-gray-600">UPI: {rescheduleData.appointment.upi}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Appointment Details */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                    <span className="text-sm font-medium text-gray-600">Appointment Type:</span>
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                      {rescheduleData.appointment.title}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                    <span className="text-sm font-medium text-gray-600">Current Date:</span>
+                    <span className="text-sm text-gray-900">{rescheduleData.originalDate}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                    <span className="text-sm font-medium text-gray-600">New Date:</span>
+                    <span className="text-sm font-semibold text-blue-600">{rescheduleData.newDateFormatted}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-sm font-medium text-gray-600">Time:</span>
+                    <span className="text-sm text-gray-900">{rescheduleData.appointment.time}</span>
+                  </div>
+                </div>
+
+                {/* Warning Message */}
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-medium text-amber-800">Important Notice</h4>
+                      <p className="text-sm text-amber-700 mt-1">
+                        Rescheduling this appointment will update the patient's follow-up schedule. 
+                        Please ensure the new date and time are appropriate for the patient's care plan.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 rounded-b-xl">
+              <div className="flex items-center justify-end space-x-3">
+                <button
+                  onClick={cancelReschedule}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmReschedule}
+                  className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 border border-transparent rounded-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 flex items-center space-x-2"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Confirm Reschedule</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Appointment Details Modal */}
+      {showAppointmentModal && selectedAppointment && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <Calendar className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Appointment Details</h3>
+                    <p className="text-sm text-gray-600">Follow-up appointment information</p>
+                  </div>
+                </div>
+                <button
+                  onClick={closeAppointmentModal}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-3">Patient Information</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><span className="font-medium">Name:</span> {selectedAppointment.patientName}</div>
+                    <div><span className="font-medium">UPI:</span> {selectedAppointment.upi}</div>
+                    <div><span className="font-medium">Age:</span> {selectedAppointment.age}</div>
+                    <div><span className="font-medium">Gender:</span> {selectedAppointment.gender}</div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-3">Appointment Details</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><span className="font-medium">Date:</span> {formatDate(selectedAppointment.scheduledDate)}</div>
+                    <div><span className="font-medium">Time:</span> {selectedAppointment.scheduledTime}</div>
+                    <div><span className="font-medium">Type:</span> Follow-up</div>
+                    <div><span className="font-medium">Doctor:</span> {selectedAppointment.assignedDoctor}</div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-3">Surgery Information</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><span className="font-medium">Surgery:</span> {selectedAppointment.surgeryType}</div>
+                    <div><span className="font-medium">Date:</span> {selectedAppointment.surgeryDate}</div>
+                    <div><span className="font-medium">Surgeon:</span> {selectedAppointment.surgeon}</div>
+                    <div><span className="font-medium">Latest PSA:</span> {selectedAppointment.lastPSA} ng/mL</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+                <button
+                  onClick={closeAppointmentModal}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => handleEditAppointment(selectedAppointment)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Edit className="h-4 w-4 mr-2 inline" />
+                  Edit
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PSA Entry Modal */}
+      {isPSAModalOpen && selectedPatientForPSA && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Add PSA Value</h2>
+                <p className="text-sm text-gray-600 mt-1">Patient: {selectedPatientForPSA.patientName}</p>
+              </div>
+              <button
+                onClick={closePSAModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddPSA} className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Test Date *
+                </label>
+                <input
+                  type="date"
+                  name="date"
+                  value={psaForm.date}
+                  onChange={handlePSAFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  PSA Value (ng/mL) *
+                </label>
+                <input
+                  type="number"
+                  name="value"
+                  value={psaForm.value}
+                  onChange={handlePSAFormChange}
+                  required
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  placeholder="e.g., 6.2"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Notes
+                </label>
+                <textarea
+                  name="notes"
+                  value={psaForm.notes}
+                  onChange={handlePSAFormChange}
+                  rows={3}
+                  placeholder="Add any clinical notes or observations..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
+                />
+              </div>
+
+              {/* PSA Status Preview */}
+              {psaForm.value && (
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">PSA Status Preview:</h4>
+                  <div className="flex items-center space-x-2">
+                    {parseFloat(psaForm.value) <= 6.0 ? (
+                      <>
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span className="text-sm font-medium text-green-800">Normal (≤6.0 ng/mL)</span>
+                      </>
+                    ) : parseFloat(psaForm.value) <= 6.5 ? (
+                      <>
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <span className="text-sm font-medium text-yellow-800">Elevated (6.1-6.5 ng/mL)</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span className="text-sm font-medium text-red-800">High (&gt;6.5 ng/mL)</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={closePSAModal}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex items-center px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add PSA Value
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* PSA Tooltip Portal - Rendered outside table overflow */}
+      {hoveredPSA && createPortal(
+        <div 
+          className="fixed px-4 py-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg z-[9999] pointer-events-none"
+          style={{
+            left: `${tooltipPosition.x}px`,
+            top: `${tooltipPosition.y}px`,
+            transform: 'translateX(-50%) translateY(-100%)',
+            minWidth: '250px'
+          }}
+        >
+          <div className="text-center">
+            <div className="font-semibold mb-2 text-white">{getPSABaselineInfo(hoveredPSA.gender, hoveredPSA.age)?.description}</div>
+            <div className="space-y-1.5 text-left">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 mr-2">•</span>
+                <span className="font-medium">Normal:</span>
+                <span className="text-gray-300">{getPSABaselineInfo(hoveredPSA.gender, hoveredPSA.age)?.normal}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 mr-2">•</span>
+                <span className="font-medium">Borderline:</span>
+                <span className="text-gray-300">{getPSABaselineInfo(hoveredPSA.gender, hoveredPSA.age)?.borderline}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 mr-2">•</span>
+                <span className="font-medium">Elevated:</span>
+                <span className="text-gray-300">{getPSABaselineInfo(hoveredPSA.gender, hoveredPSA.age)?.elevated}</span>
+              </div>
+            </div>
+            <div className="mt-3 pt-2 border-t border-gray-700">
+              <div className="text-xs text-gray-400">
+                Patient: {hoveredPSA.patientName} ({hoveredPSA.age} years, {hoveredPSA.gender})
+              </div>
+              <div className="text-xs text-gray-400">
+                Current PSA: {hoveredPSA.lastPSA} ng/mL
+              </div>
+            </div>
+          </div>
+          {/* Tooltip arrow */}
+          <div 
+            className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"
+            style={{ marginTop: '-1px' }}
+          ></div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

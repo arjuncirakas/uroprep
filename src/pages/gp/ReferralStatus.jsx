@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { 
   Filter, 
   Calendar, 
@@ -15,7 +16,8 @@ import {
   ChevronRight,
   ChevronDown,
   Info,
-  Phone
+  Phone,
+  AlertTriangle
 } from 'lucide-react';
 import PatientDetailsModal from '../../components/modals/PatientDetailsModal';
 import NewReferralModal from '../../components/modals/NewReferralModal';
@@ -29,6 +31,8 @@ const ReferralStatus = () => {
   const [showPatientModal, setShowPatientModal] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState(null);
   const [showNewReferralModal, setShowNewReferralModal] = useState(false);
+  const [hoveredPSA, setHoveredPSA] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
 
   // Mock referral data - replace with actual API calls
@@ -38,6 +42,7 @@ const ReferralStatus = () => {
       upi: 'URP2024001',
       patientName: 'John Smith',
       dob: '1965-03-15',
+      gender: 'Male',
       referralDate: '2024-01-15',
       status: 'Active Surveillance',
       priority: 'Medium',
@@ -52,6 +57,7 @@ const ReferralStatus = () => {
       upi: 'URP2024002',
       patientName: 'Mary Johnson',
       dob: '1958-07-22',
+      gender: 'Female',
       referralDate: '2024-01-10',
       status: 'Post-Op Follow-up',
       priority: 'High',
@@ -80,6 +86,7 @@ const ReferralStatus = () => {
       upi: 'URP2024004',
       patientName: 'David Wilson',
       dob: '1962-05-14',
+      gender: 'Male',
       referralDate: '2023-12-05',
       status: 'Discharged',
       priority: 'Low',
@@ -108,6 +115,7 @@ const ReferralStatus = () => {
       upi: 'URP2024006',
       patientName: 'Michael Chen',
       dob: '1972-04-25',
+      gender: 'Male',
       referralDate: '2024-01-12',
       status: 'Surgical Pathway',
       priority: 'High',
@@ -122,6 +130,7 @@ const ReferralStatus = () => {
       upi: 'URP2024007',
       patientName: 'Emma Thompson',
       dob: '1955-11-30',
+      gender: 'Female',
       referralDate: '2023-12-20',
       status: 'Surgical Pathway',
       priority: 'High',
@@ -136,8 +145,9 @@ const ReferralStatus = () => {
       upi: 'URP2024008',
       patientName: 'James Wilson',
       dob: '1963-08-15',
+      gender: 'Male',
       referralDate: '2024-01-05',
-      status: 'Active Surveillance',
+      status: 'Pending',
       priority: 'High',
       currentDatabase: 'DB3',
       daysSinceReferral: 22,
@@ -164,6 +174,7 @@ const ReferralStatus = () => {
       upi: 'URP2024010',
       patientName: 'Thomas Miller',
       dob: '1959-04-22',
+      gender: 'Male',
       referralDate: '2023-11-15',
       status: 'Discharged',
       priority: 'Low',
@@ -179,6 +190,7 @@ const ReferralStatus = () => {
       upi: 'URP2024011',
       patientName: 'Jennifer Taylor',
       dob: '1967-09-18',
+      gender: 'Female',
       referralDate: '2023-10-20',
       status: 'Discharged',
       priority: 'Low',
@@ -188,18 +200,309 @@ const ReferralStatus = () => {
       nextAppointment: null,
       latestPSA: 1.8,
       dischargeReason: 'Patient completed treatment, returned to GP management'
+    },
+    {
+      id: 'REF012',
+      upi: 'URP2024012',
+      patientName: 'Andrew Mitchell',
+      dob: '1964-06-10',
+      gender: 'Male',
+      referralDate: '2024-01-22',
+      status: 'Active Surveillance',
+      priority: 'Medium',
+      currentDatabase: 'DB2',
+      daysSinceReferral: 5,
+      nextAction: '3-month PSA monitoring',
+      nextAppointment: '2024-04-22',
+      latestPSA: 5.1
+    },
+    {
+      id: 'REF013',
+      upi: 'URP2024013',
+      patientName: 'Patricia Robinson',
+      dob: '1969-02-28',
+      gender: 'Female',
+      referralDate: '2024-01-19',
+      status: 'Surgical Pathway',
+      priority: 'High',
+      currentDatabase: 'DB3',
+      daysSinceReferral: 8,
+      nextAction: 'Surgery scheduled',
+      nextAppointment: '2024-02-25',
+      latestPSA: 16.8
+    },
+    {
+      id: 'REF014',
+      upi: 'URP2024014',
+      patientName: 'George Hamilton',
+      dob: '1956-11-14',
+      referralDate: '2023-12-28',
+      status: 'Post-Op Follow-up',
+      priority: 'Medium',
+      currentDatabase: 'DB4',
+      daysSinceReferral: 30,
+      nextAction: '3-month post-op review',
+      nextAppointment: '2024-03-28',
+      latestPSA: 0.3
+    },
+    {
+      id: 'REF015',
+      upi: 'URP2024015',
+      patientName: 'Barbara Stevens',
+      dob: '1973-07-05',
+      gender: 'Female',
+      referralDate: '2024-01-16',
+      status: 'Pending',
+      priority: 'High',
+      currentDatabase: 'DB2',
+      daysSinceReferral: 11,
+      nextAction: 'Urgent PSA review',
+      nextAppointment: '2024-02-05',
+      latestPSA: 22.5
+    },
+    {
+      id: 'REF016',
+      upi: 'URP2024016',
+      patientName: 'Kevin Martinez',
+      dob: '1961-03-20',
+      gender: 'Male',
+      referralDate: '2023-11-22',
+      status: 'Discharged',
+      priority: 'Low',
+      currentDatabase: 'Discharged',
+      daysSinceReferral: 61,
+      nextAction: 'GP monitoring',
+      nextAppointment: null,
+      latestPSA: 2.8,
+      dischargeReason: 'Benign prostatic hyperplasia, no malignancy detected'
+    },
+    {
+      id: 'REF017',
+      upi: 'URP2024017',
+      patientName: 'Nancy Cooper',
+      dob: '1968-12-08',
+      gender: 'Female',
+      referralDate: '2024-01-14',
+      status: 'Surgical Pathway',
+      priority: 'High',
+      currentDatabase: 'DB3',
+      daysSinceReferral: 13,
+      nextAction: 'Pre-operative workup',
+      nextAppointment: '2024-02-18',
+      latestPSA: 19.2
+    },
+    {
+      id: 'REF018',
+      upi: 'URP2024018',
+      patientName: 'Ronald Hughes',
+      dob: '1957-09-25',
+      referralDate: '2023-12-10',
+      status: 'Post-Op Follow-up',
+      priority: 'Medium',
+      currentDatabase: 'DB4',
+      daysSinceReferral: 47,
+      nextAction: '6-month follow-up',
+      nextAppointment: '2024-06-10',
+      latestPSA: 0.5
+    },
+    {
+      id: 'REF019',
+      upi: 'URP2024019',
+      patientName: 'Dorothy Walker',
+      dob: '1966-05-17',
+      gender: 'Female',
+      referralDate: '2024-01-21',
+      status: 'Active Surveillance',
+      priority: 'Medium',
+      currentDatabase: 'DB2',
+      daysSinceReferral: 6,
+      nextAction: '6-month PSA check',
+      nextAppointment: '2024-07-21',
+      latestPSA: 4.8
+    },
+    {
+      id: 'REF020',
+      upi: 'URP2024020',
+      patientName: 'Charles Foster',
+      dob: '1971-01-30',
+      gender: 'Male',
+      referralDate: '2024-01-11',
+      status: 'Surgical Pathway',
+      priority: 'High',
+      currentDatabase: 'DB3',
+      daysSinceReferral: 16,
+      nextAction: 'MDT discussion scheduled',
+      nextAppointment: '2024-02-08',
+      latestPSA: 14.7
+    },
+    {
+      id: 'REF021',
+      upi: 'URP2024021',
+      patientName: 'Susan Bennett',
+      dob: '1963-08-22',
+      gender: 'Female',
+      referralDate: '2023-11-05',
+      status: 'Discharged',
+      priority: 'Low',
+      currentDatabase: 'Discharged',
+      daysSinceReferral: 78,
+      nextAction: 'Annual screening',
+      nextAppointment: null,
+      latestPSA: 3.2,
+      dischargeReason: 'Low-risk patient, stable PSA levels'
+    },
+    {
+      id: 'REF022',
+      upi: 'URP2024022',
+      patientName: 'Paul Richardson',
+      dob: '1960-04-12',
+      gender: 'Male',
+      referralDate: '2024-01-23',
+      status: 'Pending',
+      priority: 'High',
+      currentDatabase: 'DB2',
+      daysSinceReferral: 4,
+      nextAction: 'Repeat biopsy',
+      nextAppointment: '2024-02-14',
+      latestPSA: 28.4
+    },
+    {
+      id: 'REF023',
+      upi: 'URP2024023',
+      patientName: 'Helen Phillips',
+      dob: '1965-10-05',
+      referralDate: '2023-12-18',
+      status: 'Post-Op Follow-up',
+      priority: 'Medium',
+      currentDatabase: 'DB4',
+      daysSinceReferral: 40,
+      nextAction: '6-month follow-up',
+      nextAppointment: '2024-03-18',
+      latestPSA: 0.2
+    },
+    {
+      id: 'REF024',
+      upi: 'URP2024024',
+      patientName: 'Edward Campbell',
+      dob: '1958-07-28',
+      gender: 'Male',
+      referralDate: '2024-01-17',
+      status: 'Surgical Pathway',
+      priority: 'High',
+      currentDatabase: 'DB3',
+      daysSinceReferral: 10,
+      nextAction: 'Surgical consultation',
+      nextAppointment: '2024-02-22',
+      latestPSA: 17.9
+    },
+    {
+      id: 'REF025',
+      upi: 'URP2024025',
+      patientName: 'Margaret Turner',
+      dob: '1972-03-16',
+      gender: 'Female',
+      referralDate: '2024-01-24',
+      status: 'Active Surveillance',
+      priority: 'Medium',
+      currentDatabase: 'DB2',
+      daysSinceReferral: 3,
+      nextAction: '3-month PSA review',
+      nextAppointment: '2024-04-24',
+      latestPSA: 6.7
+    },
+    {
+      id: 'REF026',
+      upi: 'URP2024026',
+      patientName: 'Brian Morrison',
+      dob: '1967-11-09',
+      gender: 'Male',
+      referralDate: '2023-10-15',
+      status: 'Discharged',
+      priority: 'Low',
+      currentDatabase: 'Discharged',
+      daysSinceReferral: 99,
+      nextAction: 'Discharged to GP care',
+      nextAppointment: null,
+      latestPSA: 2.5,
+      dischargeReason: 'Watchful waiting completed, no intervention required'
+    },
+    {
+      id: 'REF027',
+      upi: 'URP2024027',
+      patientName: 'Carol Edwards',
+      dob: '1969-06-23',
+      referralDate: '2024-01-13',
+      status: 'Post-Op Follow-up',
+      priority: 'High',
+      currentDatabase: 'DB4',
+      daysSinceReferral: 14,
+      nextAction: 'Early post-op review',
+      nextAppointment: '2024-02-13',
+      latestPSA: 0.9
+    },
+    {
+      id: 'REF028',
+      upi: 'URP2024028',
+      patientName: 'Frank Wright',
+      dob: '1962-02-14',
+      gender: 'Male',
+      referralDate: '2024-01-20',
+      status: 'Active Surveillance',
+      priority: 'Medium',
+      currentDatabase: 'DB2',
+      daysSinceReferral: 7,
+      nextAction: '12-month PSA review',
+      nextAppointment: '2024-07-20',
+      latestPSA: 5.9
+    },
+    {
+      id: 'REF029',
+      upi: 'URP2024029',
+      patientName: 'Betty Parker',
+      dob: '1964-09-19',
+      gender: 'Female',
+      referralDate: '2024-01-09',
+      status: 'Surgical Pathway',
+      priority: 'High',
+      currentDatabase: 'DB3',
+      daysSinceReferral: 18,
+      nextAction: 'Surgery prep',
+      nextAppointment: '2024-03-05',
+      latestPSA: 13.8
+    },
+    {
+      id: 'REF030',
+      upi: 'URP2024030',
+      patientName: 'Gregory Bell',
+      dob: '1970-12-27',
+      referralDate: '2023-12-01',
+      status: 'Post-Op Follow-up',
+      priority: 'Medium',
+      currentDatabase: 'DB4',
+      daysSinceReferral: 56,
+      nextAction: 'Annual review',
+      nextAppointment: '2024-12-01',
+      latestPSA: 0.4
     }
   ];
 
-  const filters = ['Triage Pending', 'OPD Management', 'Active Surveillance', 'Surgical Pathway', 'Post-Op Follow-up', 'Discharged'];
+  const filters = ['Triage Pending', 'Active Monitoring', 'Surgical Pathway', 'Post-Op Follow-up', 'Discharged'];
 
   // Filter referrals by status and search query
   const filteredReferrals = mockReferrals.filter(ref => {
+    // Exclude OPD Management referrals completely for GP view
+    if (ref.status === 'OPD Management') {
+      return false;
+    }
+    
     // Status filter
     let statusMatch;
     if (activeFilter === 'Triage Pending') {
-      // Triage Pending includes referrals that need initial review (OPD Management, some Active Surveillance cases)
-      statusMatch = ref.status === 'OPD Management' || (ref.status === 'Active Surveillance' && ref.priority === 'High');
+      // Triage Pending includes referrals with 'Pending' status
+      statusMatch = ref.status === 'Pending';
+    } else if (activeFilter === 'Active Monitoring') {
+      // Active Monitoring includes referrals with 'Active Surveillance' status
+      statusMatch = ref.status === 'Active Surveillance';
     } else {
       statusMatch = ref.status === activeFilter;
     }
@@ -268,10 +571,43 @@ const ReferralStatus = () => {
     return new Date(dateString).toLocaleDateString('en-AU');
   };
 
+  // Function to format wait time with highlighting for urgent cases
+  const formatWaitTime = (days, status) => {
+    // Only show wait time for Triage Pending (which maps to 'Pending' status)
+    if (status !== 'Pending') {
+      return {
+        text: null,
+        isUrgent: false,
+        className: ''
+      };
+    }
+    
+    if (days > 10) {
+      return {
+        text: `${days} days - URGENT`,
+        isUrgent: true,
+        className: 'text-red-600 font-medium'
+      };
+    } else if (days > 7) {
+      return {
+        text: `${days} days - Review needed`,
+        isUrgent: false,
+        className: 'text-amber-600 font-medium'
+      };
+    } else {
+      return {
+        text: `${days} days ago`,
+        isUrgent: false,
+        className: 'text-gray-400'
+      };
+    }
+  };
+
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'OPD Management': return 'bg-amber-100 text-amber-800';
+      case 'Pending': return 'bg-orange-100 text-orange-800';
       case 'Active Surveillance': return 'bg-cyan-100 text-cyan-800';
       case 'Surgical Pathway': return 'bg-red-100 text-red-800';
       case 'Post-Op Follow-up': return 'bg-green-100 text-green-800';
@@ -288,6 +624,40 @@ const ReferralStatus = () => {
       case 'Low': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // PSA baseline values for tooltip
+  const getPSABaselineInfo = (gender) => {
+    if (gender === 'Male') {
+      return {
+        normal: '0-4.0 ng/mL',
+        borderline: '4.0-10.0 ng/mL', 
+        elevated: '>10.0 ng/mL',
+        description: 'Male PSA Reference Ranges:'
+      };
+    } else if (gender === 'Female') {
+      return {
+        normal: '0-0.5 ng/mL',
+        borderline: '0.5-1.0 ng/mL',
+        elevated: '>1.0 ng/mL', 
+        description: 'Female PSA Reference Ranges:'
+      };
+    }
+    return null;
+  };
+
+  // Handle PSA hover for tooltip positioning
+  const handlePSAHover = (event, referral) => {
+    const rect = event.target.getBoundingClientRect();
+    setTooltipPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    });
+    setHoveredPSA(referral);
+  };
+
+  const handlePSALeave = () => {
+    setHoveredPSA(null);
   };
 
 
@@ -342,7 +712,7 @@ const ReferralStatus = () => {
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">All Referrals ({mockReferrals.length})</h2>
+            <h2 className="text-xl font-semibold text-gray-900">All Referrals ({mockReferrals.filter(ref => ref.status !== 'OPD Management').length})</h2>
             <p className="text-sm text-gray-600">Track your latest patient referrals and their status</p>
           </div>
         </div>
@@ -353,11 +723,14 @@ const ReferralStatus = () => {
             {filters.map((filter) => {
               let count;
               if (filter === 'Triage Pending') {
-                count = mockReferrals.filter(ref => 
-                  ref.status === 'OPD Management' || (ref.status === 'Active Surveillance' && ref.priority === 'High')
-                ).length;
+                // Triage Pending includes referrals with 'Pending' status
+                count = mockReferrals.filter(ref => ref.status === 'Pending').length;
+              } else if (filter === 'Active Monitoring') {
+                // Active Monitoring includes referrals with 'Active Surveillance' status
+                count = mockReferrals.filter(ref => ref.status === 'Active Surveillance').length;
               } else {
-                count = mockReferrals.filter(ref => ref.status === filter).length;
+                // Exclude OPD Management from all counts
+                count = mockReferrals.filter(ref => ref.status === filter && ref.status !== 'OPD Management').length;
               }
               
               return (
@@ -402,7 +775,7 @@ const ReferralStatus = () => {
               <p className="text-sm text-gray-600 mt-1">
                 {searchQuery 
                   ? `Found ${filteredReferrals.length} result${filteredReferrals.length !== 1 ? 's' : ''} matching your search`
-                  : `Showing ${filteredReferrals.length} of ${mockReferrals.length} total`
+                  : `Showing ${filteredReferrals.length} of ${mockReferrals.filter(ref => ref.status !== 'OPD Management').length} total`
                 }
               </p>
             </div>
@@ -423,27 +796,41 @@ const ReferralStatus = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {currentReferrals.map((referral, index) => (
-                  <tr key={referral.id} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
-                    <td className="py-4 px-4 w-[200px] min-w-[200px]">
-                      <div className="flex items-center space-x-3">
-                        <div className="relative flex-shrink-0">
-                          <div className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center shadow-sm">
-                            <span className="text-white font-semibold text-sm">
-                              {referral.patientName.split(' ').map(n => n[0]).join('')}
-                            </span>
+                {currentReferrals.map((referral, index) => {
+                  const waitTimeInfo = formatWaitTime(referral.daysSinceReferral, referral.status);
+                  return (
+                    <tr key={referral.id} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'} ${waitTimeInfo.isUrgent ? 'bg-red-50/30 border-l-4 border-red-500' : ''}`}>
+                      <td className="py-4 px-4 w-[200px] min-w-[200px]">
+                        <div className="flex items-center space-x-3">
+                          <div className="relative flex-shrink-0">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-sm ${waitTimeInfo.isUrgent ? 'bg-gradient-to-br from-red-600 to-red-800' : 'bg-gradient-to-br from-green-800 to-black'}`}>
+                              <span className="text-white font-semibold text-sm">
+                                {referral.patientName.split(' ').map(n => n[0]).join('')}
+                              </span>
+                            </div>
+                            {referral.priority === 'High' && (
+                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
+                            )}
                           </div>
-                          {referral.priority === 'High' && (
-                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
-                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center space-x-2">
+                              <p className="font-semibold text-gray-900 text-sm leading-tight">{referral.patientName}</p>
+                              {waitTimeInfo.isUrgent && (
+                                <div className="flex items-center space-x-1 bg-red-100 px-2 py-1 rounded-full">
+                                  <AlertTriangle className="w-3 h-3 text-red-600" />
+                                  <span className="text-xs font-medium text-red-600">URGENT</span>
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 leading-tight">ID: {referral.id}</p>
+                            {waitTimeInfo.text && (
+                              <p className={`text-xs leading-tight ${waitTimeInfo.className}`}>
+                                {waitTimeInfo.text}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-gray-900 text-sm leading-tight">{referral.patientName}</p>
-                          <p className="text-xs text-gray-500 leading-tight">ID: {referral.id}</p>
-                          <p className="text-xs text-gray-400 leading-tight">{referral.daysSinceReferral} days ago</p>
-                        </div>
-                      </div>
-                    </td>
+                      </td>
                     <td className="py-4 px-4 w-[140px] min-w-[140px]">
                       <div className="space-y-1">
                         <div className="inline-flex items-center px-2 py-1 bg-gradient-to-r from-green-100 to-green-200 text-green-800 text-xs font-medium rounded-full border border-green-300">
@@ -456,8 +843,10 @@ const ReferralStatus = () => {
                         <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(referral.status)}`}>
                           {referral.status}
                         </span>
-                        <p className="text-xs text-gray-500 leading-tight">Next: {referral.nextAction}</p>
-                        {referral.nextAppointment && (
+                        {referral.status !== 'Pending' && referral.status !== 'Surgical Pathway' && (
+                          <p className="text-xs text-gray-500 leading-tight">Next: {referral.nextAction}</p>
+                        )}
+                        {referral.status !== 'Pending' && referral.status !== 'Surgical Pathway' && referral.nextAppointment && (
                           <p className="text-xs text-gray-400 leading-tight">{formatDate(referral.nextAppointment)}</p>
                         )}
                         {referral.status === 'Discharged' && referral.dischargeReason && (
@@ -473,11 +862,15 @@ const ReferralStatus = () => {
                             referral.latestPSA > 4 ? 'bg-amber-500' : 
                             'bg-green-500'
                           }`}></div>
-                          <span className={`text-sm font-semibold ${
-                            referral.latestPSA > 10 ? 'text-red-600' : 
-                            referral.latestPSA > 4 ? 'text-amber-600' : 
-                            'text-green-600'
-                          }`}>
+                          <span 
+                            className={`text-sm font-semibold cursor-help ${
+                              referral.latestPSA > 10 ? 'text-red-600' : 
+                              referral.latestPSA > 4 ? 'text-amber-600' : 
+                              'text-green-600'
+                            }`}
+                            onMouseEnter={(e) => handlePSAHover(e, referral)}
+                            onMouseLeave={handlePSALeave}
+                          >
                             {referral.latestPSA} ng/mL
                           </span>
                         </div>
@@ -500,7 +893,8 @@ const ReferralStatus = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           ) : (
@@ -592,6 +986,46 @@ const ReferralStatus = () => {
         isOpen={showNewReferralModal}
         onClose={() => setShowNewReferralModal(false)}
       />
+
+      {/* PSA Tooltip Portal - Rendered outside table overflow */}
+      {hoveredPSA && createPortal(
+        <div 
+          className="fixed px-4 py-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg z-[9999] pointer-events-none"
+          style={{
+            left: `${tooltipPosition.x}px`,
+            top: `${tooltipPosition.y}px`,
+            transform: 'translateX(-50%) translateY(-100%)',
+            minWidth: '220px'
+          }}
+        >
+          <div className="text-center">
+            <div className="font-semibold mb-2 text-white">{getPSABaselineInfo(hoveredPSA.gender)?.description}</div>
+            <div className="space-y-1.5 text-left">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 mr-2">•</span>
+                <span className="font-medium">Normal:</span>
+                <span className="text-gray-300">{getPSABaselineInfo(hoveredPSA.gender)?.normal}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 mr-2">•</span>
+                <span className="font-medium">Borderline:</span>
+                <span className="text-gray-300">{getPSABaselineInfo(hoveredPSA.gender)?.borderline}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 mr-2">•</span>
+                <span className="font-medium">Elevated:</span>
+                <span className="text-gray-300">{getPSABaselineInfo(hoveredPSA.gender)?.elevated}</span>
+              </div>
+            </div>
+          </div>
+          {/* Tooltip arrow */}
+          <div 
+            className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"
+            style={{ marginTop: '-1px' }}
+          ></div>
+        </div>,
+        document.body
+      )}
 
     </div>
   );

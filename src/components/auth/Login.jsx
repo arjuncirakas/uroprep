@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { loginStart, loginSuccess, loginFailure } from '../../store/slices/authSlice';
-import { Eye, EyeOff, Mail, Lock, UserCircle, Sparkles, Users, Shield, Activity, Stethoscope } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, UserCircle, Sparkles, Users, Shield, Activity, Stethoscope, Crown } from 'lucide-react';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -43,9 +43,10 @@ const Login = () => {
       
       // Navigate based on role
       const roleRoutes = {
-        gp: '/gp/dashboard',
+        gp: '/gp/referral-status',
         urology_nurse: '/urology-nurse',
-        urologist: '/urologist'
+        urologist: '/urologist',
+        superadmin: '/superadmin'
       };
       
       navigate(roleRoutes[formData.role] || '/urology-nurse');
@@ -57,7 +58,8 @@ const Login = () => {
   const roleIcons = {
     gp: <Activity className="h-4 w-4" />,
     urology_nurse: <Stethoscope className="h-4 w-4" />,
-    urologist: <UserCircle className="h-4 w-4" />
+    urologist: <UserCircle className="h-4 w-4" />,
+    superadmin: <Crown className="h-4 w-4" />
   };
 
   return (
@@ -160,6 +162,7 @@ const Login = () => {
                   <option value="gp">General Practitioner</option>
                   <option value="urology_nurse">Urology Clinical Nurse</option>
                   <option value="urologist">Urologist</option>
+                  <option value="superadmin">Super Admin</option>
                 </select>
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

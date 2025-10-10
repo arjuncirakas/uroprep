@@ -7,6 +7,7 @@ import GPLayout from './layouts/GPLayout';
 import UrologyNurseLayout from './layouts/UrologyNurseLayout';
 import UrologistLayout from './layouts/UrologistLayout';
 import MDTCoordinatorLayout from './layouts/MDTCoordinatorLayout';
+import SuperadminLayout from './layouts/SuperadminLayout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Login from './components/auth/Login';
 
@@ -63,6 +64,10 @@ import MDTDashboard from './pages/mdt-coordinator/Dashboard';
 import MDTScheduling from './pages/mdt-coordinator/Scheduling';
 import MDTCaseManagement from './pages/mdt-coordinator/CaseManagement';
 import MDTReports from './pages/mdt-coordinator/Reports';
+
+// Superadmin Pages
+import SuperadminDoctors from './pages/Superadmin/Doctors';
+import SuperadminNurses from './pages/Superadmin/Nurses';
 
 // Error Pages
 import Unauthorized from './pages/Unauthorized';
@@ -162,6 +167,17 @@ const AppRoutes = () => {
         <Route path="scheduling" element={<MDTScheduling />} />
         <Route path="cases" element={<MDTCaseManagement />} />
         <Route path="reports" element={<MDTReports />} />
+      </Route>
+      
+      {/* Superadmin Routes */}
+      <Route path="/superadmin" element={
+        <ProtectedRoute allowedRoles={['superadmin']}>
+          <SuperadminLayout />
+        </ProtectedRoute>
+      }>
+        <Route index element={<Navigate to="doctors" replace />} />
+        <Route path="doctors" element={<SuperadminDoctors />} />
+        <Route path="nurses" element={<SuperadminNurses />} />
       </Route>
       
       {/* Error Routes */}

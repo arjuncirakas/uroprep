@@ -31,7 +31,7 @@ const AddPatientModal = ({ isOpen, onClose, onPatientAdded, isUrologist = false 
     state: '',
     
     // Medical Information
-    referringGP: '',
+    referringDepartment: '',
     referralDate: '',
     initialPSA: '',
     initialPSADate: '',
@@ -46,10 +46,7 @@ const AddPatientModal = ({ isOpen, onClose, onPatientAdded, isUrologist = false 
     
     // Initial Assessment
     priority: 'Normal',
-    notes: '',
-    
-    // Urologist-specific fields
-    assignToPathway: ''
+    notes: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -146,7 +143,7 @@ const AddPatientModal = ({ isOpen, onClose, onPatientAdded, isUrologist = false 
         postcode: '',
         city: '',
         state: '',
-        referringGP: '',
+        referringDepartment: '',
         referralDate: '',
         initialPSA: '',
         initialPSADate: '',
@@ -157,8 +154,7 @@ const AddPatientModal = ({ isOpen, onClose, onPatientAdded, isUrologist = false 
         emergencyContactPhone: '',
         emergencyContactRelationship: '',
         priority: 'Normal',
-        notes: '',
-        assignToPathway: ''
+        notes: ''
       });
       setErrors({});
       onClose();
@@ -183,13 +179,12 @@ const AddPatientModal = ({ isOpen, onClose, onPatientAdded, isUrologist = false 
       postcode: '',
       city: '',
       state: '',
-      referringGP: '',
-      referralDate: '',
-      initialPSA: '',
-      initialPSADate: '',
-      medicalHistory: '',
-      currentMedications: '',
-      allergies: '',
+        referralDate: '',
+        initialPSA: '',
+        initialPSADate: '',
+        medicalHistory: '',
+        currentMedications: '',
+        allergies: '',
       emergencyContactName: '',
       emergencyContactPhone: '',
       emergencyContactRelationship: '',
@@ -456,6 +451,20 @@ const AddPatientModal = ({ isOpen, onClose, onPatientAdded, isUrologist = false 
                     </select>
                   </div>
                 </div>
+                
+                <div className="mt-6">
+                  <label className="block text-sm font-medium text-slate-700 mb-3">
+                    Referring Department
+                  </label>
+                  <input
+                    type="text"
+                    name="referringDepartment"
+                    value={formData.referringDepartment}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl transition-all duration-200 focus:outline-none focus:ring-0 focus:border-blue-500"
+                    placeholder="General Practice, Cardiology, Emergency, etc."
+                  />
+                </div>
               </div>
 
               {/* PSA Information */}
@@ -523,6 +532,7 @@ const AddPatientModal = ({ isOpen, onClose, onPatientAdded, isUrologist = false 
                     <p className="text-sm text-slate-500">Clinical details and treatment pathway</p>
                   </div>
                 </div>
+                
                 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-3">
@@ -653,56 +663,6 @@ const AddPatientModal = ({ isOpen, onClose, onPatientAdded, isUrologist = false 
                 </div>
               </div>
 
-              {/* Urologist-Specific Section - Pathway Assignment */}
-              {isUrologist && (
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 backdrop-blur-sm rounded-2xl border-2 border-green-200 p-6">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-600 to-emerald-700 flex items-center justify-center">
-                      <Activity className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-medium text-slate-900">Pathway Assignment</h2>
-                      <p className="text-sm text-slate-600">Assign patient to a specific treatment pathway</p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-3">
-                        Assign to Pathway
-                      </label>
-                      <select
-                        name="assignToPathway"
-                        value={formData.assignToPathway}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl transition-all duration-200 focus:outline-none focus:ring-0 focus:border-green-500 bg-white"
-                      >
-                        <option value="">Select pathway...</option>
-                        <option value="OPD Queue">OPD Queue</option>
-                        <option value="Active Surveillance">Active Surveillance</option>
-                        <option value="Surgical Pathway">Surgical Pathway</option>
-                        <option value="Post-Op Follow-Up">Post-Op Follow-Up</option>
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-3">
-                        Priority Level
-                      </label>
-                      <select
-                        name="priority"
-                        value={formData.priority}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl transition-all duration-200 focus:outline-none focus:ring-0 focus:border-green-500 bg-white"
-                      >
-                        <option value="Normal">Normal</option>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
             </form>
           </div>
 

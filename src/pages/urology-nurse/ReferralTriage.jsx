@@ -13,6 +13,7 @@ import {
   Calendar,
   MapPin,
   AlertCircle,
+  AlertTriangle,
   Clock,
   Activity,
   TrendingUp,
@@ -50,6 +51,15 @@ const ReferralTriage = () => {
   const [showMoveToOPDSuccessModal, setShowMoveToOPDSuccessModal] = useState(false);
   const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
   const [showSaveFailureModal, setShowSaveFailureModal] = useState(false);
+  const [showPSAHistoryModal, setShowPSAHistoryModal] = useState(false);
+  const [psaChartType, setPsaChartType] = useState('line');
+  const [isPSAModalOpen, setIsPSAModalOpen] = useState(false);
+  const [selectedPatientForPSA, setSelectedPatientForPSA] = useState(null);
+  const [psaForm, setPsaForm] = useState({
+    date: '',
+    value: '',
+    note: ''
+  });
   const [clinicalData, setClinicalData] = useState({
     currentPSA: '',
     psaDate: new Date().toISOString().split('T')[0],
@@ -66,6 +76,15 @@ const ReferralTriage = () => {
     }
   });
   const [documents, setDocuments] = useState([]);
+  const [testResults, setTestResults] = useState({
+    mri: '',
+    biopsy: '',
+    trus: '',
+    mriDocument: null,
+    biopsyDocument: null,
+    trusDocument: null
+  });
+  const [additionalTests, setAdditionalTests] = useState([]);
   const [selectedProcedure, setSelectedProcedure] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
@@ -80,7 +99,7 @@ const ReferralTriage = () => {
       patientName: 'John Smith',
       age: 65,
       gender: 'Male',
-      referralDate: '2024-01-10',
+      referralDate: '2025-9-25',
       receivedDate: '2024-01-12',
       status: 'pending',
       urgency: 'high',
@@ -107,7 +126,7 @@ const ReferralTriage = () => {
       patientName: 'Michael Brown',
       age: 58,
       gender: 'Male',
-      referralDate: '2024-01-08',
+      referralDate: '2025-9-25',
       receivedDate: '2024-01-09',
       status: 'triaged',
       urgency: 'medium',
@@ -134,7 +153,7 @@ const ReferralTriage = () => {
       patientName: 'David Wilson',
       age: 71,
       gender: 'Male',
-      referralDate: '2024-01-05',
+      referralDate: '2025-10-8',
       receivedDate: '2024-01-06',
       status: 'active',
       urgency: 'low',
@@ -161,7 +180,7 @@ const ReferralTriage = () => {
       patientName: 'Robert Davis',
       age: 62,
       gender: 'Male',
-      referralDate: '2023-12-20',
+      referralDate: '2025-10-8',
       receivedDate: '2023-12-21',
       status: 'ready_for_discharge',
       urgency: 'low',
@@ -188,7 +207,7 @@ const ReferralTriage = () => {
       patientName: 'James Anderson',
       age: 55,
       gender: 'Male',
-      referralDate: '2024-01-14',
+      referralDate: '2025-10-8',
       receivedDate: '2024-01-15',
       status: 'pending',
       urgency: 'high',
@@ -215,7 +234,7 @@ const ReferralTriage = () => {
       patientName: 'William Thompson',
       age: 68,
       gender: 'Male',
-      referralDate: '2024-01-11',
+      referralDate: '2025-10-8',
       receivedDate: '2024-01-12',
       status: 'triaged',
       urgency: 'medium',
@@ -244,6 +263,33 @@ const ReferralTriage = () => {
     const referral = new Date(referralDate);
     const diffTime = Math.abs(today - referral);
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  // Function to format wait time with highlighting for urgent cases
+  const formatWaitTime = (days) => {
+    if (days > 10) {
+      return {
+        text: `${days} days - URGENT`,
+        isUrgent: true,
+        className: 'text-red-600 font-medium'
+      };
+    } else if (days > 3) {
+      return {
+        text: `${days} days - Review needed`,
+        isUrgent: false,
+        className: 'text-amber-600 font-medium'
+      };
+    } else {
+      return {
+        text: `${days} days ago`,
+        isUrgent: false,
+        className: 'text-gray-400'
+      };
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-AU');
   };
 
 
@@ -299,6 +345,15 @@ const ReferralTriage = () => {
     setShowPatientModal(false);
     setSelectedReferral(null);
     setDocuments([]);
+    setTestResults({
+      mri: '',
+      biopsy: '',
+      trus: '',
+      mriDocument: null,
+      biopsyDocument: null,
+      trusDocument: null
+    });
+    setAdditionalTests([]);
   };
 
   // Document handling functions
@@ -327,6 +382,55 @@ const ReferralTriage = () => {
     if (file) {
       setDocuments(documents.map(doc => 
         doc.id === documentId ? { ...doc, file, fileName: file.name } : doc
+      ));
+    }
+  };
+
+  // Test results handling functions
+
+  const handleTestDocumentUpload = (testType, event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setTestResults(prev => ({
+        ...prev,
+        [`${testType}Document`]: file
+      }));
+    }
+  };
+
+  const removeTestDocument = (testType) => {
+    setTestResults(prev => ({
+      ...prev,
+      [`${testType}Document`]: null
+    }));
+  };
+
+  // Additional tests handling functions
+  const addAdditionalTest = () => {
+    const newTest = {
+      id: Date.now(),
+      title: '',
+      result: '',
+      document: null
+    };
+    setAdditionalTests([...additionalTests, newTest]);
+  };
+
+  const removeAdditionalTest = (testId) => {
+    setAdditionalTests(additionalTests.filter(test => test.id !== testId));
+  };
+
+  const updateAdditionalTest = (testId, field, value) => {
+    setAdditionalTests(additionalTests.map(test => 
+      test.id === testId ? { ...test, [field]: value } : test
+    ));
+  };
+
+  const handleAdditionalTestDocumentUpload = (testId, event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setAdditionalTests(additionalTests.map(test => 
+        test.id === testId ? { ...test, document: file, fileName: file.name } : test
       ));
     }
   };
@@ -448,6 +552,66 @@ const ReferralTriage = () => {
     return searchMatch;
   });
 
+  // PSA Chart Helper Functions
+
+  const getPSACategory = (psa) => {
+    if (psa < 4) return { category: 'Normal', color: 'text-green-600', bgColor: 'bg-green-100' };
+    if (psa < 10) return { category: 'Borderline', color: 'text-yellow-600', bgColor: 'bg-yellow-100' };
+    if (psa < 20) return { category: 'Elevated', color: 'text-orange-600', bgColor: 'bg-orange-100' };
+    return { category: 'High Risk', color: 'text-red-600', bgColor: 'bg-red-100' };
+  };
+
+  // Mock PSA history data for charts
+  const mockPSAHistory = [
+    { value: 4.2, date: '2023-06-15', velocity: null },
+    { value: 6.8, date: '2023-09-15', velocity: 1.8 },
+    { value: 8.5, date: '2024-01-08', velocity: 2.1 }
+  ];
+
+  const maxPSA = Math.max(...mockPSAHistory.map(p => p.value));
+  const minPSA = Math.min(...mockPSAHistory.map(p => p.value));
+  const psaRange = maxPSA - minPSA;
+
+  // PSA Entry Functions
+  const handlePSAEntry = (referralId) => {
+    const referral = enhancedReferrals.find(r => r.id === referralId);
+    setSelectedPatientForPSA(referral);
+    setIsPSAModalOpen(true);
+  };
+
+  const handlePSAFormChange = (e) => {
+    const { name, value } = e.target;
+    setPsaForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleAddPSA = (e) => {
+    e.preventDefault();
+    // In a real app, this would save to the backend
+    console.log('Adding PSA value for patient:', selectedPatientForPSA?.id, psaForm);
+    
+    // Reset form and close modal
+    setPsaForm({
+      date: '',
+      value: '',
+      note: ''
+    });
+    setSelectedPatientForPSA(null);
+    setIsPSAModalOpen(false);
+  };
+
+  const closePSAModal = () => {
+    setIsPSAModalOpen(false);
+    setSelectedPatientForPSA(null);
+    setPsaForm({
+      date: '',
+      value: '',
+      note: ''
+    });
+  };
+
   return (
     <div className="space-y-6">
       
@@ -498,28 +662,52 @@ const ReferralTriage = () => {
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Referring GP</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Referral Date</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredReferrals.map((referral, index) => (
-                  <tr key={referral.id} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
-                    <td className="py-5 px-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center shadow-sm">
-                          <span className="text-white font-semibold text-sm">
-                            {referral.patientName.split(' ').map(n => n[0]).join('')}
-                          </span>
+                {filteredReferrals.map((referral, index) => {
+                  const waitTimeInfo = formatWaitTime(getDaysSinceReferral(referral.referralDate));
+                  return (
+                    <tr key={referral.id} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'} ${waitTimeInfo.isUrgent ? 'bg-red-50/30 border-l-4 border-red-500' : ''}`}>
+                      <td className="py-5 px-6">
+                        <div className="flex items-center space-x-4">
+                          <div className="relative flex-shrink-0">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-sm ${waitTimeInfo.isUrgent ? 'bg-gradient-to-br from-red-600 to-red-800' : 'bg-gradient-to-br from-green-800 to-black'}`}>
+                              <span className="text-white font-semibold text-sm">
+                                {referral.patientName.split(' ').map(n => n[0]).join('')}
+                              </span>
+                            </div>
+                            {waitTimeInfo.isUrgent && (
+                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center space-x-2">
+                              <p className="font-semibold text-gray-900">{referral.patientName}</p>
+                              {waitTimeInfo.isUrgent && (
+                                <div className="flex items-center space-x-1 bg-red-100 px-2 py-1 rounded-full">
+                                  <AlertTriangle className="w-3 h-3 text-red-600" />
+                                  <span className="text-xs font-medium text-red-600">URGENT</span>
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-500">Age: {referral.age} • PSA: {referral.lastPSA} ng/mL</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold text-gray-900">{referral.patientName}</p>
-                          <p className="text-sm text-gray-500">Age: {referral.age} • PSA: {referral.lastPSA} ng/mL</p>
+                      </td>
+                      <td className="py-5 px-6">
+                        <p className="font-medium text-gray-900">{referral.referringGP}</p>
+                      </td>
+                      <td className="py-5 px-6">
+                        <div className="space-y-1">
+                          <p className="font-medium text-gray-900">{formatDate(referral.referralDate)}</p>
+                          <p className={`text-xs leading-tight ${waitTimeInfo.className}`}>
+                            {waitTimeInfo.text}
+                          </p>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-5 px-6">
-                      <p className="font-medium text-gray-900">{referral.referringGP}</p>
-                    </td>
+                      </td>
                     <td className="py-5 px-6">
                       <div className="flex items-center space-x-2">
                         <button
@@ -527,12 +715,20 @@ const ReferralTriage = () => {
                           className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
                         >
                           <Eye className="h-3 w-3 mr-1" />
-                          <span>View/Add Details</span>
+                          <span>View/Add Clinical Info</span>
+                        </button>
+                        <button
+                          onClick={() => handlePSAEntry(referral.id)}
+                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          <span>Add PSA</span>
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           ) : (
@@ -629,7 +825,16 @@ const ReferralTriage = () => {
                   {/* PSA Data Section */}
                   <div className="space-y-4 mb-6">
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                      <h2 className="text-base font-semibold text-gray-900 mb-4">PSA Data & Criteria</h2>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-base font-semibold text-gray-900">PSA Data & Criteria</h2>
+                        <button
+                          onClick={() => setShowPSAHistoryModal(true)}
+                          className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                        >
+                          <TrendingUp className="h-4 w-4 mr-1" />
+                          View PSA History
+                        </button>
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
                           <div className="text-3xl font-bold text-blue-900">{selectedReferral.lastPSA}</div>
@@ -678,27 +883,6 @@ const ReferralTriage = () => {
                     </div>
                   </div>
 
-                  {/* Clinical Notes Section */}
-                  <div className="space-y-4 mb-6">
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                      <h2 className="text-base font-semibold text-gray-900 mb-4">Clinical Notes</h2>
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-600 mb-1">
-                            Clinical Notes
-                          </label>
-                          <textarea
-                            value={clinicalData.clinicalNotes}
-                            onChange={(e) => setClinicalData({...clinicalData, clinicalNotes: e.target.value})}
-                            rows={4}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            placeholder="Enter clinical observations and notes..."
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
 
                   {/* Patient Assessment Section */}
                   <div className="space-y-4">
@@ -719,35 +903,8 @@ const ReferralTriage = () => {
                         />
                       </div>
 
-                      {/* Family History */}
+                      {/* Allergies */}
                       <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-600 mb-1">
-                          Family History
-                        </label>
-                        <textarea
-                          value={clinicalData.familyHistory}
-                          onChange={(e) => setClinicalData({...clinicalData, familyHistory: e.target.value})}
-                          rows={2}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                          placeholder="Enter relevant family medical history..."
-                        />
-                      </div>
-
-                      {/* Medications and Allergies */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-600 mb-1">
-                            Current Medications
-                          </label>
-                          <textarea
-                            value={clinicalData.medications}
-                            onChange={(e) => setClinicalData({...clinicalData, medications: e.target.value})}
-                            rows={2}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            placeholder="List current medications..."
-                          />
-                        </div>
-                        <div>
                           <label className="block text-sm font-medium text-gray-600 mb-1">
                             Allergies
                           </label>
@@ -758,7 +915,6 @@ const ReferralTriage = () => {
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             placeholder="List known allergies..."
                           />
-                        </div>
                       </div>
 
                       {/* Vital Signs */}
@@ -833,42 +989,235 @@ const ReferralTriage = () => {
                     </div>
                   </div>
 
-                  {/* Documents & Test Results Section */}
+                  {/* Nurse Note Section */}
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                      <h2 className="text-base font-semibold text-gray-900 mb-4">Nurse Note</h2>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1">
+                            Clinical Notes
+                          </label>
+                          <textarea
+                            value={clinicalData.clinicalNotes}
+                            onChange={(e) => setClinicalData({...clinicalData, clinicalNotes: e.target.value})}
+                            rows={4}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            placeholder="Enter clinical observations and notes..."
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Test Results Section */}
+                  <div className="space-y-4 mb-6">
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                      <h2 className="text-base font-semibold text-gray-900 mb-4">Test Results</h2>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* MRI Results */}
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                            <h3 className="text-sm font-semibold text-gray-900">MRI Results</h3>
+                            {testResults.mriDocument && (
+                              <div className="flex items-center space-x-1">
+                                <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                                  <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                              Upload Report
+                            </label>
+                            {testResults.mriDocument ? (
+                              <div className="flex items-center justify-between px-3 py-2 border border-green-300 rounded-lg bg-green-50">
+                                <div className="flex items-center">
+                                  <FileText className="h-3 w-3 text-green-600 mr-2" />
+                                  <span className="text-xs text-green-800 font-medium">
+                                    {testResults.mriDocument.name}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => removeTestDocument('mri')}
+                                  className="text-red-500 hover:text-red-700 transition-colors"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="relative">
+                                <input
+                                  type="file"
+                                  onChange={(e) => handleTestDocumentUpload('mri', e)}
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.tiff"
+                                />
+                                <div className="flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors">
+                                  <div className="flex items-center">
+                                    <Upload className="h-3 w-3 text-gray-400 mr-2" />
+                                    <span className="text-xs text-gray-600">Choose file...</span>
+                                  </div>
+                                  <span className="text-xs text-gray-500">Browse</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Biopsy Results */}
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <h3 className="text-sm font-semibold text-gray-900">Biopsy Results</h3>
+                            {testResults.biopsyDocument && (
+                              <div className="flex items-center space-x-1">
+                                <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                                  <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                              Upload Report
+                            </label>
+                            {testResults.biopsyDocument ? (
+                              <div className="flex items-center justify-between px-3 py-2 border border-green-300 rounded-lg bg-green-50">
+                                <div className="flex items-center">
+                                  <FileText className="h-3 w-3 text-green-600 mr-2" />
+                                  <span className="text-xs text-green-800 font-medium">
+                                    {testResults.biopsyDocument.name}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => removeTestDocument('biopsy')}
+                                  className="text-red-500 hover:text-red-700 transition-colors"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="relative">
+                                <input
+                                  type="file"
+                                  onChange={(e) => handleTestDocumentUpload('biopsy', e)}
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.tiff"
+                                />
+                                <div className="flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors">
+                                  <div className="flex items-center">
+                                    <Upload className="h-3 w-3 text-gray-400 mr-2" />
+                                    <span className="text-xs text-gray-600">Choose file...</span>
+                                  </div>
+                                  <span className="text-xs text-gray-500">Browse</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* TRUS Results */}
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                            <h3 className="text-sm font-semibold text-gray-900">TRUS Results</h3>
+                            {testResults.trusDocument && (
+                              <div className="flex items-center space-x-1">
+                                <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                                  <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                              Upload Report
+                            </label>
+                            {testResults.trusDocument ? (
+                              <div className="flex items-center justify-between px-3 py-2 border border-green-300 rounded-lg bg-green-50">
+                                <div className="flex items-center">
+                                  <FileText className="h-3 w-3 text-green-600 mr-2" />
+                                  <span className="text-xs text-green-800 font-medium">
+                                    {testResults.trusDocument.name}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => removeTestDocument('trus')}
+                                  className="text-red-500 hover:text-red-700 transition-colors"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="relative">
+                                <input
+                                  type="file"
+                                  onChange={(e) => handleTestDocumentUpload('trus', e)}
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.tiff"
+                                />
+                                <div className="flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors">
+                                  <div className="flex items-center">
+                                    <Upload className="h-3 w-3 text-gray-400 mr-2" />
+                                    <span className="text-xs text-gray-600">Choose file...</span>
+                                  </div>
+                                  <span className="text-xs text-gray-500">Browse</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Test Results Section */}
                   <div className="space-y-4">
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                       <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-base font-semibold text-gray-900">Documents & Test Results</h2>
+                        <h2 className="text-base font-semibold text-gray-900">Additional Test Results</h2>
                         <button
-                          onClick={addDocument}
-                          className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                          onClick={addAdditionalTest}
+                          className="flex items-center px-3 py-2 text-sm font-medium text-purple-600 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 hover:border-purple-300 transition-colors"
                         >
                           <Plus className="h-4 w-4 mr-1" />
-                          Add Document
+                          Add Test
                         </button>
                       </div>
 
-                      {documents.length === 0 ? (
+                      {additionalTests.length === 0 ? (
                         <div className="text-center py-8">
-                          <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                            <FileText className="h-8 w-8 text-gray-400" />
+                          <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
+                            <TestTube className="h-8 w-8 text-purple-400" />
                           </div>
-                          <p className="text-sm text-gray-500 mb-4">No documents added yet</p>
+                          <p className="text-sm text-gray-500 mb-4">No additional tests added yet</p>
                           <button
-                            onClick={addDocument}
-                            className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                            onClick={addAdditionalTest}
+                            className="inline-flex items-center px-4 py-2 text-sm font-medium text-purple-600 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 hover:border-purple-300 transition-colors"
                           >
                             <Plus className="h-4 w-4 mr-2" />
-                            Add First Document
+                            Add First Test
                           </button>
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          {documents.map((document, index) => (
-                            <div key={document.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                          {additionalTests.map((test, index) => (
+                            <div key={test.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                               <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-sm font-medium text-gray-700">Document {index + 1}</h3>
+                                <h3 className="text-sm font-medium text-gray-700">Additional Test {index + 1}</h3>
                                 <button
-                                  onClick={() => removeDocument(document.id)}
+                                  onClick={() => removeAdditionalTest(test.id)}
                                   className="flex items-center px-2 py-1 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 hover:border-red-300 transition-colors"
                                 >
                                   <X className="h-3 w-3 mr-1" />
@@ -876,28 +1225,41 @@ const ReferralTriage = () => {
                                 </button>
                               </div>
                               
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                   <label className="block text-sm font-medium text-gray-600 mb-1">
-                                    Document Title
+                                    Test Title
                                   </label>
                                   <input
                                     type="text"
-                                    value={document.title}
-                                    onChange={(e) => updateDocumentTitle(document.id, e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                                    placeholder="e.g., PSA Test Results, MRI Report, Biopsy Report"
+                                    value={test.title}
+                                    onChange={(e) => updateAdditionalTest(test.id, 'title', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                                    placeholder="e.g., Blood Chemistry, Urinalysis, CT Scan"
                                   />
                                 </div>
                                 
                                 <div>
                                   <label className="block text-sm font-medium text-gray-600 mb-1">
-                                    Upload File
+                                    Result
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={test.result}
+                                    onChange={(e) => updateAdditionalTest(test.id, 'result', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                                    placeholder="Enter test result or status"
+                                  />
+                                </div>
+                                
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                                    Upload Report
                                   </label>
                                   <div className="relative">
                                     <input
                                       type="file"
-                                      onChange={(e) => handleFileUpload(document.id, e)}
+                                      onChange={(e) => handleAdditionalTestDocumentUpload(test.id, e)}
                                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.tiff"
                                     />
@@ -905,7 +1267,7 @@ const ReferralTriage = () => {
                                       <div className="flex items-center">
                                         <Upload className="h-4 w-4 text-gray-400 mr-2" />
                                         <span className="text-sm text-gray-600">
-                                          {document.fileName || 'Choose file...'}
+                                          {test.fileName || 'Choose file...'}
                                         </span>
                                       </div>
                                       <span className="text-xs text-gray-500">Browse</span>
@@ -923,6 +1285,7 @@ const ReferralTriage = () => {
                     </div>
                   </div>
 
+
                   {/* Save Clinical Data Button */}
                   <div className="space-y-4">
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
@@ -931,6 +1294,8 @@ const ReferralTriage = () => {
                           onClick={() => {
                             console.log('Saving clinical data:', clinicalData);
                             console.log('Saving documents:', documents);
+                            console.log('Saving test results:', testResults);
+                            console.log('Saving additional tests:', additionalTests);
                             // Here you would typically save the data to your backend
                             // Simulate success for now - in real app, handle success/failure based on API response
                             setShowSaveSuccessModal(true);
@@ -1520,6 +1885,453 @@ const ReferralTriage = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* PSA History Modal */}
+      {showPSAHistoryModal && selectedReferral && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-[150] flex items-center justify-center p-4">
+          <div className="relative mx-auto w-full max-w-4xl">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden max-h-[90vh] flex flex-col">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-50 to-gray-50 border-b border-gray-200 px-6 py-6 flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900">PSA History</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      PSA trend analysis for {selectedReferral.patientName}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowPSAHistoryModal(false)}
+                    className="flex items-center px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Close
+                  </button>
+                </div>
+              </div>
+              
+              {/* Content */}
+              <div className="px-6 py-6 flex-1 overflow-y-auto">
+                <div className="space-y-6">
+                  {/* Patient Info Card */}
+                  <div className="bg-gradient-to-r from-blue-50 to-gray-50 border border-gray-200 rounded-lg p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="relative">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-800 to-black rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">
+                            {selectedReferral.patientName.split(' ').map(n => n[0]).join('')}
+                          </span>
+                        </div>
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white"></div>
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-semibold text-gray-900">{selectedReferral.patientName}</h4>
+                        <div className="flex items-center space-x-4 mt-1">
+                          <span className="text-sm text-gray-600">Age: {selectedReferral.age} years</span>
+                          <span className="text-sm text-gray-600">Latest PSA: {selectedReferral.lastPSA} ng/mL</span>
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-blue-100 text-blue-800">
+                            {selectedReferral.psaCriteria}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* PSA History Table */}
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                      <h4 className="text-lg font-semibold text-gray-900">PSA Test History</h4>
+                      <p className="text-sm text-gray-600 mt-1">Historical PSA values and trends</p>
+                    </div>
+                    
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="text-left py-3 px-6 font-semibold text-gray-700 text-sm">Date</th>
+                            <th className="text-left py-3 px-6 font-semibold text-gray-700 text-sm">PSA Value</th>
+                            <th className="text-left py-3 px-6 font-semibold text-gray-700 text-sm">Category</th>
+                            <th className="text-left py-3 px-6 font-semibold text-gray-700 text-sm">Velocity</th>
+                            <th className="text-left py-3 px-6 font-semibold text-gray-700 text-sm">Notes</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {/* Hardcoded PSA history data */}
+                          <tr className="hover:bg-gray-50">
+                            <td className="py-4 px-6 text-sm text-gray-900">2024-01-08</td>
+                            <td className="py-4 px-6">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                {selectedReferral.lastPSA} ng/mL
+                              </span>
+                            </td>
+                            <td className="py-4 px-6">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                High Risk
+                              </span>
+                            </td>
+                            <td className="py-4 px-6 text-sm text-gray-900">+2.1 ng/mL/year</td>
+                            <td className="py-4 px-6 text-sm text-gray-600">Latest test result</td>
+                          </tr>
+                          <tr className="hover:bg-gray-50">
+                            <td className="py-4 px-6 text-sm text-gray-900">2023-09-15</td>
+                            <td className="py-4 px-6">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+                                6.8 ng/mL
+                              </span>
+                            </td>
+                            <td className="py-4 px-6">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+                                Elevated
+                              </span>
+                            </td>
+                            <td className="py-4 px-6 text-sm text-gray-900">+1.8 ng/mL/year</td>
+                            <td className="py-4 px-6 text-sm text-gray-600">Rising trend noted</td>
+                          </tr>
+                          <tr className="hover:bg-gray-50">
+                            <td className="py-4 px-6 text-sm text-gray-900">2023-06-15</td>
+                            <td className="py-4 px-6">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                                4.2 ng/mL
+                              </span>
+                            </td>
+                            <td className="py-4 px-6">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                                Borderline
+                              </span>
+                            </td>
+                            <td className="py-4 px-6 text-sm text-gray-900">+0.9 ng/mL/year</td>
+                            <td className="py-4 px-6 text-sm text-gray-600">Baseline established</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* PSA Chart Section */}
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 px-6 py-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-900">PSA Trend Chart</h4>
+                          <p className="text-sm text-gray-600 mt-1">Prostate-specific antigen levels over time</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => setPsaChartType('line')}
+                            className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${
+                              psaChartType === 'line' 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : 'text-gray-600 hover:bg-gray-100'
+                            }`}
+                          >
+                            Line Chart
+                          </button>
+                          <button
+                            onClick={() => setPsaChartType('bar')}
+                            className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${
+                              psaChartType === 'bar' 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : 'text-gray-600 hover:bg-gray-100'
+                            }`}
+                          >
+                            Bar Chart
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-6">
+                      {/* Chart Area */}
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                        <div className="relative h-64">
+                          {/* Chart Grid */}
+                          <div className="absolute inset-0">
+                            {/* Horizontal grid lines */}
+                            {[0, 1, 2, 3, 4, 5].map((i) => (
+                              <div
+                                key={i}
+                                className="absolute w-full border-t border-gray-200"
+                                style={{ top: `${(i / 5) * 100}%` }}
+                              >
+                                <span className="absolute -left-12 -top-2 text-xs text-gray-500">
+                                  {Math.round(maxPSA - (i / 5) * psaRange)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Chart Content */}
+                          <div className="relative h-full">
+                            {psaChartType === 'line' ? (
+                              // Line Chart
+                              <svg className="w-full h-full" viewBox="0 0 600 240" preserveAspectRatio="none">
+                                <defs>
+                                  <linearGradient id="psaGradientModal" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.3" />
+                                    <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
+                                  </linearGradient>
+                                </defs>
+                                
+                                {/* Area under curve */}
+                                <path
+                                  d={`M 40 ${200 - ((mockPSAHistory[0].value - minPSA) / psaRange) * 160} ${mockPSAHistory.map((psa, index) => 
+                                    `L ${40 + (index / (mockPSAHistory.length - 1)) * 520} ${200 - ((psa.value - minPSA) / psaRange) * 160}`
+                                  ).join(' ')} L ${40 + 520} 200 L 40 200 Z`}
+                                  fill="url(#psaGradientModal)"
+                                />
+                                
+                                {/* Line */}
+                                <path
+                                  d={`M 40 ${200 - ((mockPSAHistory[0].value - minPSA) / psaRange) * 160} ${mockPSAHistory.map((psa, index) => 
+                                    `L ${40 + (index / (mockPSAHistory.length - 1)) * 520} ${200 - ((psa.value - minPSA) / psaRange) * 160}`
+                                  ).join(' ')}`}
+                                  stroke="#3B82F6"
+                                  strokeWidth="3"
+                                  fill="none"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                                
+                                {/* Data points */}
+                                {mockPSAHistory.map((psa, index) => (
+                                  <g key={index}>
+                                    <circle
+                                      cx={40 + (index / (mockPSAHistory.length - 1)) * 520}
+                                      cy={200 - ((psa.value - minPSA) / psaRange) * 160}
+                                      r="6"
+                                      fill="white"
+                                      stroke="#3B82F6"
+                                      strokeWidth="2"
+                                    />
+                                    <circle
+                                      cx={40 + (index / (mockPSAHistory.length - 1)) * 520}
+                                      cy={200 - ((psa.value - minPSA) / psaRange) * 160}
+                                      r="3"
+                                      fill="#3B82F6"
+                                    />
+                                  </g>
+                                ))}
+                              </svg>
+                            ) : (
+                              // Bar Chart
+                              <div className="flex items-end justify-between h-full px-4 space-x-2">
+                                {mockPSAHistory.map((psa, index) => {
+                                  const height = ((psa.value - minPSA) / psaRange) * 80; // 80% of container height
+                                  const category = getPSACategory(psa.value);
+                                  return (
+                                    <div key={index} className="flex-1 flex flex-col items-center group">
+                                      <div
+                                        className={`w-full ${category.bgColor} rounded-t-lg transition-all duration-300 hover:opacity-80 cursor-pointer relative border`}
+                                        style={{ height: `${height}%`, minHeight: '20px' }}
+                                        title={`${psa.value} ng/mL - ${formatDate(psa.date)}`}
+                                      >
+                                        <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <div className="bg-gray-800 text-white text-xs px-2 py-1 rounded">
+                                            {psa.value} ng/mL
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="mt-2 text-center">
+                                        <p className="text-xs font-medium text-gray-900">{psa.value}</p>
+                                        <p className="text-xs text-gray-500">{formatDate(psa.date).split('/')[0]}</p>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Chart Legend */}
+                      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <span className="text-sm font-medium text-gray-900">Normal</span>
+                          </div>
+                          <p className="text-xs text-gray-600 mt-1">&lt; 4.0 ng/mL</p>
+                        </div>
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                            <span className="text-sm font-medium text-gray-900">Borderline</span>
+                          </div>
+                          <p className="text-xs text-gray-600 mt-1">4.0 - 10.0 ng/mL</p>
+                        </div>
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                            <span className="text-sm font-medium text-gray-900">Elevated</span>
+                          </div>
+                          <p className="text-xs text-gray-600 mt-1">10.0 - 20.0 ng/mL</p>
+                        </div>
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                            <span className="text-sm font-medium text-gray-900">High Risk</span>
+                          </div>
+                          <p className="text-xs text-gray-600 mt-1">&gt; 20.0 ng/mL</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* PSA Trend Analysis */}
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Trend Analysis</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="text-center p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg border border-red-200">
+                        <div className="text-2xl font-bold text-red-900">+2.1</div>
+                        <div className="text-sm text-red-700">ng/mL/year</div>
+                        <div className="text-xs text-red-600 mt-1">Current Velocity</div>
+                      </div>
+                      <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg border border-orange-200">
+                        <div className="text-2xl font-bold text-orange-900">3</div>
+                        <div className="text-sm text-orange-700">Tests</div>
+                        <div className="text-xs text-orange-600 mt-1">Last 12 Months</div>
+                      </div>
+                      <div className="text-center p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg border border-yellow-200">
+                        <div className="text-2xl font-bold text-yellow-900">High</div>
+                        <div className="text-sm text-yellow-700">Risk Level</div>
+                        <div className="text-xs text-yellow-600 mt-1">Current Status</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Actions */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex-shrink-0">
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setShowPSAHistoryModal(false)}
+                    className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add PSA Value Modal */}
+      {isPSAModalOpen && selectedPatientForPSA && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Add PSA Value</h2>
+                <p className="text-sm text-gray-600 mt-1">Patient: {selectedPatientForPSA.patientName}</p>
+              </div>
+              <button
+                onClick={closePSAModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddPSA} className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Test Date *
+                </label>
+                <input
+                  type="date"
+                  name="date"
+                  value={psaForm.date}
+                  onChange={handlePSAFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  PSA Value (ng/mL) *
+                </label>
+                <input
+                  type="number"
+                  name="value"
+                  value={psaForm.value}
+                  onChange={handlePSAFormChange}
+                  required
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  placeholder="e.g., 6.2"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Notes
+                </label>
+                <textarea
+                  name="note"
+                  value={psaForm.note}
+                  onChange={handlePSAFormChange}
+                  rows="3"
+                  placeholder="Add any relevant notes or observations..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
+                />
+              </div>
+
+              {/* PSA Status Preview */}
+              {psaForm.value && (
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">PSA Status Preview:</h4>
+                  <div className="flex items-center space-x-2">
+                    {parseFloat(psaForm.value) <= 4.0 ? (
+                      <>
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span className="text-sm font-medium text-green-800">Normal (≤4.0 ng/mL)</span>
+                      </>
+                    ) : parseFloat(psaForm.value) <= 10.0 ? (
+                      <>
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <span className="text-sm font-medium text-yellow-800">Borderline (4.1-10.0 ng/mL)</span>
+                      </>
+                    ) : parseFloat(psaForm.value) <= 20.0 ? (
+                      <>
+                        <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                        <span className="text-sm font-medium text-orange-800">Elevated (10.1-20.0 ng/mL)</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span className="text-sm font-medium text-red-800">High Risk (&gt;20.0 ng/mL)</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={closePSAModal}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex items-center px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add PSA Value
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
