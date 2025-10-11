@@ -1247,6 +1247,15 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
               </div>
             </div>
           </div>
+          
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors duration-200 group"
+            title="Close modal"
+          >
+            <X className="h-5 w-5 text-gray-500 group-hover:text-gray-700 transition-colors duration-200" />
+          </button>
         </div>
 
         {/* Professional Tab Navigation */}
