@@ -2040,8 +2040,65 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
             <div className="flex items-center justify-center gap-6">
               <h3 className="text-lg font-semibold text-gray-800">Transfer to:</h3>
               <div className="flex items-center space-x-2 sm:space-x-4">
-                {/* Default buttons for all contexts except Surgical Pathway and Post-op Follow-up */}
-                {context !== 'surgicalPathway' && context !== 'postOpFollowUp' && (
+                {/* Special buttons for New Patients context */}
+                {context === 'newPatients' && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setSelectedPathway('Active Monitoring');
+                        setIsPathwayModalOpen(true);
+                      }}
+                      className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-2xl hover:border-blue-400 hover:from-blue-100 hover:to-blue-200 transition-all duration-300 shadow-sm hover:shadow-md"
+                    >
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-blue-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-blue-700 transition-colors duration-300">
+                        <Activity className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-blue-800 text-center leading-tight">Active<br />Monitoring</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedPathway('Surgery Pathway');
+                        setIsPathwayModalOpen(true);
+                      }}
+                      className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-2xl hover:border-purple-400 hover:from-purple-100 hover:to-purple-200 transition-all duration-300 shadow-sm hover:shadow-md"
+                    >
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-purple-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-purple-700 transition-colors duration-300">
+                        <Stethoscope className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-purple-800 text-center leading-tight">Surgery<br />Pathway</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedPathway('Medication');
+                        setIsPathwayModalOpen(true);
+                      }}
+                      className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-200 rounded-2xl hover:border-orange-400 hover:from-orange-100 hover:to-orange-200 transition-all duration-300 shadow-sm hover:shadow-md"
+                    >
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-orange-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-orange-700 transition-colors duration-300">
+                        <Pill className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-orange-800 text-center leading-tight">Medication</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedPathway('Radiotherapy');
+                        setIsPathwayModalOpen(true);
+                      }}
+                      className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-2xl hover:border-red-400 hover:from-red-100 hover:to-red-200 transition-all duration-300 shadow-sm hover:shadow-md"
+                    >
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-red-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-red-700 transition-colors duration-300">
+                        <Radiation className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-red-800 text-center leading-tight">Radiotherapy</span>
+                    </button>
+                  </>
+                )}
+
+                {/* Default buttons for all other contexts (excluding special contexts) */}
+                {context !== 'surgicalPathway' && context !== 'postOpFollowUp' && context !== 'newPatients' && (
                   <>
                     <button
                       onClick={() => {
