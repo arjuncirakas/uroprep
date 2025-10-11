@@ -450,7 +450,15 @@ const PatientManagement = () => {
 
   // Patient Details Modal handlers
   const handleViewPatientDetails = (patientId) => {
-    openPatientDetails(patientId, 'urologist');
+    let context = null;
+    if (activeTab === 'New Patients') {
+      context = 'newPatients';
+    } else if (activeTab === 'Surgical Pathway') {
+      context = 'surgicalPathway';
+    } else if (activeTab === 'Post-op Follow-up') {
+      context = 'postOpFollowUp';
+    }
+    openPatientDetails(patientId, 'urologist', null, context);
   };
 
   // Schedule MDT Modal handlers

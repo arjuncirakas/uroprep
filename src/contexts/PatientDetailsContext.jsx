@@ -14,10 +14,14 @@ export const PatientDetailsProvider = ({ children }) => {
   const [showPatientDetailsModal, setShowPatientDetailsModal] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState(null);
   const [userRole, setUserRole] = useState('nurse');
+  const [source, setSource] = useState(null);
+  const [context, setContext] = useState(null);
 
-  const openPatientDetails = (patientId, role = 'nurse') => {
+  const openPatientDetails = (patientId, role = 'nurse', sourceParam = null, context = null) => {
     setSelectedPatientId(patientId);
     setUserRole(role);
+    setSource(sourceParam);
+    setContext(context);
     setShowPatientDetailsModal(true);
   };
 
@@ -25,12 +29,16 @@ export const PatientDetailsProvider = ({ children }) => {
     setShowPatientDetailsModal(false);
     setSelectedPatientId(null);
     setUserRole('nurse');
+    setSource(null);
+    setContext(null);
   };
 
   const value = {
     showPatientDetailsModal,
     selectedPatientId,
     userRole,
+    source,
+    context,
     openPatientDetails,
     closePatientDetails
   };

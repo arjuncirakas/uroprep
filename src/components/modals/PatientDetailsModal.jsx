@@ -64,7 +64,7 @@ ChartJS.register(
   Legend
 );
 
-const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
+const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, context }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isClinicalHistoryModalOpen, setIsClinicalHistoryModalOpen] = useState(false);
   const [isPSAModalOpen, setIsPSAModalOpen] = useState(false);
@@ -108,6 +108,12 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
   const [isPathwayModalOpen, setIsPathwayModalOpen] = useState(false);
   const [selectedPathway, setSelectedPathway] = useState('');
   const [transferNote, setTransferNote] = useState('');
+  
+  // State for Post-op Transfer modal
+  const [showPostOpTransferModal, setShowPostOpTransferModal] = useState(false);
+  const [postOpTransferDetails, setPostOpTransferDetails] = useState({
+    notes: ''
+  });
   const [transferDetails, setTransferDetails] = useState({
     reason: '',
     priority: 'normal',
@@ -784,6 +790,47 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
     }
   };
 
+  const getPathwayColors = (pathway) => {
+    switch (pathway) {
+      case 'Active Monitoring': return {
+        header: 'from-blue-500 via-blue-600 to-blue-700',
+        button: 'from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800',
+        shadow: 'shadow-blue-200 hover:shadow-blue-300',
+        icon: 'text-blue-600'
+      };
+      case 'Surgery Pathway': return {
+        header: 'from-purple-500 via-purple-600 to-purple-700',
+        button: 'from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800',
+        shadow: 'shadow-purple-200 hover:shadow-purple-300',
+        icon: 'text-purple-600'
+      };
+      case 'Medication': return {
+        header: 'from-orange-500 via-orange-600 to-red-600',
+        button: 'from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800',
+        shadow: 'shadow-orange-200 hover:shadow-orange-300',
+        icon: 'text-orange-600'
+      };
+      case 'Radiotherapy': return {
+        header: 'from-red-500 via-red-600 to-red-700',
+        button: 'from-red-600 to-red-700 hover:from-red-700 hover:to-red-800',
+        shadow: 'shadow-red-200 hover:shadow-red-300',
+        icon: 'text-red-600'
+      };
+      case 'Discharge': return {
+        header: 'from-green-500 via-green-600 to-green-700',
+        button: 'from-green-600 to-green-700 hover:from-green-700 hover:to-green-800',
+        shadow: 'shadow-green-200 hover:shadow-green-300',
+        icon: 'text-green-600'
+      };
+      default: return {
+        header: 'from-orange-500 via-orange-600 to-red-600',
+        button: 'from-green-600 to-green-700 hover:from-green-700 hover:to-green-800',
+        shadow: 'shadow-green-200 hover:shadow-green-300',
+        icon: 'text-orange-600'
+      };
+    }
+  };
+
   const handleClinicalHistoryFormChange = (e) => {
     const { name, value } = e.target;
     setClinicalHistoryForm(prev => ({
@@ -1211,12 +1258,26 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
     }
   }, [isOpen]);
 
+  // If MDT Notes tab is hidden and user is on that tab, switch to Overview
+  useEffect(() => {
+    if (source === 'activeSurveillance' && activeTab === 'mdt-notes') {
+      setActiveTab('overview');
+    }
+  }, [source, activeTab]);
+
+  // If Discharge Summaries tab is hidden and user is on that tab, switch to Overview
+  useEffect(() => {
+    if (context === 'newPatients' && activeTab === 'discharge') {
+      setActiveTab('overview');
+    }
+  }, [context, activeTab]);
+
   if (!isOpen) return null;
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: User, count: 1, active: activeTab === 'overview' },
-    { id: 'mdt-notes', name: 'MDT Notes', icon: Users, count: 2, active: activeTab === 'mdt-notes' },
-    { id: 'discharge', name: 'Discharge Summaries', icon: FileText, count: 1, active: activeTab === 'discharge' }
+    ...(source !== 'activeSurveillance' ? [{ id: 'mdt-notes', name: 'MDT Notes', icon: Users, count: 2, active: activeTab === 'mdt-notes' }] : []),
+    ...(context !== 'newPatients' ? [{ id: 'discharge', name: 'Discharge Summaries', icon: FileText, count: 1, active: activeTab === 'discharge' }] : [])
   ];
 
   return (
@@ -1979,70 +2040,162 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
             <div className="flex items-center justify-center gap-6">
               <h3 className="text-lg font-semibold text-gray-800">Transfer to:</h3>
               <div className="flex items-center space-x-2 sm:space-x-4">
-                <button
-                  onClick={() => {
-                    setSelectedPathway('Active Monitoring');
-                    setIsPathwayModalOpen(true);
-                  }}
-                  className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-2xl hover:border-blue-400 hover:from-blue-100 hover:to-blue-200 transition-all duration-300 shadow-sm hover:shadow-md"
-                >
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-blue-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-blue-700 transition-colors duration-300">
-                    <Activity className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
-                  </div>
-                  <span className="text-xs sm:text-sm font-semibold text-blue-800 text-center leading-tight">Active<br />Monitoring</span>
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setSelectedPathway('Surgery Pathway');
-                    setIsPathwayModalOpen(true);
-                  }}
-                  className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-2xl hover:border-purple-400 hover:from-purple-100 hover:to-purple-200 transition-all duration-300 shadow-sm hover:shadow-md"
-                >
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-purple-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-purple-700 transition-colors duration-300">
-                    <Stethoscope className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
-                  </div>
-                  <span className="text-xs sm:text-sm font-semibold text-purple-800 text-center leading-tight">Surgery<br />Pathway</span>
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setSelectedPathway('Medication');
-                    setIsPathwayModalOpen(true);
-                  }}
-                  className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-200 rounded-2xl hover:border-orange-400 hover:from-orange-100 hover:to-orange-200 transition-all duration-300 shadow-sm hover:shadow-md"
-                >
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-orange-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-orange-700 transition-colors duration-300">
-                    <Pill className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
-                  </div>
-                  <span className="text-xs sm:text-sm font-semibold text-orange-800 text-center leading-tight">Medication</span>
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setSelectedPathway('Radiotherapy');
-                    setIsPathwayModalOpen(true);
-                  }}
-                  className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-2xl hover:border-red-400 hover:from-red-100 hover:to-red-200 transition-all duration-300 shadow-sm hover:shadow-md"
-                >
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-red-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-red-700 transition-colors duration-300">
-                    <Radiation className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
-                  </div>
-                  <span className="text-xs sm:text-sm font-semibold text-red-800 text-center leading-tight">Radiotherapy</span>
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setSelectedPathway('Discharge');
-                    setIsPathwayModalOpen(true);
-                  }}
-                  className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-2xl hover:border-green-400 hover:from-green-100 hover:to-green-200 transition-all duration-300 shadow-sm hover:shadow-md"
-                >
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-green-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-green-700 transition-colors duration-300">
-                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
-                  </div>
-                  <span className="text-xs sm:text-sm font-semibold text-green-800 text-center leading-tight">Discharge</span>
-                </button>
+                {/* Default buttons for all contexts except Surgical Pathway and Post-op Follow-up */}
+                {context !== 'surgicalPathway' && context !== 'postOpFollowUp' && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setSelectedPathway('Active Monitoring');
+                        setIsPathwayModalOpen(true);
+                      }}
+                      className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-2xl hover:border-blue-400 hover:from-blue-100 hover:to-blue-200 transition-all duration-300 shadow-sm hover:shadow-md"
+                    >
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-blue-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-blue-700 transition-colors duration-300">
+                        <Activity className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-blue-800 text-center leading-tight">Active<br />Monitoring</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedPathway('Surgery Pathway');
+                        setIsPathwayModalOpen(true);
+                      }}
+                      className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-2xl hover:border-purple-400 hover:from-purple-100 hover:to-purple-200 transition-all duration-300 shadow-sm hover:shadow-md"
+                    >
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-purple-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-purple-700 transition-colors duration-300">
+                        <Stethoscope className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-purple-800 text-center leading-tight">Surgery<br />Pathway</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedPathway('Medication');
+                        setIsPathwayModalOpen(true);
+                      }}
+                      className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-200 rounded-2xl hover:border-orange-400 hover:from-orange-100 hover:to-orange-200 transition-all duration-300 shadow-sm hover:shadow-md"
+                    >
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-orange-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-orange-700 transition-colors duration-300">
+                        <Pill className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-orange-800 text-center leading-tight">Medication</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedPathway('Radiotherapy');
+                        setIsPathwayModalOpen(true);
+                      }}
+                      className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-2xl hover:border-red-400 hover:from-red-100 hover:to-red-200 transition-all duration-300 shadow-sm hover:shadow-md"
+                    >
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-red-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-red-700 transition-colors duration-300">
+                        <Radiation className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-red-800 text-center leading-tight">Radiotherapy</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedPathway('Discharge');
+                        setIsPathwayModalOpen(true);
+                      }}
+                      className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-2xl hover:border-green-400 hover:from-green-100 hover:to-green-200 transition-all duration-300 shadow-sm hover:shadow-md"
+                    >
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-green-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-green-700 transition-colors duration-300">
+                        <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-green-800 text-center leading-tight">Discharge</span>
+                    </button>
+                  </>
+                )}
+
+                {/* Special buttons for Surgical Pathway context */}
+                {context === 'surgicalPathway' && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setSelectedPathway('Active Monitoring');
+                        setIsPathwayModalOpen(true);
+                      }}
+                      className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-2xl hover:border-blue-400 hover:from-blue-100 hover:to-blue-200 transition-all duration-300 shadow-sm hover:shadow-md"
+                    >
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-blue-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-blue-700 transition-colors duration-300">
+                        <Activity className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-blue-800 text-center leading-tight">Active<br />Monitoring</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedPathway('Medication');
+                        setIsPathwayModalOpen(true);
+                      }}
+                      className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-200 rounded-2xl hover:border-orange-400 hover:from-orange-100 hover:to-orange-200 transition-all duration-300 shadow-sm hover:shadow-md"
+                    >
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-orange-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-orange-700 transition-colors duration-300">
+                        <Pill className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-orange-800 text-center leading-tight">Medication</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setShowPostOpTransferModal(true);
+                      }}
+                      className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-indigo-50 to-indigo-100 border-2 border-indigo-200 rounded-2xl hover:border-indigo-400 hover:from-indigo-100 hover:to-indigo-200 transition-all duration-300 shadow-sm hover:shadow-md"
+                    >
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-indigo-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-indigo-700 transition-colors duration-300">
+                        <Stethoscope className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-indigo-800 text-center leading-tight">Post-op<br />Transfer</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedPathway('Discharge');
+                        setIsPathwayModalOpen(true);
+                      }}
+                      className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-2xl hover:border-green-400 hover:from-green-100 hover:to-green-200 transition-all duration-300 shadow-sm hover:shadow-md"
+                    >
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-green-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-green-700 transition-colors duration-300">
+                        <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-green-800 text-center leading-tight">Discharge</span>
+                    </button>
+                  </>
+                )}
+
+                {/* Special buttons for Post-op Follow-up context */}
+                {context === 'postOpFollowUp' && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setSelectedPathway('Medication');
+                        setIsPathwayModalOpen(true);
+                      }}
+                      className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-200 rounded-2xl hover:border-orange-400 hover:from-orange-100 hover:to-orange-200 transition-all duration-300 shadow-sm hover:shadow-md"
+                    >
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-orange-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-orange-700 transition-colors duration-300">
+                        <Pill className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-orange-800 text-center leading-tight">Medication</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedPathway('Discharge');
+                        setIsPathwayModalOpen(true);
+                      }}
+                      className="group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-2xl hover:border-green-400 hover:from-green-100 hover:to-green-200 transition-all duration-300 shadow-sm hover:shadow-md"
+                    >
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-green-600 rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:bg-green-700 transition-colors duration-300">
+                        <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-green-800 text-center leading-tight">Discharge</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -4053,7 +4206,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden transform transition-all flex flex-col">
             {/* Header */}
-            <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 px-6 pt-6 pb-5">
+            <div className={`relative bg-gradient-to-br ${getPathwayColors(selectedPathway).header} px-6 pt-6 pb-5`}>
               <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12"></div>
               <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/10 rounded-full -ml-10 -mb-10"></div>
               
@@ -4061,7 +4214,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
               <div className="relative flex justify-center mb-3">
                 <div className="relative">
                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg">
-                    <AlertCircle className="h-7 w-7 text-orange-600" strokeWidth={2.5} />
+                    <AlertCircle className={`h-7 w-7 ${getPathwayColors(selectedPathway).icon}`} strokeWidth={2.5} />
                   </div>
                   <div className="absolute inset-0 w-12 h-12 bg-white rounded-full animate-ping opacity-20"></div>
                 </div>
@@ -4135,6 +4288,36 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                   </p>
                 </div>
               </div>
+
+              {/* Surgery Pathway - Simple Notes Section */}
+              {selectedPathway === 'Surgery Pathway' && (
+                <div className="mb-6">
+                  <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-5">
+                    <div className="flex items-center mb-4">
+                      <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center mr-3">
+                        <Stethoscope className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-semibold text-gray-900">Surgery Pathway Notes</h4>
+                        <p className="text-sm text-gray-600">Add notes for the surgery pathway transfer</p>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Notes
+                      </label>
+                      <textarea
+                        value={transferDetails.additionalNotes || ''}
+                        onChange={(e) => setTransferDetails(prev => ({ ...prev, additionalNotes: e.target.value }))}
+                        placeholder="Add any notes or instructions for the surgery pathway..."
+                        rows={4}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white shadow-sm resize-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Conditional Content Based on Pathway */}
               {selectedPathway === 'Medication' && (
@@ -4248,60 +4431,6 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                     </div>
                   </div>
 
-                  {/* Follow-up Appointment for Medication */}
-                  <div className="mb-6">
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
-                      <div className="flex items-center mb-4">
-                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
-                          <Calendar className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <h4 className="text-lg font-semibold text-gray-900">Follow-up Appointment</h4>
-                          <p className="text-sm text-gray-600">Schedule medication review appointment</p>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Appointment Date <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="date"
-                            value={medicationDetails.appointmentDate}
-                            onChange={(e) => setMedicationDetails(prev => ({ ...prev, appointmentDate: e.target.value }))}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white shadow-sm"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Appointment Time <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="time"
-                            value={medicationDetails.appointmentTime}
-                            onChange={(e) => setMedicationDetails(prev => ({ ...prev, appointmentTime: e.target.value }))}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white shadow-sm"
-                            required
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="mt-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Appointment Notes
-                        </label>
-                        <textarea
-                          value={medicationDetails.notes}
-                          onChange={(e) => setMedicationDetails(prev => ({ ...prev, notes: e.target.value }))}
-                          placeholder="Add any notes for the follow-up appointment..."
-                          rows={2}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white shadow-sm resize-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
                 </>
               )}
 
@@ -4367,7 +4496,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
               )}
 
               {/* Default content for other pathways */}
-              {selectedPathway !== 'Medication' && selectedPathway !== 'Discharge' && (
+              {selectedPathway !== 'Medication' && selectedPathway !== 'Discharge' && selectedPathway !== 'Surgery Pathway' && (
                 <>
               {/* Transfer Details Section */}
               <div className="mb-6">
@@ -4441,8 +4570,9 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                 </div>
               </div>
 
-              {/* Appointment Booking Section - Not needed for Radiotherapy */}
-              {selectedPathway !== 'Radiotherapy' && (
+
+              {/* Appointment Booking Section - Not needed for Radiotherapy and Surgery Pathway */}
+              {selectedPathway !== 'Radiotherapy' && selectedPathway !== 'Surgery Pathway' && (
               <div className="mb-6">
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
                   <div className="flex items-center mb-4">
@@ -4498,8 +4628,8 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
               </div>
               )}
 
-              {/* Recurring Check-ups Section - Not needed for Radiotherapy */}
-              {selectedPathway !== 'Radiotherapy' && (
+              {/* Recurring Check-ups Section - Not needed for Radiotherapy and Surgery Pathway */}
+              {selectedPathway !== 'Radiotherapy' && selectedPathway !== 'Surgery Pathway' && (
               <div className="mb-6">
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5">
                   <div className="flex items-center mb-4">
@@ -4606,10 +4736,6 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                         alert('Please fill in all required medication fields (name, dosage, frequency)');
                         return;
                       }
-                      if (!medicationDetails.appointmentDate || !medicationDetails.appointmentTime) {
-                        alert('Please schedule a follow-up appointment before confirming');
-                        return;
-                      }
                       // Show discharge summary modal for medication pathway
                       setIsPathwayModalOpen(false);
                       setIsDischargeSummaryModalOpen(true);
@@ -4622,6 +4748,11 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                       // Generate and show discharge summary
                       setIsPathwayModalOpen(false);
                       setIsDischargeSummaryModalOpen(true);
+                    } else if (selectedPathway === 'Surgery Pathway') {
+                      // Surgery Pathway validation - only notes are required
+                      setSuccessMessage(`Patient successfully transferred to ${selectedPathway}`);
+                      setIsPathwayModalOpen(false);
+                      setIsSuccessModalOpen(true);
                     } else {
                       // Default validation for other pathways
                       if (!transferDetails.reason || !transferDetails.clinicalRationale.trim()) {
@@ -4691,14 +4822,16 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                   }}
                   disabled={
                     selectedPathway === 'Medication' 
-                      ? !medicationDetails.medications.every(med => med.name.trim() && med.dosage.trim() && med.frequency.trim()) || !medicationDetails.appointmentDate || !medicationDetails.appointmentTime
+                      ? !medicationDetails.medications.every(med => med.name.trim() && med.dosage.trim() && med.frequency.trim())
                       : selectedPathway === 'Discharge'
                         ? !transferDetails.reason || !transferDetails.clinicalRationale.trim()
                         : selectedPathway === 'Radiotherapy'
                           ? !transferDetails.reason || !transferDetails.clinicalRationale.trim()
-                          : !transferDetails.reason || !transferDetails.clinicalRationale.trim() || !appointmentBooking.appointmentDate || !appointmentBooking.appointmentTime
+                          : selectedPathway === 'Surgery Pathway'
+                            ? false // Surgery Pathway has no required fields
+                            : !transferDetails.reason || !transferDetails.clinicalRationale.trim() || !appointmentBooking.appointmentDate || !appointmentBooking.appointmentTime
                   }
-                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 font-medium shadow-lg shadow-green-200 hover:shadow-xl hover:shadow-green-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-green-600 disabled:hover:to-green-700"
+                  className={`flex-1 px-4 py-2.5 bg-gradient-to-r ${getPathwayColors(selectedPathway).button} text-white rounded-lg transition-all duration-200 font-medium shadow-lg ${getPathwayColors(selectedPathway).shadow} hover:shadow-xl text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gradient-to-r disabled:hover:${getPathwayColors(selectedPathway).button.replace('hover:', '')}`}
                 >
                   Confirm Transfer
                 </button>
@@ -4760,6 +4893,129 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                   className="flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 font-medium shadow-lg shadow-green-200 hover:shadow-xl hover:shadow-green-300"
                 >
                   Got it, thanks!
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Post-op Transfer Modal */}
+      {showPostOpTransferModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden transform transition-all flex flex-col">
+            {/* Header */}
+            <div className="relative bg-gradient-to-br from-indigo-500 via-indigo-600 to-indigo-700 px-6 pt-6 pb-5">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12"></div>
+              <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/10 rounded-full -ml-10 -mb-10"></div>
+              
+              {/* Close Button */}
+              <button
+                onClick={() => {
+                  setShowPostOpTransferModal(false);
+                  setPostOpTransferDetails({ notes: '' });
+                }}
+                className="absolute top-4 right-4 text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2 transition-all duration-200 z-10"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              
+              <div className="relative flex justify-center mb-3">
+                <div className="relative">
+                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg">
+                    <Stethoscope className="h-7 w-7 text-indigo-600" strokeWidth={2.5} />
+                  </div>
+                  <div className="absolute inset-0 w-12 h-12 bg-white rounded-full animate-ping opacity-20"></div>
+                </div>
+              </div>
+              
+              <h3 className="text-xl font-bold text-white text-center mb-1">
+                Post-op Transfer
+              </h3>
+              <p className="text-indigo-50 text-center text-sm">
+                Transfer patient to post-operative care
+              </p>
+            </div>
+            
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+              <div className="max-w-4xl mx-auto space-y-6">
+                {/* Warning Message */}
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center mt-0.5">
+                      <AlertCircle className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-amber-800">
+                        <span className="font-semibold">Please confirm:</span> Transferring this patient will update their care pathway and may trigger notifications to the care team.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Post-op Transfer Notes Section */}
+                <div className="mb-6">
+                  <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 border border-indigo-200 rounded-xl p-5">
+                    <div className="flex items-center mb-4">
+                      <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center mr-3">
+                        <Stethoscope className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-semibold text-gray-900">Post-op Transfer Notes</h4>
+                        <p className="text-sm text-gray-600">Add notes for the post-operative transfer</p>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Notes
+                      </label>
+                      <textarea
+                        value={postOpTransferDetails.notes}
+                        onChange={(e) => setPostOpTransferDetails(prev => ({ ...prev, notes: e.target.value }))}
+                        placeholder="Add any notes or instructions for the post-operative transfer..."
+                        rows={4}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white shadow-sm resize-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Fixed Footer */}
+            <div className="flex-shrink-0 p-6 bg-gray-50 border-t border-gray-200">
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => {
+                    setShowPostOpTransferModal(false);
+                    setPostOpTransferDetails({
+                      notes: ''
+                    });
+                  }}
+                  className="flex-1 px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium shadow-sm hover:shadow-md text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    // Process transfer
+                    setSuccessMessage('Patient successfully transferred to Post-op Follow-up');
+                    setShowPostOpTransferModal(false);
+                    setIsSuccessModalOpen(true);
+                    
+                    // Reset form
+                    setPostOpTransferDetails({
+                      notes: ''
+                    });
+                    
+                    // In real app, this would save to backend
+                    console.log('Post-op Transfer details:', postOpTransferDetails);
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg transition-all duration-200 font-medium shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:from-indigo-700 hover:to-indigo-800 text-sm"
+                >
+                  Confirm Transfer
                 </button>
               </div>
             </div>
@@ -4885,11 +5141,6 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole }) => {
                   <div className="mb-4 pb-3 border-b border-gray-200">
                     <h6 className="font-medium text-gray-900 mb-2">Follow-up Instructions</h6>
                     <div className="text-sm text-gray-700 space-y-1">
-                      {selectedPathway === 'Medication' && medicationDetails.appointmentDate && (
-                        <div>
-                          <span className="font-medium">Follow-up Appointment:</span> {new Date(medicationDetails.appointmentDate).toLocaleDateString('en-AU')} at {medicationDetails.appointmentTime}
-                        </div>
-                      )}
                       {selectedPathway !== 'Medication' && selectedPathway !== 'Discharge' && appointmentBooking.appointmentDate && (
                         <div>
                           <span className="font-medium">Follow-up Appointment:</span> {new Date(appointmentBooking.appointmentDate).toLocaleDateString('en-AU')} at {appointmentBooking.appointmentTime}

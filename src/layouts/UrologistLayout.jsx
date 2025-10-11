@@ -14,7 +14,7 @@ const UrologistLayoutContent = () => {
   const dispatch = useDispatch();
   const { user, role } = useSelector((state) => state.auth);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const { showPatientDetailsModal, selectedPatientId, userRole, closePatientDetails } = usePatientDetails();
+  const { showPatientDetailsModal, selectedPatientId, userRole, source, context, closePatientDetails } = usePatientDetails();
 
   const handleLogout = () => {
     dispatch(logout());
@@ -133,6 +133,8 @@ const UrologistLayoutContent = () => {
         onClose={closePatientDetails}
         patientId={selectedPatientId}
         userRole={userRole}
+        source={source}
+        context={context}
       />
     </div>
   );

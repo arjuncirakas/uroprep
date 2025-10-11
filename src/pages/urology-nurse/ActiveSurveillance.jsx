@@ -870,7 +870,7 @@ const ActiveSurveillance = () => {
 
 
   const handleViewPatientDetails = (patientId) => {
-    openPatientDetails(patientId);
+    openPatientDetails(patientId, 'nurse', 'activeSurveillance');
   };
 
   const handleBookAppointment = (patient) => {
@@ -1636,7 +1636,7 @@ const ActiveSurveillance = () => {
                             className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
                           >
                             <Clock className="h-3 w-3 mr-1" />
-                            <span>Update Review</span>
+                            <span>Edit Appointment</span>
                           </button>
                       </div>
                     </td>

@@ -11,7 +11,7 @@ const UrologyNurseLayoutContent = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
-  const { showPatientDetailsModal, selectedPatientId, closePatientDetails } = usePatientDetails();
+  const { showPatientDetailsModal, selectedPatientId, userRole, source, context, closePatientDetails } = usePatientDetails();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -73,6 +73,9 @@ const UrologyNurseLayoutContent = () => {
           isOpen={showPatientDetailsModal}
           onClose={closePatientDetails}
           patientId={selectedPatientId}
+          userRole={userRole}
+          source={source}
+          context={context}
         />
       </div>
     </NavigationProvider>
