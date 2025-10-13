@@ -44,12 +44,12 @@ const Login = () => {
       // Navigate based on role
       const roleRoutes = {
         gp: '/gp/referral-status',
-        urology_nurse: '/urology-nurse',
+        urology_nurse: '/urology-nurse/opd-management',
         urologist: '/urologist',
         superadmin: '/superadmin'
       };
       
-      navigate(roleRoutes[formData.role] || '/urology-nurse');
+      navigate(roleRoutes[formData.role] || '/urology-nurse/opd-management');
     } catch (err) {
       dispatch(loginFailure('Invalid credentials'));
     }

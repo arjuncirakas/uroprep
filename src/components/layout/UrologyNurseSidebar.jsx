@@ -28,7 +28,7 @@ const UrologyNurseSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse })
   
   const navigation = [
     // { name: 'Dashboard', href: '/urology-nurse/dashboard', icon: LayoutDashboard },
-    { name: 'Referral Triage', href: '/urology-nurse/triage', icon: AlertTriangle },
+    // { name: 'Referral Triage', href: '/urology-nurse/triage', icon: AlertTriangle },
     { name: 'OPD Management', href: '/urology-nurse/opd-management', icon: Database },
     { name: 'Patient Management', href: '/urology-nurse/patients', icon: Users },
     { name: 'Appointments', href: '/urology-nurse/appointments', icon: Calendar },
@@ -120,8 +120,8 @@ const UrologyNurseSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse })
               
               return (
                 <React.Fragment key={item.name}>
-                  {/* Add separator after Active Surveillance (index 4) */}
-                  {index === 4 && (
+                  {/* Add separator after Active Monitoring (index 3) */}
+                  {index === 3 && (
                     <li key="separator" className={`${isCollapsed ? 'mx-2' : 'mx-3'} my-5`}>
                       <div className="flex items-center">
                         <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>

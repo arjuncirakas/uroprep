@@ -26,6 +26,7 @@ const SurgicalPathway = () => {
   const { openPatientDetails } = usePatientDetails();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('Scheduled');
+  const [selectedDoctor, setSelectedDoctor] = useState('All Doctors');
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [selectedPatientForSchedule, setSelectedPatientForSchedule] = useState(null);
@@ -323,6 +324,14 @@ const SurgicalPathway = () => {
     }
   ];
 
+  // Available doctors list
+  const availableDoctors = [
+    'Dr. Michael Chen',
+    'Dr. Sarah Wilson',
+    'Dr. Emma Wilson',
+    'Dr. James Brown',
+    'Dr. Lisa Davis'
+  ];
 
   // Prevent background scrolling when modals are open
   useEffect(() => {
@@ -373,7 +382,10 @@ const SurgicalPathway = () => {
       (activeFilter === 'In Surgery' && patient.status === 'In Surgery') ||
       (activeFilter === 'Post-Op' && patient.status === 'Post-Op');
     
-    return searchMatch && statusMatch;
+    const doctorMatch = selectedDoctor === 'All Doctors' || 
+      patient.assignedSurgeon === selectedDoctor;
+    
+    return searchMatch && statusMatch && doctorMatch;
   });
 
 
@@ -512,25 +524,46 @@ const SurgicalPathway = () => {
           </div>
         </div>
 
-        {/* Search Bar */}
+        {/* Search Bar and Filters */}
         <div className="px-6 py-4 border-b border-gray-200">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by patient name, UPI, or surgeon..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-            />
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by patient name, UPI, or surgeon..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            
+            {/* Doctor Filter */}
+            <div className="relative">
+              <select
+                value={selectedDoctor}
+                onChange={(e) => setSelectedDoctor(e.target.value)}
+                className="px-4 py-3 pr-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400 bg-white min-w-[180px] appearance-none cursor-pointer"
               >
-                <X className="h-4 w-4" />
-              </button>
-            )}
+                <option value="All Doctors">All Doctors</option>
+                {availableDoctors.map(doctor => (
+                  <option key={doctor} value={doctor}>{doctor}</option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -626,6 +659,7 @@ const SurgicalPathway = () => {
                 <button
                   onClick={() => {
                     setSearchTerm('');
+                    setSelectedDoctor('All Doctors');
                     setActiveFilter('Scheduled');
                   }}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"

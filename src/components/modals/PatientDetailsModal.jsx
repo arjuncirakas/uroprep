@@ -1364,7 +1364,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
         </div>
 
         {/* Modal Content */}
-        <div className="flex-1 overflow-hidden" style={{ height: 'calc(100vh - 180px)', minHeight: '250px' }}>
+        <div className="flex-1 overflow-hidden" style={{ height: userRole === 'urology-nurse' ? 'calc(100vh - 140px)' : 'calc(100vh - 180px)', minHeight: '250px' }}>
           {/* Overview Tab */}
           {activeTab === 'overview' && (
             <div className="h-full flex">
@@ -1445,7 +1445,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                 )}
 
                 {/* Timeline - Scrollable */}
-                <div className="flex-1 overflow-y-auto p-6" style={{ maxHeight: 'calc(100vh - 350px)' }}>
+                <div className="flex-1 overflow-y-auto p-6" style={{ maxHeight: userRole === 'urology-nurse' ? 'calc(100vh - 280px)' : 'calc(100vh - 350px)' }}>
                   <h4 className="font-medium text-gray-700 text-sm mb-4 flex items-center">
                     <Clock className="h-4 w-4 mr-2" />
                     Notes Timeline
@@ -1530,10 +1530,13 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
               </div>
 
               {/* Right Component - PSA & Test Results */}
-              <div className="w-1/2 h-full flex flex-col overflow-y-auto p-6 bg-gray-50" style={{ maxHeight: 'calc(100vh - 350px)' }}>
+              <div className={`w-1/2 h-full flex flex-col bg-gray-50 ${userRole === 'urologist' ? 'overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100' : ''}`} style={{ 
+                maxHeight: userRole === 'urology-nurse' ? 'calc(100vh - 280px)' : 'calc(100vh - 350px)',
+                padding: userRole === 'urology-nurse' ? '16px' : '24px'
+              }}>
                 {/* PSA Details - Compact */}
-                <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
-                  <div className="p-4">
+                <div className="bg-white border border-gray-200 rounded-lg shadow-sm flex-shrink-0" style={{ marginBottom: userRole === 'urology-nurse' ? '12px' : '16px' }}>
+                  <div className="p-4" style={{ padding: userRole === 'urology-nurse' ? '12px' : '16px' }}>
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold text-gray-900 text-base flex items-center">
                         <Activity className="h-4 w-4 mr-2 text-green-600" />
@@ -1567,74 +1570,178 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                   </div>
                 </div>
 
-                {/* Latest Test Results - Simple List */}
-                <div className="bg-white border border-gray-200 rounded-lg shadow-sm flex-1">
-                  <div className="p-4">
+                {/* Test Results - Comprehensive List */}
+                <div className="bg-white border border-gray-200 rounded-lg shadow-sm flex-1 flex flex-col">
+                  <div className="p-4 flex-shrink-0">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold text-gray-900 text-base flex items-center">
                         <Database className="h-4 w-4 mr-2 text-blue-600" />
                         Test Results
                       </h3>
+                    </div>
+                  </div>
+
+                  {/* Test Results List - Scrollable */}
+                  <div className={`flex-1 overflow-y-auto px-4 ${userRole === 'urology-nurse' ? 'scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100' : ''}`} style={{ 
+                    paddingBottom: userRole === 'urology-nurse' ? '8px' : '16px',
+                    minHeight: userRole === 'urology-nurse' ? '200px' : '250px'
+                  }}>
+                    <div className="space-y-3">
+                      {/* MRI Results */}
+                      <div className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <h4 className="text-sm font-semibold text-gray-900">MRI Prostate</h4>
+                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                            Available
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-1">PIRADS 3 lesion in left peripheral zone</p>
+                        <p className="text-xs text-gray-500">Date: 2023-06-20 • Ordered by: Dr. Sarah Wilson</p>
+                      </div>
+
+                      {/* Biopsy Results */}
+                      <div className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <h4 className="text-sm font-semibold text-gray-900">Prostate Biopsy</h4>
+                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                            Available
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-1">Gleason Score 3+4=7 (Grade Group 2)</p>
+                        <p className="text-xs text-gray-500">Date: 2023-08-15 • Ordered by: Dr. Sarah Wilson</p>
+                      </div>
+
+                      {/* TRUS Results */}
+                      <div className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                          <h4 className="text-sm font-semibold text-gray-900">TRUS Prostate</h4>
+                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
+                            Available
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-1">Hypoechoic lesion in left peripheral zone</p>
+                        <p className="text-xs text-gray-500">Date: 2023-08-10 • Ordered by: Dr. Sarah Wilson</p>
+                      </div>
+
+                      {/* Blood Work */}
+                      <div className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                          <h4 className="text-sm font-semibold text-gray-900">Blood Work (PSA)</h4>
+                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-orange-100 text-orange-800">
+                            Latest
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-1">PSA: {mockPatient.lastPSA.value} ng/mL</p>
+                        <p className="text-xs text-gray-500">Date: {formatDate(mockPatient.lastPSA.date)} • Lab: Melbourne Pathology</p>
+                      </div>
+
+                      {/* Follow-up MRI */}
+                      <div className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <h4 className="text-sm font-semibold text-gray-900">MRI Prostate (Follow-up)</h4>
+                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                            Stable
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-1">Stable PIRADS 3 lesion, no significant change</p>
+                        <p className="text-xs text-gray-500">Date: 2023-12-15 • Ordered by: Dr. Michael Chen</p>
+                      </div>
+
+                      {/* Repeat Biopsy */}
+                      <div className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <h4 className="text-sm font-semibold text-gray-900">Repeat Biopsy</h4>
+                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                            No Progression
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-1">Gleason Score 3+3=6 (Grade Group 1)</p>
+                        <p className="text-xs text-gray-500">Date: 2024-01-20 • Ordered by: Dr. Michael Chen</p>
+                      </div>
+
+                      {/* Additional Test Results - Only for Nurse Panel */}
+                      {userRole === 'urology-nurse' && (
+                        <>
+                          <div className="border border-gray-200 rounded-lg p-3">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                              <h4 className="text-sm font-semibold text-gray-900">CT Scan (Abdomen/Pelvis)</h4>
+                              <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                                Pending
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-600 mb-1">Scheduled for staging assessment</p>
+                            <p className="text-xs text-gray-500">Date: 2024-02-15 • Ordered by: Dr. Sarah Wilson</p>
+                          </div>
+
+                          <div className="border border-gray-200 rounded-lg p-3">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                              <h4 className="text-sm font-semibold text-gray-900">Bone Scan</h4>
+                              <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                                Scheduled
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-600 mb-1">To rule out bone metastasis</p>
+                            <p className="text-xs text-gray-500">Date: 2024-02-18 • Ordered by: Dr. Sarah Wilson</p>
+                          </div>
+
+                          <div className="border border-gray-200 rounded-lg p-3">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                              <h4 className="text-sm font-semibold text-gray-900">PET-CT Scan</h4>
+                              <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-100 text-indigo-800">
+                                Completed
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-600 mb-1">No evidence of distant metastasis</p>
+                            <p className="text-xs text-gray-500">Date: 2024-01-25 • Ordered by: Dr. Michael Chen</p>
+                          </div>
+
+                          <div className="border border-gray-200 rounded-lg p-3">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                              <h4 className="text-sm font-semibold text-gray-900">Cystoscopy</h4>
+                              <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-pink-100 text-pink-800">
+                                Normal
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-600 mb-1">Bladder and urethra appear normal</p>
+                            <p className="text-xs text-gray-500">Date: 2024-01-10 • Ordered by: Dr. Sarah Wilson</p>
+                          </div>
+
+                          <div className="border border-gray-200 rounded-lg p-3">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                              <h4 className="text-sm font-semibold text-gray-900">Digital Rectal Exam</h4>
+                              <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-teal-100 text-teal-800">
+                                Stable
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-600 mb-1">Prostate feels firm, no new nodules</p>
+                            <p className="text-xs text-gray-500">Date: 2024-01-15 • Performed by: Dr. Sarah Wilson</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* View All Button - Fixed at bottom */}
+                  <div className="flex-shrink-0 p-4 pt-2 border-t border-gray-100" style={{ paddingTop: userRole === 'urology-nurse' ? '8px' : '12px' }}>
                       <button
                         onClick={() => setIsTestResultsModalOpen(true)}
-                        className="flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
+                        className="w-full flex items-center justify-center px-3 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                        style={{ paddingTop: userRole === 'urology-nurse' ? '6px' : '8px', paddingBottom: userRole === 'urology-nurse' ? '6px' : '8px' }}
                       >
-                        <Eye className="h-3 w-3 mr-1" />
-                        View All
-                      </button>
-                    </div>
-
-                    {/* Simple Test List */}
-                    <div className="space-y-2">
-                      {/* Latest Imaging */}
-                      {mockPatient.imaging.slice(0, 1).map((img) => (
-                        <div key={img.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded border">
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">{img.type}</p>
-                            <p className="text-xs text-gray-500">{formatDate(img.date)}</p>
-                          </div>
-                          <button
-                            onClick={() => setIsTestResultsModalOpen(true)}
-                            className="flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
-                          >
-                            <Eye className="h-3 w-3 mr-1" />
-                            View
-                          </button>
-                        </div>
-                      ))}
-
-                      {/* Latest Procedure */}
-                      {mockPatient.procedures.slice(0, 1).map((proc) => (
-                        <div key={proc.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded border">
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">{proc.type}</p>
-                            <p className="text-xs text-gray-500">{formatDate(proc.date)}</p>
-                          </div>
-                          <button
-                            onClick={() => setIsTestResultsModalOpen(true)}
-                            className="flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
-                          >
-                            <Eye className="h-3 w-3 mr-1" />
-                            View
-                          </button>
-                        </div>
-                      ))}
-
-                      {/* Add more tests if needed - simple list format */}
-                      <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded border">
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">Blood Work</p>
-                          <p className="text-xs text-gray-500">{formatDate(mockPatient.lastPSA.date)}</p>
-                        </div>
-                        <button
-                          onClick={() => setIsTestResultsModalOpen(true)}
-                          className="flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
-                        >
-                          <Eye className="h-3 w-3 mr-1" />
-                          View
-                        </button>
-                      </div>
-                    </div>
+                      <Eye className="h-4 w-4 mr-2" />
+                      View All Test Results & Documents
+                    </button>
                   </div>
                 </div>
               </div>

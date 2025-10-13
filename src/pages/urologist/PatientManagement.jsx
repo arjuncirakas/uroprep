@@ -23,9 +23,10 @@ import {
 const PatientManagement = () => {
   const { openPatientDetails } = usePatientDetails();
   
-  const [searchTerm, setSearchTerm] = useState('');
+  const [newPatientsSearch, setNewPatientsSearch] = useState('');
+  const [surgicalPathwaySearch, setSurgicalPathwaySearch] = useState('');
+  const [postOpFollowUpSearch, setPostOpFollowUpSearch] = useState('');
   const [selectedPathway, setSelectedPathway] = useState('all');
-  const [activeTab, setActiveTab] = useState('New Patients');
   const [sortBy, setSortBy] = useState('name');
   
   // Add Patient Modal state
@@ -374,51 +375,59 @@ const PatientManagement = () => {
     }
   ];
 
-  // Filter and search logic
-  const filteredPatients = allPatients.filter(patient => {
-    const searchMatch = searchTerm === '' || 
-      patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.phone.includes(searchTerm) ||
-      patient.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const pathwayMatch = selectedPathway === 'all' || patient.status === selectedPathway;
-    
-    // Tab filtering based on database/pathway
-    let tabMatch = false;
-    switch (activeTab) {
-      case 'New Patients':
-        tabMatch = patient.database === 'DB1' || patient.status === 'OPD Queue';
-        break;
-      case 'Surgical Pathway':
-        tabMatch = patient.database === 'DB3' || patient.status === 'Surgery Scheduled' || patient.status === 'Inpatient';
-        break;
-      case 'Post-op Follow-up':
-        tabMatch = patient.database === 'DB4' || patient.status === 'Post-Op Follow-Up' || patient.status === 'Discharged';
-        break;
-      default:
-        tabMatch = true;
-    }
-    
-    return searchMatch && pathwayMatch && tabMatch;
-  });
+  // Filter and search logic for each category
+  const filterPatients = (patients, category, searchTerm) => {
+    return patients.filter(patient => {
+      const searchMatch = searchTerm === '' || 
+        patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        patient.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        patient.phone.includes(searchTerm) ||
+        patient.email.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const pathwayMatch = selectedPathway === 'all' || patient.status === selectedPathway;
+      
+      let categoryMatch = false;
+      switch (category) {
+        case 'newPatients':
+          categoryMatch = patient.database === 'DB1' || patient.status === 'OPD Queue';
+          break;
+        case 'surgicalPathway':
+          categoryMatch = patient.database === 'DB3' || patient.status === 'Surgery Scheduled' || patient.status === 'Inpatient';
+          break;
+        case 'postOpFollowUp':
+          categoryMatch = patient.database === 'DB4' || patient.status === 'Post-Op Follow-Up' || patient.status === 'Discharged';
+          break;
+        default:
+          categoryMatch = true;
+      }
+      
+      return searchMatch && pathwayMatch && categoryMatch;
+    });
+  };
 
-  // Sort patients
-  const sortedPatients = [...filteredPatients].sort((a, b) => {
-    switch (sortBy) {
-      case 'name':
-        return a.name.localeCompare(b.name);
-      case 'psa':
-        return b.psa - a.psa;
-      case 'age':
-        return b.age - a.age;
-      case 'priority':
-        const priorityOrder = { 'High': 3, 'Medium': 2, 'Normal': 1 };
-        return priorityOrder[b.priority] - priorityOrder[a.priority];
-      default:
-        return 0;
-    }
-  });
+  // Sort patients helper function
+  const sortPatients = (patients) => {
+    return [...patients].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'psa':
+          return b.psa - a.psa;
+        case 'age':
+          return b.age - a.age;
+        case 'priority':
+          const priorityOrder = { 'High': 3, 'Medium': 2, 'Normal': 1 };
+          return priorityOrder[b.priority] - priorityOrder[a.priority];
+        default:
+          return 0;
+      }
+    });
+  };
+
+  // Get filtered and sorted patients for each category
+  const newPatients = sortPatients(filterPatients(allPatients, 'newPatients', newPatientsSearch));
+  const surgicalPathwayPatients = sortPatients(filterPatients(allPatients, 'surgicalPathway', surgicalPathwaySearch));
+  const postOpFollowUpPatients = sortPatients(filterPatients(allPatients, 'postOpFollowUp', postOpFollowUpSearch));
 
 
   const getPriorityColor = (priority) => {
@@ -449,15 +458,7 @@ const PatientManagement = () => {
   };
 
   // Patient Details Modal handlers
-  const handleViewPatientDetails = (patientId) => {
-    let context = null;
-    if (activeTab === 'New Patients') {
-      context = 'newPatients';
-    } else if (activeTab === 'Surgical Pathway') {
-      context = 'surgicalPathway';
-    } else if (activeTab === 'Post-op Follow-up') {
-      context = 'postOpFollowUp';
-    }
+  const handleViewPatientDetails = (patientId, context) => {
     openPatientDetails(patientId, 'urologist', null, context);
   };
 
@@ -685,239 +686,355 @@ const PatientManagement = () => {
 
   return (
     <div className="space-y-6">
+
       {/* Page Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-end">
-          <button 
-            onClick={handleAddPatient}
-            className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
-          >
-            <UserPlus className="h-4 w-4 mr-2" />
-            <span className="font-medium">Add New Patient</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Patient Management</h2>
-              <p className="text-sm text-gray-600 mt-1">Search, add, and view patient timelines across all databases</p>
-            </div>
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Patient Management</h1>
+            <p className="text-gray-600">Search, add, and view patient timelines across all databases</p>
           </div>
-        </div>
-        {/* Patient Tab Switcher */}
-        <div className="px-6 py-4 bg-white border-b border-gray-200">
-          <div className="flex space-x-2 overflow-x-auto">
-            <button
-              onClick={() => setActiveTab('New Patients')}
-              className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                activeTab === 'New Patients'
-                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
+          <div className="flex items-center space-x-3">
+            <button 
+              onClick={handleAddPatient}
+              className="flex items-center px-4 py-2 bg-gradient-to-r from-green-800 to-black text-white rounded-lg hover:opacity-90 transition-opacity"
             >
-              New Patients
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                activeTab === 'New Patients'
-                  ? 'bg-green-400 text-white'
-                  : 'bg-gray-200 text-gray-600'
-              }`}>
-                {allPatients.filter(p => p.database === 'DB1' || p.status === 'OPD Queue').length}
-              </span>
+              <UserPlus className="h-4 w-4 mr-2" />
+              <span className="font-medium">Add New Patient</span>
             </button>
-            <button
-              onClick={() => setActiveTab('Surgical Pathway')}
-              className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                activeTab === 'Surgical Pathway'
-                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              Surgical Pathway
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                activeTab === 'Surgical Pathway'
-                  ? 'bg-green-400 text-white'
-                  : 'bg-gray-200 text-gray-600'
-              }`}>
-                {allPatients.filter(p => p.database === 'DB3' || p.status === 'Surgery Scheduled' || p.status === 'Inpatient').length}
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveTab('Post-op Follow-up')}
-              className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                activeTab === 'Post-op Follow-up'
-                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              Post-op Follow-up
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                activeTab === 'Post-op Follow-up'
-                  ? 'bg-green-400 text-white'
-                  : 'bg-gray-200 text-gray-600'
-              }`}>
-                {allPatients.filter(p => p.database === 'DB4' || p.status === 'Post-Op Follow-Up' || p.status === 'Discharged').length}
-              </span>
-            </button>
-          </div>
-        </div>
-        
-        <div className="p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-              {/* Search Input removed - moved to table header */}
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Patients Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
+      {/* Three Tables Side by Side */}
+      <div className="grid grid-cols-3 gap-6">
+        {/* New Patients Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300">
+          <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Users className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">New Patients</h3>
+                <p className="text-gray-600 text-sm">Fresh referrals & consultations</p>
+              </div>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search new patients..."
+                value={newPatientsSearch}
+                onChange={(e) => setNewPatientsSearch(e.target.value)}
+                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 placeholder-gray-500"
+              />
+              {newPatientsSearch && (
+                <button
+                  onClick={() => setNewPatientsSearch('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name, ID, phone, or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400"
-            />
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        </div>
-        
-        <div className="overflow-x-auto">
-          {filteredPatients.length > 0 ? (
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Latest PSA</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Next Appointment</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Priority</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredPatients.map((patient, index) => {
-                return (
-                    <tr key={patient.id} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
-                      <td className="py-5 px-6">
-                        <div className="flex items-center space-x-4">
+          
+          <div className="overflow-x-auto max-h-96">
+            {newPatients.length > 0 ? (
+              <table className="w-full">
+                <thead className="bg-gray-50 sticky top-0 z-10">
+                  <tr>
+                    <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
+                    <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">PSA</th>
+                    <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">Priority</th>
+                    <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {newPatients.map((patient, index) => (
+                    <tr key={patient.id} className={`hover:bg-blue-50 transition-all duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center space-x-3">
                           <div className="relative">
-                            <div className="w-10 h-10 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center shadow-sm">
-                              <span className="text-white font-semibold text-sm">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center shadow-md">
+                              <span className="text-white font-bold text-sm">
                                 {patient.name.split(' ').map(n => n[0]).join('')}
                               </span>
                             </div>
                             {patient.priority === 'High' && (
-                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
+                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse z-0"></div>
                             )}
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-900">{patient.name}</p>
-                            <p className="text-sm text-gray-500">ID: {patient.id}</p>
-                            <p className="text-xs text-gray-400">Age: {patient.age} • {patient.referringGP}</p>
+                            <p className="font-semibold text-gray-900 text-sm">{patient.name}</p>
+                            <p className="text-xs text-gray-500">{patient.id}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-5 px-6">
-                        <p className="font-medium text-gray-900">{patient.psa} ng/mL</p>
+                      <td className="py-4 px-4">
+                        <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-lg text-sm font-medium">
+                          {patient.psa}
+                        </div>
                       </td>
-                      <td className="py-5 px-6">
-                        <p className="text-sm font-medium text-gray-900">{formatDate(patient.nextAppointment)}</p>
-                      </td>
-                      <td className="py-5 px-6">
-                        <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getPriorityColor(patient.priority)}`}>
+                      <td className="py-4 px-4">
+                        <span className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-full ${getPriorityColor(patient.priority)}`}>
                           {patient.priority}
                         </span>
                       </td>
-                      <td className="py-5 px-6">
-                        <div className="flex items-center space-x-2">
-                        <button
-                            onClick={() => handleViewPatientDetails(patient.id)}
-                            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                      <td className="py-4 px-4">
+                        <div className="flex flex-col space-y-2">
+                          <button
+                            onClick={() => handleViewPatientDetails(patient.id, 'newPatients')}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 border border-blue-500 rounded-lg shadow-sm hover:from-blue-600 hover:to-blue-700 hover:shadow-md transition-all duration-200 transform hover:scale-105"
                           >
-                            <Eye className="h-4 w-4 mr-2" />
-                            <span>View Details</span>
-                        </button>
-                        {/* Show Schedule MDT and MDT Notes buttons only for Surgical Pathway patients */}
-                        {activeTab === 'Surgical Pathway' && (
-                          <>
-                            <button
-                              onClick={() => handleScheduleMDT(patient)}
-                              className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-800 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                            >
-                              <Calendar className="h-4 w-4 mr-2" />
-                              <span>Schedule MDT</span>
-                            </button>
-                            <button
-                              onClick={() => handleMDTNotes(patient)}
-                              className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-                            >
-                              <MessageSquare className="h-4 w-4 mr-2" />
-                              <span>MDT Notes</span>
-                            </button>
-                          </>
-                        )}
-                      </div>
+                            <Eye className="h-3 w-3 mr-1" />
+                            <span>View</span>
+                          </button>
+                          <button
+                            onClick={() => handleScheduleMDT(patient)}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-500 to-green-600 border border-green-500 rounded-lg shadow-sm hover:from-green-600 hover:to-green-700 hover:shadow-md transition-all duration-200 transform hover:scale-105"
+                          >
+                            <Calendar className="h-3 w-3 mr-1" />
+                            <span>MDT</span>
+                          </button>
+                          <button
+                            onClick={() => handleMDTNotes(patient)}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-500 to-purple-600 border border-purple-500 rounded-lg shadow-sm hover:from-purple-600 hover:to-purple-700 hover:shadow-md transition-all duration-200 transform hover:scale-105"
+                          >
+                            <MessageSquare className="h-3 w-3 mr-1" />
+                            <span>Notes</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                );
-              })}
-              </tbody>
-            </table>
-          ) : (
-            <div className="text-center py-16">
-              <div className="mx-auto w-32 h-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-6 shadow-inner">
-                <Users className="h-12 w-12 text-gray-400" />
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="h-8 w-8 text-blue-600" />
+                </div>
+                <p className="text-gray-500 text-sm font-medium">No new patients found</p>
+                <p className="text-gray-400 text-xs mt-1">Try adjusting your search criteria</p>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                No patients found
-              </h3>
-              <p className="text-gray-500 mb-6 max-w-md mx-auto">
-                {searchTerm ? 'No patients match your search criteria. Try adjusting your filters or search terms.' : 'No patients are currently in the system.'}
-              </p>
-              <div className="flex items-center justify-center space-x-4">
-                <button
-                  onClick={() => {
-                    setSearchTerm('');
-                    setActiveTab('New Patients');
-                  }}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Clear Filters
-                </button>
-                <button
-                  onClick={handleAddPatient}
-                  className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-800 to-black text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl"
-                >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Add New Patient
-                </button>
+            )}
+          </div>
+        </div>
+
+        {/* Surgical Pathway Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300">
+          <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <Stethoscope className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Surgical Pathway</h3>
+                <p className="text-gray-600 text-sm">Pre & post-operative care</p>
               </div>
             </div>
-          )}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search surgical patients..."
+                value={surgicalPathwaySearch}
+                onChange={(e) => setSurgicalPathwaySearch(e.target.value)}
+                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-gray-900 placeholder-gray-500"
+              />
+              {surgicalPathwaySearch && (
+                <button
+                  onClick={() => setSurgicalPathwaySearch('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+          
+          <div className="overflow-x-auto max-h-96">
+            {surgicalPathwayPatients.length > 0 ? (
+              <table className="w-full">
+                <thead className="bg-gray-50 sticky top-0 z-10">
+                  <tr>
+                    <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
+                    <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">PSA</th>
+                    <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">Priority</th>
+                    <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {surgicalPathwayPatients.map((patient, index) => (
+                    <tr key={patient.id} className={`hover:bg-orange-50 transition-all duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="relative">
+                            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center shadow-md">
+                              <span className="text-white font-bold text-sm">
+                                {patient.name.split(' ').map(n => n[0]).join('')}
+                              </span>
+                            </div>
+                            {patient.priority === 'High' && (
+                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse z-0"></div>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900 text-sm">{patient.name}</p>
+                            <p className="text-xs text-gray-500">{patient.id}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-lg text-sm font-medium">
+                          {patient.psa}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-full ${getPriorityColor(patient.priority)}`}>
+                          {patient.priority}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex flex-col space-y-2">
+                          <button
+                            onClick={() => handleViewPatientDetails(patient.id, 'surgicalPathway')}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 border border-blue-500 rounded-lg shadow-sm hover:from-blue-600 hover:to-blue-700 hover:shadow-md transition-all duration-200 transform hover:scale-105"
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            <span>View</span>
+                          </button>
+                          <button
+                            onClick={() => handleScheduleMDT(patient)}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-500 to-green-600 border border-green-500 rounded-lg shadow-sm hover:from-green-600 hover:to-green-700 hover:shadow-md transition-all duration-200 transform hover:scale-105"
+                          >
+                            <Calendar className="h-3 w-3 mr-1" />
+                            <span>MDT</span>
+                          </button>
+                          <button
+                            onClick={() => handleMDTNotes(patient)}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-500 to-purple-600 border border-purple-500 rounded-lg shadow-sm hover:from-purple-600 hover:to-purple-700 hover:shadow-md transition-all duration-200 transform hover:scale-105"
+                          >
+                            <MessageSquare className="h-3 w-3 mr-1" />
+                            <span>Notes</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Stethoscope className="h-8 w-8 text-orange-600" />
+                </div>
+                <p className="text-gray-500 text-sm font-medium">No surgical patients found</p>
+                <p className="text-gray-400 text-xs mt-1">Try adjusting your search criteria</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Post-op Follow-up Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300">
+          <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Activity className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Post-op Follow-up</h3>
+                <p className="text-gray-600 text-sm">Recovery & monitoring</p>
+              </div>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search follow-up patients..."
+                value={postOpFollowUpSearch}
+                onChange={(e) => setPostOpFollowUpSearch(e.target.value)}
+                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all text-gray-900 placeholder-gray-500"
+              />
+              {postOpFollowUpSearch && (
+                <button
+                  onClick={() => setPostOpFollowUpSearch('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+          
+          <div className="overflow-x-auto max-h-96">
+            {postOpFollowUpPatients.length > 0 ? (
+              <table className="w-full">
+                <thead className="bg-gray-50 sticky top-0 z-10">
+                  <tr>
+                    <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
+                    <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">PSA</th>
+                    <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">Priority</th>
+                    <th className="text-left py-4 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {postOpFollowUpPatients.map((patient, index) => (
+                    <tr key={patient.id} className={`hover:bg-green-50 transition-all duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="relative">
+                            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-md">
+                              <span className="text-white font-bold text-sm">
+                                {patient.name.split(' ').map(n => n[0]).join('')}
+                              </span>
+                            </div>
+                            {patient.priority === 'High' && (
+                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse z-0"></div>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900 text-sm">{patient.name}</p>
+                            <p className="text-xs text-gray-500">{patient.id}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="bg-green-100 text-green-800 px-2 py-1 rounded-lg text-sm font-medium">
+                          {patient.psa}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-full ${getPriorityColor(patient.priority)}`}>
+                          {patient.priority}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <button
+                          onClick={() => handleViewPatientDetails(patient.id, 'postOpFollowUp')}
+                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-500 to-green-600 border border-green-500 rounded-lg shadow-sm hover:from-green-600 hover:to-green-700 hover:shadow-md transition-all duration-200 transform hover:scale-105"
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          <span>View</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Activity className="h-8 w-8 text-green-600" />
+                </div>
+                <p className="text-gray-500 text-sm font-medium">No follow-up patients found</p>
+                <p className="text-gray-400 text-xs mt-1">Try adjusting your search criteria</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
