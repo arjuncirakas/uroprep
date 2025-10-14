@@ -27,9 +27,9 @@ import {
   GripVertical,
   MessageSquare,
   Edit,
-  CheckCircle
+  CheckCircle,
+  Stethoscope
 } from 'lucide-react';
-import BookAppointmentModalWithPatient from '../../components/modals/BookAppointmentModalWithPatient';
 import NursePatientDetailsModal from '../../components/modals/NursePatientDetailsModal';
 import { usePatientDetails } from '../../contexts/PatientDetailsContext';
 
@@ -109,6 +109,20 @@ const PostOpFollowUp = () => {
     'Dr. James Brown',
     'Dr. Lisa Davis'
   ];
+
+  // Generate available time slots
+  const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 9; hour <= 18; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        slots.push(timeString);
+      }
+    }
+    return slots;
+  };
+
+  const timeSlots = generateTimeSlots();
 
   // Mock post-op follow-up data
   const mockPostOpPatients = [
@@ -751,6 +765,16 @@ const PostOpFollowUp = () => {
 
   const handleBookAppointment = (patient) => {
     setSelectedPatientForAppointment(patient);
+    
+    // Pre-populate form with existing surgery details if available
+    setScheduleForm({
+      date: patient.scheduledDate || '',
+      time: patient.scheduledTime || '',
+      type: 'followup',
+      doctor: patient.assignedDoctor || patient.surgeon || '',
+      notes: patient.notes || ''
+    });
+    
     setIsBookAppointmentModalOpen(true);
   };
 
@@ -1878,13 +1902,203 @@ const PostOpFollowUp = () => {
       )}
 
 
-      {/* Book Appointment Modal */}
-      <BookAppointmentModalWithPatient
-        isOpen={isBookAppointmentModalOpen}
-        onClose={handleCloseAppointmentModal}
-        onAppointmentBooked={handleAppointmentBooked}
-        selectedPatientData={selectedPatientForAppointment}
-      />
+      {/* Edit Follow-up Appointment Modal */}
+      {isBookAppointmentModalOpen && selectedPatientForAppointment && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-[110] flex items-center justify-center p-4">
+          <div className="relative mx-auto w-full max-w-4xl">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden max-h-[90vh] flex flex-col">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-6 flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900">Edit Follow-up Appointment</h3>
+                    <p className="text-sm text-gray-600 mt-1">Update follow-up appointment for {selectedPatientForAppointment.patientName}</p>
+                  </div>
+                  <button
+                    onClick={handleCloseAppointmentModal}
+                    className="flex items-center px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Close
+                  </button>
+                </div>
+              </div>
+              
+              {/* Content */}
+              <div className="px-6 py-6 flex-1 overflow-y-auto">
+                <div className="space-y-6">
+                  {/* Patient Info Card */}
+                  <div className="bg-gradient-to-r from-green-50 to-gray-50 border border-gray-200 rounded-lg p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="relative">
+                        <div className="w-12 h-12 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">
+                            {selectedPatientForAppointment.patientName.split(' ').map(n => n[0]).join('')}
+                          </span>
+                        </div>
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-semibold text-gray-900">{selectedPatientForAppointment.patientName}</h4>
+                        <div className="flex items-center space-x-4 mt-1">
+                          <span className="text-sm text-gray-600">UPI: {selectedPatientForAppointment.upi}</span>
+                          <span className="text-sm text-gray-600">Age: {selectedPatientForAppointment.age} years</span>
+                          <span className="text-sm text-gray-600">PSA: {selectedPatientForAppointment.lastPSA} ng/mL</span>
+                          <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-md ${getRiskColor(selectedPatientForAppointment.riskAssessment)}`}>
+                            {selectedPatientForAppointment.riskAssessment}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Follow-up Details Form */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Follow-up Information */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-3">Follow-up Type *</label>
+                        <select
+                          value={scheduleForm.type}
+                          onChange={(e) => setScheduleForm(prev => ({...prev, type: e.target.value}))}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                        >
+                          <option value="followup">Post-Op Follow-up</option>
+                          <option value="psa_check">PSA Check</option>
+                          <option value="continence_review">Continence Review</option>
+                          <option value="sexual_function">Sexual Function Review</option>
+                          <option value="discharge_planning">Discharge Planning</option>
+                          <option value="mdt_review">MDT Review</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-3">Assigned Doctor *</label>
+                        <select
+                          value={scheduleForm.doctor}
+                          onChange={(e) => setScheduleForm(prev => ({...prev, doctor: e.target.value}))}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                        >
+                          <option value="">Select doctor...</option>
+                          {availableDoctors.map((doctor) => (
+                            <option key={doctor} value={doctor}>
+                              {doctor}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-3">Follow-up Date *</label>
+                        <input
+                          type="date"
+                          value={scheduleForm.date}
+                          onChange={(e) => setScheduleForm(prev => ({...prev, date: e.target.value}))}
+                          min={new Date().toISOString().split('T')[0]}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-3">Notes</label>
+                        <textarea
+                          value={scheduleForm.notes}
+                          onChange={(e) => setScheduleForm(prev => ({...prev, notes: e.target.value}))}
+                          rows={4}
+                          placeholder="Add any notes or special instructions for this follow-up appointment..."
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-none"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Optional: Add any relevant notes, clinical observations, or instructions</p>
+                      </div>
+                    </div>
+
+                    {/* Time Selection */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-3">Follow-up Time *</label>
+                      <div className="grid grid-cols-3 gap-2 max-h-80 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        {timeSlots.map((time) => (
+                          <button
+                            key={time}
+                            type="button"
+                            onClick={() => setScheduleForm(prev => ({...prev, time: time}))}
+                            className={`px-3 py-2 text-sm rounded-md border transition-all duration-200 font-medium ${
+                              scheduleForm.time === time
+                                ? 'bg-green-500 text-white border-green-500 shadow-md transform scale-105'
+                                : 'bg-white text-gray-700 border-gray-300 hover:border-green-300 hover:bg-green-50 hover:shadow-sm'
+                            }`}
+                          >
+                            {time}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">Click on a time slot to select your preferred follow-up time</p>
+                    </div>
+                  </div>
+
+                  {/* Selected Summary */}
+                  {scheduleForm.date && scheduleForm.time && scheduleForm.doctor && (
+                    <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-100">
+                      <div className="flex items-center mb-3">
+                        <div className="h-2 w-2 bg-green-500 rounded-full mr-2"></div>
+                        <h4 className="text-sm font-semibold text-green-900">Follow-up Summary</h4>
+                      </div>
+                      <div className="text-sm text-green-800 space-y-2">
+                        <p><strong>Type:</strong> {scheduleForm.type === 'followup' ? 'Post-Op Follow-up' : scheduleForm.type}</p>
+                        <p><strong>Patient:</strong> {selectedPatientForAppointment.patientName}</p>
+                        <p><strong>Doctor:</strong> {scheduleForm.doctor}</p>
+                        <p><strong>Surgery Type:</strong> {selectedPatientForAppointment.surgeryType}</p>
+                        <p><strong>Surgery Date:</strong> {selectedPatientForAppointment.surgeryDate}</p>
+                        <p><strong>Surgeon:</strong> {selectedPatientForAppointment.surgeon}</p>
+                        <p><strong>Date:</strong> {new Date(scheduleForm.date).toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}</p>
+                        <p><strong>Time:</strong> {scheduleForm.time}</p>
+                        {scheduleForm.notes && (
+                          <div className="mt-3 pt-2 border-t border-green-200">
+                            <p><strong>Notes:</strong> {scheduleForm.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Actions */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex-shrink-0">
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => {
+                      if (!scheduleForm.date || !scheduleForm.time || !scheduleForm.doctor) {
+                        alert('Please select date, time, and doctor');
+                        return;
+                      }
+                      console.log('Updated appointment:', scheduleForm);
+                      setIsBookAppointmentModalOpen(false);
+                      setSelectedPatientForAppointment(null);
+                      alert('Appointment updated successfully!');
+                    }}
+                    disabled={!scheduleForm.date || !scheduleForm.time || !scheduleForm.doctor}
+                    className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold py-3 px-6 rounded-lg hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    <Calendar className="h-4 w-4 mr-2 inline" />
+                    Update Follow-up Details
+                  </button>
+                  <button
+                    onClick={handleCloseAppointmentModal}
+                    className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition-all duration-200"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
 
       {/* Reschedule Confirmation Modal */}

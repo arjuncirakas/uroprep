@@ -169,7 +169,13 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
     reason: '',
     priority: 'normal',
     clinicalRationale: '',
-    additionalNotes: ''
+    additionalNotes: '',
+    surgeryProcedure: '',
+    surgeryDate: '',
+    surgeryTime: '',
+    surgeon: '',
+    anesthesiaType: '',
+    estimatedDuration: ''
   });
   const [appointmentBooking, setAppointmentBooking] = useState({
     appointmentDate: '',
@@ -608,7 +614,29 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
       dischargeSummaries: [],
       monitoringData: { protocol: 'Active Surveillance - Low Risk', startDate: '2023-06-15', nextPSA: '2024-06-15', nextMRI: '2024-12-15', nextBiopsy: '2025-06-15', compliance: 'Good', progressionRisk: 'Low' },
       clinicalHistoryTimeline: [],
-      mdtNotes: [],
+      mdtNotes: [
+        {
+          id: 'MDT009',
+          timestamp: '2023-06-20T14:00:00',
+          date: '2023-06-20',
+          time: '14:00',
+          mdtDate: '2023-06-20',
+          teamMembers: ['Dr. Sarah Wilson (Urologist)', 'Dr. Michael Chen (Oncologist)', 'Dr. Jennifer Lee (Radiologist)'],
+          caseType: 'Low-risk prostate cancer - Active Surveillance Decision',
+          priority: 'Normal',
+          status: 'Review Complete',
+          discussionNotes: 'Patient presents with low-risk prostate cancer (Gleason 3+3=6, T1c disease). MRI shows small, organ-confined lesion. PSA velocity stable. Patient suitable for active surveillance protocol.',
+          outcome: 'Active Surveillance',
+          recommendations: 'Continue active surveillance protocol with 6-monthly PSA testing and annual MRI. Patient counseled on surveillance benefits and risks. Review in 6 months or if PSA rises significantly.',
+          followUpActions: [
+            'Schedule 6-month PSA test',
+            'Book annual MRI for June 2024',
+            'Provide surveillance information booklet',
+            'Arrange patient support group referral'
+          ],
+          documents: ['MDT_Summary_20230620.pdf', 'Surveillance_Protocol_20230620.pdf']
+        }
+      ],
       clinicalNotes: []
     },
     'URP2024004': {
@@ -646,7 +674,29 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
       dischargeSummaries: [],
       monitoringData: { protocol: 'Active Surveillance - Low Risk', startDate: '2023-08-20', nextPSA: '2024-05-20', nextMRI: '2024-08-20', nextBiopsy: '2025-08-20', compliance: 'Good', progressionRisk: 'Low' },
       clinicalHistoryTimeline: [],
-      mdtNotes: [],
+      mdtNotes: [
+        {
+          id: 'MDT010',
+          timestamp: '2023-08-25T11:30:00',
+          date: '2023-08-25',
+          time: '11:30',
+          mdtDate: '2023-08-25',
+          teamMembers: ['Dr. Michael Chen (Urologist)', 'Dr. Sarah Wilson (Oncologist)', 'Dr. Jennifer Lee (Radiologist)'],
+          caseType: 'Low-risk prostate cancer - Active Surveillance Review',
+          priority: 'Normal',
+          status: 'Review Complete',
+          discussionNotes: 'Patient presents with low-risk prostate cancer (Gleason 3+3=6, T1c disease) for active surveillance review. MRI shows stable, organ-confined lesion. PSA levels remain stable. Patient continues to be suitable for surveillance.',
+          outcome: 'Continue Active Surveillance',
+          recommendations: 'Continue active surveillance protocol with 6-monthly PSA testing and annual MRI. Patient counseled on ongoing surveillance benefits. Next review in 6 months.',
+          followUpActions: [
+            'Schedule 6-month PSA test',
+            'Book annual MRI for August 2024',
+            'Continue surveillance monitoring',
+            'Review patient compliance'
+          ],
+          documents: ['MDT_Summary_20230825.pdf', 'Surveillance_Review_20230825.pdf']
+        }
+      ],
       clinicalNotes: []
     },
     'URP005': {
@@ -686,7 +736,29 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
       dischargeSummaries: [],
       monitoringData: null,
       clinicalHistoryTimeline: [],
-      mdtNotes: [],
+      mdtNotes: [
+        {
+          id: 'MDT003',
+          timestamp: '2024-01-15T14:00:00',
+          date: '2024-01-15',
+          time: '14:00',
+          mdtDate: '2024-01-15',
+          teamMembers: ['Dr. Sarah Wilson (Urologist)', 'Dr. Michael Chen (Oncologist)', 'Dr. Jennifer Lee (Radiologist)', 'Dr. David Wilson (Pathologist)'],
+          caseType: 'High-risk prostate cancer - Surgery Planning',
+          priority: 'High',
+          status: 'Review Complete',
+          discussionNotes: 'Patient presents with high-risk prostate cancer (Gleason 4+3=7, T2b disease). MRI shows organ-confined disease. PSMA PET scan shows no distant metastases. Patient is suitable for surgical intervention.',
+          outcome: 'Proceed to RALP',
+          recommendations: 'Schedule robotic-assisted laparoscopic prostatectomy (RALP) for February 15, 2024. Pre-operative assessment including cardiology and anesthesia clearance required. Patient counseled on risks and benefits.',
+          followUpActions: [
+            'Schedule pre-operative cardiology assessment',
+            'Book surgery date for February 15, 2024',
+            'Arrange pre-operative nursing consultation',
+            'Provide patient information booklet'
+          ],
+          documents: ['MDT_Summary_20240115.pdf', 'Surgery_Consent_20240115.pdf']
+        }
+      ],
       clinicalNotes: []
     },
     'URP006': {
@@ -726,7 +798,29 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
       dischargeSummaries: [],
       monitoringData: null,
       clinicalHistoryTimeline: [],
-      mdtNotes: [],
+      mdtNotes: [
+        {
+          id: 'MDT004',
+          timestamp: '2024-01-18T10:30:00',
+          date: '2024-01-18',
+          time: '10:30',
+          mdtDate: '2024-01-18',
+          teamMembers: ['Dr. Michael Chen (Urologist)', 'Dr. Sarah Wilson (Oncologist)', 'Dr. Jennifer Lee (Radiologist)', 'Dr. David Wilson (Pathologist)'],
+          caseType: 'Intermediate-risk prostate cancer - Treatment Planning',
+          priority: 'Medium',
+          status: 'Review Complete',
+          discussionNotes: 'Patient presents with intermediate-risk prostate cancer (Gleason 3+4=7, T2a disease). MRI shows organ-confined disease with no extracapsular extension. PSMA PET scan shows no distant metastases.',
+          outcome: 'Proceed to RALP',
+          recommendations: 'Schedule robotic-assisted laparoscopic prostatectomy (RALP) for February 20, 2024. Pre-operative assessment required. Patient counseled on treatment options and surgical approach.',
+          followUpActions: [
+            'Schedule pre-operative assessment',
+            'Book surgery date for February 20, 2024',
+            'Arrange patient counseling session',
+            'Provide surgical information materials'
+          ],
+          documents: ['MDT_Summary_20240118.pdf', 'Treatment_Plan_20240118.pdf']
+        }
+      ],
       clinicalNotes: []
     },
     'URP007': {
@@ -767,7 +861,29 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
       dischargeSummaries: [],
       monitoringData: null,
       clinicalHistoryTimeline: [],
-      mdtNotes: [],
+      mdtNotes: [
+        {
+          id: 'MDT005',
+          timestamp: '2023-08-20T15:00:00',
+          date: '2023-08-20',
+          time: '15:00',
+          mdtDate: '2023-08-20',
+          teamMembers: ['Dr. Sarah Wilson (Urologist)', 'Dr. Michael Chen (Oncologist)', 'Dr. Jennifer Lee (Radiologist)', 'Dr. David Wilson (Pathologist)'],
+          caseType: 'Post-operative Review - RALP',
+          priority: 'Normal',
+          status: 'Review Complete',
+          discussionNotes: 'Post-operative review following successful RALP on August 15, 2023. Histopathology shows Gleason 3+4=7, organ-confined disease with negative margins. No lymph node involvement. Patient recovering well.',
+          outcome: 'Continue Post-op Monitoring',
+          recommendations: 'Continue standard post-operative surveillance protocol. PSA monitoring at 3, 6, and 12 months. Patient counseled on recovery expectations and follow-up schedule.',
+          followUpActions: [
+            'Schedule 3-month PSA test',
+            'Arrange 6-month follow-up appointment',
+            'Provide post-operative care information',
+            'Monitor for any complications'
+          ],
+          documents: ['MDT_Summary_20230820.pdf', 'Histopathology_Report_20230820.pdf']
+        }
+      ],
       clinicalNotes: []
     },
     'URP008': {
@@ -808,7 +924,29 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
       dischargeSummaries: [],
       monitoringData: null,
       clinicalHistoryTimeline: [],
-      mdtNotes: [],
+      mdtNotes: [
+        {
+          id: 'MDT006',
+          timestamp: '2023-06-25T11:00:00',
+          date: '2023-06-25',
+          time: '11:00',
+          mdtDate: '2023-06-25',
+          teamMembers: ['Dr. Michael Chen (Urologist)', 'Dr. Sarah Wilson (Oncologist)', 'Dr. Jennifer Lee (Radiologist)', 'Dr. David Wilson (Pathologist)'],
+          caseType: 'Post-operative Review - Open Prostatectomy',
+          priority: 'Normal',
+          status: 'Review Complete',
+          discussionNotes: 'Post-operative review following open prostatectomy on June 20, 2023. Histopathology shows Gleason 4+3=7, T3a disease with positive margins and extracapsular extension. No lymph node involvement. Patient recovering well despite positive margins.',
+          outcome: 'Continue Post-op Monitoring with Adjuvant Therapy Consideration',
+          recommendations: 'Continue standard post-operative surveillance protocol with consideration for adjuvant radiotherapy due to positive margins. PSA monitoring at 3, 6, and 12 months. Discuss adjuvant therapy options with patient.',
+          followUpActions: [
+            'Schedule 3-month PSA test',
+            'Discuss adjuvant radiotherapy options',
+            'Arrange 6-month follow-up appointment',
+            'Monitor for biochemical recurrence'
+          ],
+          documents: ['MDT_Summary_20230625.pdf', 'Histopathology_Report_20230625.pdf']
+        }
+      ],
       clinicalNotes: []
     },
     'URP009': {
@@ -848,7 +986,29 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
       dischargeSummaries: [],
       monitoringData: null,
       clinicalHistoryTimeline: [],
-      mdtNotes: [],
+      mdtNotes: [
+        {
+          id: 'MDT007',
+          timestamp: '2024-01-20T09:00:00',
+          date: '2024-01-20',
+          time: '09:00',
+          mdtDate: '2024-01-20',
+          teamMembers: ['Dr. Sarah Wilson (Urologist)', 'Dr. Michael Chen (Oncologist)', 'Dr. Jennifer Lee (Radiologist)', 'Dr. David Wilson (Pathologist)'],
+          caseType: 'Intermediate-risk prostate cancer - Inpatient Management',
+          priority: 'High',
+          status: 'Review Complete',
+          discussionNotes: 'Patient presents with intermediate-risk prostate cancer (Gleason 3+4=7, T2b disease) requiring inpatient care. MRI shows organ-confined disease. Patient requires surgical intervention with careful perioperative management.',
+          outcome: 'Proceed to RALP with Inpatient Care',
+          recommendations: 'Schedule robotic-assisted laparoscopic prostatectomy (RALP) for January 25, 2024. Arrange inpatient admission for perioperative care. Pre-operative assessment including cardiology clearance required.',
+          followUpActions: [
+            'Schedule pre-operative cardiology assessment',
+            'Arrange inpatient admission',
+            'Book surgery date for January 25, 2024',
+            'Prepare perioperative care plan'
+          ],
+          documents: ['MDT_Summary_20240120.pdf', 'Inpatient_Care_Plan_20240120.pdf']
+        }
+      ],
       clinicalNotes: []
     },
     'URP010': {
@@ -888,7 +1048,29 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
       dischargeSummaries: [],
       monitoringData: null,
       clinicalHistoryTimeline: [],
-      mdtNotes: [],
+      mdtNotes: [
+        {
+          id: 'MDT008',
+          timestamp: '2024-01-22T13:30:00',
+          date: '2024-01-22',
+          time: '13:30',
+          mdtDate: '2024-01-22',
+          teamMembers: ['Dr. Michael Chen (Urologist)', 'Dr. Sarah Wilson (Oncologist)', 'Dr. Jennifer Lee (Radiologist)', 'Dr. David Wilson (Pathologist)'],
+          caseType: 'High-risk prostate cancer with complications - Treatment Planning',
+          priority: 'High',
+          status: 'Review Complete',
+          discussionNotes: 'Patient presents with high-risk prostate cancer (Gleason 4+4=8, T3b disease) with complications. MRI shows extracapsular extension and seminal vesicle involvement. PSMA PET scan shows no distant metastases but high local risk.',
+          outcome: 'Proceed to Open Prostatectomy with Extended Lymph Node Dissection',
+          recommendations: 'Schedule open prostatectomy with extended lymph node dissection for January 28, 2024. Consider neoadjuvant therapy due to high-risk features. Pre-operative assessment including cardiology and anesthesia clearance required.',
+          followUpActions: [
+            'Schedule pre-operative cardiology assessment',
+            'Consider neoadjuvant therapy discussion',
+            'Book surgery date for January 28, 2024',
+            'Arrange extended lymph node dissection planning'
+          ],
+          documents: ['MDT_Summary_20240122.pdf', 'High_Risk_Treatment_Plan_20240122.pdf']
+        }
+      ],
       clinicalNotes: []
     },
     'URP2024010': {
@@ -924,7 +1106,29 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
       dischargeSummaries: [],
       monitoringData: null,
       clinicalHistoryTimeline: [],
-      mdtNotes: [],
+      mdtNotes: [
+        {
+          id: 'MDT011',
+          timestamp: '2023-11-20T16:00:00',
+          date: '2023-11-20',
+          time: '16:00',
+          mdtDate: '2023-11-20',
+          teamMembers: ['Dr. Sarah Wilson (Urologist)', 'Dr. Michael Chen (Oncologist)', 'Dr. Jennifer Lee (Radiologist)'],
+          caseType: 'Benign Prostatic Hyperplasia - Treatment Review',
+          priority: 'Normal',
+          status: 'Review Complete',
+          discussionNotes: 'Patient presents with benign prostatic hyperplasia with normalized PSA levels. No evidence of malignancy on imaging or biopsy. Patient suitable for discharge to GP care with annual monitoring.',
+          outcome: 'Discharge to GP Care',
+          recommendations: 'Discharge patient to GP care with annual PSA monitoring. No further urological follow-up required unless symptoms develop. Patient counseled on signs and symptoms to watch for.',
+          followUpActions: [
+            'Discharge to GP care',
+            'Provide discharge summary',
+            'Arrange annual PSA monitoring',
+            'Patient education on symptoms to watch for'
+          ],
+          documents: ['MDT_Summary_20231120.pdf', 'Discharge_Summary_20231120.pdf']
+        }
+      ],
       clinicalNotes: []
     },
     'URP2024011': {
@@ -960,7 +1164,29 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
       dischargeSummaries: [],
       monitoringData: null,
       clinicalHistoryTimeline: [],
-      mdtNotes: [],
+      mdtNotes: [
+        {
+          id: 'MDT012',
+          timestamp: '2023-10-25T15:30:00',
+          date: '2023-10-25',
+          time: '15:30',
+          mdtDate: '2023-10-25',
+          teamMembers: ['Dr. Michael Chen (Urologist)', 'Dr. Sarah Wilson (Oncologist)', 'Dr. Jennifer Lee (Radiologist)'],
+          caseType: 'Normal PSA Levels - Treatment Completion Review',
+          priority: 'Normal',
+          status: 'Review Complete',
+          discussionNotes: 'Patient presents with normalized PSA levels following treatment completion. No evidence of malignancy on imaging or biopsy. Patient has completed treatment successfully and is suitable for discharge to GP care.',
+          outcome: 'Discharge to GP Management',
+          recommendations: 'Discharge patient to GP management with annual PSA monitoring. No further urological follow-up required unless symptoms develop. Patient counseled on long-term monitoring requirements.',
+          followUpActions: [
+            'Discharge to GP management',
+            'Provide completion summary',
+            'Arrange annual PSA monitoring',
+            'Patient education on long-term monitoring'
+          ],
+          documents: ['MDT_Summary_20231025.pdf', 'Treatment_Completion_Summary_20231025.pdf']
+        }
+      ],
       clinicalNotes: []
     }
   };
@@ -1800,10 +2026,10 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
 
   // If MDT Notes tab is hidden and user is on that tab, switch to Overview
   useEffect(() => {
-    if ((source === 'activeSurveillance' || userRole !== 'urologist') && activeTab === 'mdt-notes') {
+    if ((source === 'activeSurveillance' || userRole !== 'urologist' || context === 'newPatients') && activeTab === 'mdt-notes') {
       setActiveTab('overview');
     }
-  }, [source, activeTab, userRole]);
+  }, [source, activeTab, userRole, context]);
 
   // If Discharge Summaries tab is hidden and user is on that tab, switch to Overview
   useEffect(() => {
@@ -1816,7 +2042,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: User, count: 1, active: activeTab === 'overview' },
-    ...(source !== 'activeSurveillance' && userRole === 'urologist' ? [{ id: 'mdt-notes', name: 'MDT Notes', icon: Users, count: 2, active: activeTab === 'mdt-notes' }] : []),
+    ...(source !== 'activeSurveillance' && userRole === 'urologist' && context !== 'newPatients' ? [{ id: 'mdt-notes', name: 'MDT Notes', icon: Users, count: 2, active: activeTab === 'mdt-notes' }] : []),
     ...(context !== 'newPatients' ? [{ id: 'discharge', name: 'Discharge Summaries', icon: FileText, count: 1, active: activeTab === 'discharge' }] : [])
   ];
 
@@ -2392,11 +2618,13 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                           <div className="mb-4">
                             <h5 className="text-sm font-semibold text-gray-700 mb-2">Team Members</h5>
                             <div className="flex flex-wrap gap-2">
-                              {mdtNote.teamMembers.map((member, idx) => (
+                              {mdtNote.teamMembers && Array.isArray(mdtNote.teamMembers) ? mdtNote.teamMembers.map((member, idx) => (
                                 <span key={idx} className="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-md border border-blue-200">
                                   {member}
                                 </span>
-                              ))}
+                              )) : (
+                                <span className="text-sm text-gray-500 italic">No team members listed</span>
+                              )}
                             </div>
                           </div>
 
@@ -2428,17 +2656,19 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                           <div className="mb-4">
                             <h5 className="text-sm font-semibold text-gray-700 mb-2">Follow-up Actions</h5>
                             <ul className="space-y-1">
-                              {mdtNote.followUpActions.map((action, idx) => (
+                              {mdtNote.followUpActions && Array.isArray(mdtNote.followUpActions) ? mdtNote.followUpActions.map((action, idx) => (
                                 <li key={idx} className="flex items-center text-sm text-gray-700">
                                   <CheckCircle className="h-3 w-3 text-green-500 mr-2 flex-shrink-0" />
                                   {action}
                                 </li>
-                              ))}
+                              )) : (
+                                <li className="text-sm text-gray-500 italic">No follow-up actions listed</li>
+                              )}
                             </ul>
                           </div>
 
                           {/* Documents */}
-                          {mdtNote.documents && mdtNote.documents.length > 0 && (
+                          {mdtNote.documents && Array.isArray(mdtNote.documents) && mdtNote.documents.length > 0 && (
                             <div>
                               <h5 className="text-sm font-semibold text-gray-700 mb-2">Documents</h5>
                               <div className="flex flex-wrap gap-2">
@@ -2528,11 +2758,12 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
               </div>
               
               <div className="space-y-6">
-                {dischargeSummaries.length > 0 ? (
+                {dischargeSummaries && Array.isArray(dischargeSummaries) && dischargeSummaries.length > 0 ? (
                   <div className="relative">
                     <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-200"></div>
                     
                     {dischargeSummaries.map((summary, index) => (
+                      summary && summary.id ? (
                       <div key={summary.id} className="relative flex items-start space-x-6 pb-8">
                         <div className="relative flex-shrink-0 w-16 h-16 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center shadow-lg">
                           <FileText className="h-6 w-6 text-white" />
@@ -2675,21 +2906,28 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                                 Discharge Medications
                               </h5>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {summary.medications.map((med, medIndex) => (
-                                  <div key={medIndex} className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                                    <div className="flex items-center space-x-3">
-                                      <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <span className="text-blue-600 text-xs font-semibold">{medIndex + 1}</span>
+                                {summary.medications && Array.isArray(summary.medications) && summary.medications.length > 0 ? (
+                                  summary.medications.map((med, medIndex) => (
+                                    <div key={medIndex} className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                                      <div className="flex items-center space-x-3">
+                                        <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                          <span className="text-blue-600 text-xs font-semibold">{medIndex + 1}</span>
+                                        </div>
+                                        <span className="text-sm font-medium text-blue-900">{med}</span>
                                       </div>
-                                      <span className="text-sm font-medium text-blue-900">{med}</span>
                                     </div>
+                                  ))
+                                ) : (
+                                  <div className="col-span-full bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                                    <p className="text-sm text-gray-500 italic">No medications prescribed</p>
                                   </div>
-                                ))}
+                                )}
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
+                      ) : null
                     ))}
                   </div>
                 ) : (
@@ -5042,7 +5280,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                 </div>
               </div>
 
-              {/* Surgery Pathway - Simple Notes Section */}
+              {/* Surgery Pathway - Simplified Section */}
               {selectedPathway === 'Surgery Pathway' && (
                 <div className="mb-6">
                   <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-5">
@@ -5051,14 +5289,35 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                         <Stethoscope className="h-5 w-5 text-white" />
                       </div>
                       <div>
-                        <h4 className="text-lg font-semibold text-gray-900">Surgery Pathway Notes</h4>
-                        <p className="text-sm text-gray-600">Add notes for the surgery pathway transfer</p>
+                        <h4 className="text-lg font-semibold text-gray-900">Surgery Procedure Details</h4>
+                        <p className="text-sm text-gray-600">Configure the surgical procedure</p>
                       </div>
                     </div>
                     
-                    <div>
+                    <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Notes
+                        Surgery Procedure <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={transferDetails.surgeryProcedure}
+                        onChange={(e) => setTransferDetails(prev => ({ ...prev, surgeryProcedure: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white shadow-sm"
+                        required
+                      >
+                        <option value="">Select Surgery Procedure</option>
+                        <option value="RALP">RALP (Robotic Assisted Laparoscopic Prostatectomy)</option>
+                        <option value="Open Prostatectomy">Open Prostatectomy</option>
+                        <option value="Laparoscopic Prostatectomy">Laparoscopic Prostatectomy</option>
+                        <option value="TURP">TURP (Transurethral Resection of Prostate)</option>
+                        <option value="Prostate Biopsy">Prostate Biopsy</option>
+                        <option value="Cystoscopy">Cystoscopy</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Surgery Pathway Notes
                       </label>
                       <textarea
                         value={transferDetails.additionalNotes || ''}
@@ -5067,6 +5326,41 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                         rows={4}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white shadow-sm resize-none"
                       />
+                    </div>
+                    
+                    {/* Surgery Scheduling Section */}
+                    <div className="border-t border-purple-200 pt-4">
+                      <h5 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                        <Calendar className="h-4 w-4 mr-2 text-purple-600" />
+                        Surgery Scheduling
+                      </h5>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Surgery Date
+                          </label>
+                          <input
+                            type="date"
+                            value={transferDetails.surgeryDate}
+                            onChange={(e) => setTransferDetails(prev => ({ ...prev, surgeryDate: e.target.value }))}
+                            min={new Date().toISOString().split('T')[0]}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white shadow-sm"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Surgery Time
+                          </label>
+                          <input
+                            type="time"
+                            value={transferDetails.surgeryTime}
+                            onChange={(e) => setTransferDetails(prev => ({ ...prev, surgeryTime: e.target.value }))}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white shadow-sm"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -5367,6 +5661,42 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                   
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Check-up Frequency <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={recurringAppointments.interval}
+                      onChange={(e) => setRecurringAppointments(prev => ({ ...prev, interval: e.target.value }))}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white shadow-sm"
+                      required
+                    >
+                      <option value="1">Monthly check-ups</option>
+                      <option value="3">Every 3 months (Quarterly)</option>
+                      <option value="6">Every 6 months (Bi-annual)</option>
+                      <option value="12">Annual check-ups</option>
+                    </select>
+                  </div>
+                  
+                  <div className="mt-4 bg-white border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Calendar className="h-3 w-3 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 mb-1">
+                          {recurringAppointments.interval === '1' && 'Monthly Check-ups Scheduled'}
+                          {recurringAppointments.interval === '3' && 'Quarterly Check-ups Scheduled'}
+                          {recurringAppointments.interval === '6' && 'Bi-annual Check-ups Scheduled'}
+                          {recurringAppointments.interval === '12' && 'Annual Check-ups Scheduled'}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          The system will automatically create follow-up appointments based on your selected frequency. You'll receive notifications before each scheduled visit.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Special Instructions
                     </label>
                     <textarea
@@ -5381,59 +5711,6 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
               </div>
               )}
 
-              {/* Recurring Check-ups Section - Not needed for Radiotherapy and Surgery Pathway */}
-              {selectedPathway !== 'Radiotherapy' && selectedPathway !== 'Surgery Pathway' && (
-              <div className="mb-6">
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5">
-                  <div className="flex items-center mb-4">
-                    <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center mr-3">
-                      <Calendar className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h4 className="text-lg font-semibold text-gray-900">Set Up Regular Check-ups</h4>
-                      <p className="text-sm text-gray-600">Automatically schedule follow-up appointments</p>
-                    </div>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Check-up Frequency <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={recurringAppointments.interval}
-                      onChange={(e) => setRecurringAppointments(prev => ({ ...prev, interval: e.target.value }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white shadow-sm"
-                      required
-                    >
-                      <option value="1">Monthly check-ups</option>
-                      <option value="3">Every 3 months (Quarterly)</option>
-                      <option value="6">Every 6 months (Bi-annual)</option>
-                      <option value="12">Annual check-ups</option>
-                    </select>
-                  </div>
-                  
-                  <div className="bg-white border border-green-200 rounded-lg p-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Calendar className="h-3 w-3 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 mb-1">
-                          {recurringAppointments.interval === '1' && 'Monthly Check-ups Scheduled'}
-                          {recurringAppointments.interval === '3' && 'Quarterly Check-ups Scheduled'}
-                          {recurringAppointments.interval === '6' && 'Bi-annual Check-ups Scheduled'}
-                          {recurringAppointments.interval === '12' && 'Annual Check-ups Scheduled'}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          The system will automatically create follow-up appointments based on your selected frequency. 
-                          You'll receive notifications before each scheduled visit.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              )}
                 </>
               )}
             </div>
@@ -5446,12 +5723,18 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                     setIsPathwayModalOpen(false);
                     setSelectedPathway('');
                     setTransferNote('');
-                    setTransferDetails({
-                      reason: '',
-                      priority: 'normal',
-                      clinicalRationale: '',
-                      additionalNotes: ''
-                    });
+                  setTransferDetails({
+                    reason: '',
+                    priority: 'normal',
+                    clinicalRationale: '',
+                    additionalNotes: '',
+                    surgeryProcedure: '',
+                    surgeryDate: '',
+                    surgeryTime: '',
+                    surgeon: '',
+                    anesthesiaType: '',
+                    estimatedDuration: ''
+                  });
                     setAppointmentBooking({
                       appointmentDate: '',
                       appointmentTime: '',
@@ -5502,7 +5785,11 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                       setIsPathwayModalOpen(false);
                       setIsDischargeSummaryModalOpen(true);
                     } else if (selectedPathway === 'Surgery Pathway') {
-                      // Surgery Pathway validation - only notes are required
+                      // Surgery Pathway validation - only procedure is required
+                      if (!transferDetails.surgeryProcedure) {
+                        alert('Please select a surgery procedure before confirming');
+                        return;
+                      }
                       setSuccessMessage(`Patient successfully transferred to ${selectedPathway}`);
                       setIsPathwayModalOpen(false);
                       setIsSuccessModalOpen(true);
@@ -5532,12 +5819,18 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                     // Reset all states
                     setSelectedPathway('');
                     setTransferNote('');
-                    setTransferDetails({
-                      reason: '',
-                      priority: 'normal',
-                      clinicalRationale: '',
-                      additionalNotes: ''
-                    });
+                  setTransferDetails({
+                    reason: '',
+                    priority: 'normal',
+                    clinicalRationale: '',
+                    additionalNotes: '',
+                    surgeryProcedure: '',
+                    surgeryDate: '',
+                    surgeryTime: '',
+                    surgeon: '',
+                    anesthesiaType: '',
+                    estimatedDuration: ''
+                  });
                     setMedicationDetails({
                       medications: [{
                         id: Date.now(),
@@ -5581,7 +5874,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                         : selectedPathway === 'Radiotherapy'
                           ? !transferDetails.reason || !transferDetails.clinicalRationale.trim()
                           : selectedPathway === 'Surgery Pathway'
-                            ? false // Surgery Pathway has no required fields
+                            ? !transferDetails.surgeryProcedure
                             : !transferDetails.reason || !transferDetails.clinicalRationale.trim() || !appointmentBooking.appointmentDate || !appointmentBooking.appointmentTime
                   }
                   className={`flex-1 px-4 py-2.5 bg-gradient-to-r ${getPathwayColors(selectedPathway).button} text-white rounded-lg transition-all duration-200 font-medium shadow-lg ${getPathwayColors(selectedPathway).shadow} hover:shadow-xl text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gradient-to-r disabled:hover:${getPathwayColors(selectedPathway).button.replace('hover:', '')}`}

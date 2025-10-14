@@ -829,28 +829,66 @@ const NursePatientDetailsModal = ({ isOpen, onClose, patientId, patientData, use
             <div className="h-full flex">
               {/* Left Component - Clinical Notes Adding Section */}
               <div className="w-1/2 h-full flex flex-col border-r border-gray-200">
-                {/* Add Note Section - Non-scrollable */}
+                {/* Header - Fixed */}
                 <div className="flex-shrink-0 p-4 bg-white border-b border-gray-200">
                   <h3 className="font-semibold text-gray-900 text-base flex items-center mb-3">
                     <FileText className="h-4 w-4 mr-2 text-blue-600" />
                     Clinical Notes
                   </h3>
+                </div>
+                
+                {/* Scrollable Form Content */}
+                <div className="flex-1 overflow-y-auto p-4 min-h-0">
                   <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-xl p-4 border-2 border-blue-200 shadow-sm">
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {/* Note Input */}
                       <div>
                     <textarea
                           value={clinicalData.clinicalNotes}
                           onChange={(e) => setClinicalData({...clinicalData, clinicalNotes: e.target.value})}
                           placeholder="Add a clinical note or assessment..."
-                          className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none bg-white/80 backdrop-blur-sm shadow-inner transition-all duration-200"
-                          rows="4"
+                          className="w-full px-3 py-2 text-sm border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none bg-white/80 backdrop-blur-sm shadow-inner transition-all duration-200"
+                          rows="3"
+                        />
+                      </div>
+
+                      {/* Symptoms Field */}
+                      <div className="bg-white/40 backdrop-blur-sm rounded-lg p-2 border border-gray-200">
+                        <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center">
+                          <svg className="h-3 w-3 mr-1 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                          </svg>
+                          Symptoms
+                        </label>
+                        <input
+                          type="text"
+                          value={clinicalData.symptoms || ''}
+                          onChange={(e) => setClinicalData({...clinicalData, symptoms: e.target.value})}
+                          placeholder="Enter patient symptoms..."
+                          className="w-full px-2 py-1 text-xs border border-red-200 rounded focus:ring-1 focus:ring-red-400 focus:border-red-400 bg-white/80"
+                        />
+                      </div>
+
+                      {/* Allergies Field */}
+                      <div className="bg-white/40 backdrop-blur-sm rounded-lg p-2 border border-gray-200">
+                        <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center">
+                          <svg className="h-3 w-3 mr-1 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                          </svg>
+                          Allergies
+                        </label>
+                        <input
+                          type="text"
+                          value={clinicalData.allergies || ''}
+                          onChange={(e) => setClinicalData({...clinicalData, allergies: e.target.value})}
+                          placeholder="Enter patient allergies..."
+                          className="w-full px-2 py-1 text-xs border border-orange-200 rounded focus:ring-1 focus:ring-orange-400 focus:border-orange-400 bg-white/80"
                         />
                       </div>
                       
                       {/* Vital Signs - Single Row */}
-                      <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 border border-gray-200">
-                        <label className="block text-xs font-semibold text-gray-700 mb-2 flex items-center">
+                      <div className="bg-white/40 backdrop-blur-sm rounded-lg p-2 border border-gray-200">
+                        <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center">
                           <Heart className="h-3 w-3 mr-1" />
                           Vital Signs
                         </label>
@@ -938,25 +976,25 @@ const NursePatientDetailsModal = ({ isOpen, onClose, patientId, patientData, use
                       </div>
 
                       {/* Priority and Action Buttons */}
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between pt-2">
                         <div className="flex items-center space-x-2">
                           <label className="text-xs font-medium text-gray-700">Priority:</label>
                       <select
                             value={clinicalData.priority || 'Normal'}
                             onChange={(e) => setClinicalData({...clinicalData, priority: e.target.value})}
-                            className="px-2 py-1 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white/80"
+                            className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white/80"
                       >
-                        <option value="Normal">Normal Priority</option>
-                        <option value="High">High Priority</option>
+                        <option value="Normal">Normal</option>
+                        <option value="High">High</option>
                         <option value="Urgent">Urgent</option>
                       </select>
                         </div>
                       <button
                           onClick={handleSaveChanges}
                           disabled={!clinicalData.clinicalNotes.trim()}
-                          className="flex items-center px-4 py-2 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
+                          className="flex items-center px-3 py-1.5 text-xs bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <Plus className="h-4 w-4 mr-2" />
+                          <Plus className="h-3 w-3 mr-1" />
                         Add Note
                       </button>
                       </div>

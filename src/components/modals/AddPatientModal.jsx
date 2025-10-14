@@ -38,6 +38,7 @@ const AddPatientModal = ({ isOpen, onClose, onPatientAdded, isUrologist = false 
     medicalHistory: '',
     currentMedications: '',
     allergies: '',
+    assignedUrologist: '',
     
     // Emergency Contact
     emergencyContactName: '',
@@ -51,6 +52,15 @@ const AddPatientModal = ({ isOpen, onClose, onPatientAdded, isUrologist = false 
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Available urologists (same as in OPDManagement)
+  const urologists = [
+    { id: 'dr_smith', name: 'Dr. John Smith', specialization: 'Urologist', experience: '15 years' },
+    { id: 'dr_johnson', name: 'Dr. Sarah Johnson', specialization: 'Urologist', experience: '12 years' },
+    { id: 'dr_wilson', name: 'Dr. Michael Wilson', specialization: 'Urologist', experience: '18 years' },
+    { id: 'dr_brown', name: 'Dr. Emily Brown', specialization: 'Urologist', experience: '10 years' },
+    { id: 'dr_davis', name: 'Dr. Robert Davis', specialization: 'Urologist', experience: '20 years' }
+  ];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -121,7 +131,9 @@ const AddPatientModal = ({ isOpen, onClose, onPatientAdded, isUrologist = false 
         nextAppointment: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
         lastPSA: parseFloat(formData.initialPSA),
         lastPSADate: formData.initialPSADate,
-        age: new Date().getFullYear() - new Date(formData.dateOfBirth).getFullYear()
+        latestPSA: parseFloat(formData.initialPSA), // Also add latestPSA for consistency
+        age: new Date().getFullYear() - new Date(formData.dateOfBirth).getFullYear(),
+        assignedUrologist: formData.assignedUrologist || 'Not Assigned'
       };
       
       console.log('New patient created:', newPatient);
@@ -150,6 +162,7 @@ const AddPatientModal = ({ isOpen, onClose, onPatientAdded, isUrologist = false 
         medicalHistory: '',
         currentMedications: '',
         allergies: '',
+        assignedUrologist: '',
         emergencyContactName: '',
         emergencyContactPhone: '',
         emergencyContactRelationship: '',
@@ -179,18 +192,19 @@ const AddPatientModal = ({ isOpen, onClose, onPatientAdded, isUrologist = false 
       postcode: '',
       city: '',
       state: '',
-        referralDate: '',
-        initialPSA: '',
-        initialPSADate: '',
-        medicalHistory: '',
-        currentMedications: '',
-        allergies: '',
+      referringDepartment: '',
+      referralDate: '',
+      initialPSA: '',
+      initialPSADate: '',
+      medicalHistory: '',
+      currentMedications: '',
+      allergies: '',
+      assignedUrologist: '',
       emergencyContactName: '',
       emergencyContactPhone: '',
       emergencyContactRelationship: '',
       priority: 'Normal',
-      notes: '',
-      assignToPathway: ''
+      notes: ''
     });
     setErrors({});
     onClose();
@@ -534,7 +548,41 @@ const AddPatientModal = ({ isOpen, onClose, onPatientAdded, isUrologist = false 
                 </div>
                 
                 
-                <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-3">
+                      Assigned Urologist
+                    </label>
+                    <select
+                      name="assignedUrologist"
+                      value={formData.assignedUrologist}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl transition-all duration-200 focus:outline-none focus:ring-0 focus:border-blue-500"
+                    >
+                      <option value="">Select urologist</option>
+                      {urologists.map((urologist) => (
+                        <option key={urologist.id} value={urologist.name}>
+                          {urologist.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-3">
+                      Referral Date
+                    </label>
+                    <input
+                      type="date"
+                      name="referralDate"
+                      value={formData.referralDate}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl transition-all duration-200 focus:outline-none focus:ring-0 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+                
+                <div className="mt-6">
                   <label className="block text-sm font-medium text-slate-700 mb-3">
                     Medical History
                   </label>

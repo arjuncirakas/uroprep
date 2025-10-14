@@ -18,7 +18,6 @@ import {
   Shield,
   Clock
 } from 'lucide-react';
-import BookAppointmentModalWithPatient from '../../components/modals/BookAppointmentModalWithPatient';
 import NursePatientDetailsModal from '../../components/modals/NursePatientDetailsModal';
 import { usePatientDetails } from '../../contexts/PatientDetailsContext';
 
@@ -54,7 +53,7 @@ const SurgicalPathway = () => {
       phone: '+61 434 567 890',
       email: 'david.wilson@email.com',
       surgeryDate: '2025-10-25',
-      surgeryTime: '8:00 AM',
+      surgeryTime: '9:00 AM',
       surgeryType: 'RALP',
       assignedSurgeon: 'Dr. Michael Chen',
       status: 'Scheduled',
@@ -259,7 +258,7 @@ const SurgicalPathway = () => {
       phone: '+61 427 890 123',
       email: 'mark.johnson@email.com',
       surgeryDate: '2025-11-08',
-      surgeryTime: '7:30 AM',
+      surgeryTime: '9:30 AM',
       surgeryType: 'RALP',
       assignedSurgeon: 'Dr. James Brown',
       status: 'Pre-Op',
@@ -383,6 +382,20 @@ const SurgicalPathway = () => {
     'Dr. James Brown',
     'Dr. Lisa Davis'
   ];
+
+  // Generate available time slots
+  const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 9; hour <= 18; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        slots.push(timeString);
+      }
+    }
+    return slots;
+  };
+
+  const timeSlots = generateTimeSlots();
 
   // Prevent background scrolling when modals are open
   useEffect(() => {
@@ -549,21 +562,58 @@ const SurgicalPathway = () => {
 
   const handleBookAppointment = (patient) => {
     setSelectedPatientForAppointment(patient);
+    
+    // Convert surgery time format (e.g., "8:00 AM" to "08:00")
+    let formattedTime = '';
+    if (patient.surgeryTime) {
+      // Convert "8:00 AM" format to "08:00" format
+      const timeMatch = patient.surgeryTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+      if (timeMatch) {
+        let hours = parseInt(timeMatch[1]);
+        const minutes = timeMatch[2];
+        const ampm = timeMatch[3].toUpperCase();
+        
+        if (ampm === 'PM' && hours !== 12) {
+          hours += 12;
+        } else if (ampm === 'AM' && hours === 12) {
+          hours = 0;
+        }
+        
+        formattedTime = `${hours.toString().padStart(2, '0')}:${minutes}`;
+      }
+    }
+    
+    // Pre-populate form with existing surgery details if available
+    setScheduleForm({
+      date: patient.surgeryDate || '',
+      time: formattedTime || '',
+      type: patient.surgeryType || 'surgery',
+      doctor: patient.assignedSurgeon || '',
+      notes: patient.notes || ''
+    });
+    
     setIsBookAppointmentModalOpen(true);
   };
 
   const handleAppointmentBooked = (appointmentData) => {
-    console.log('Appointment booked:', appointmentData);
+    console.log('Surgery details updated:', appointmentData);
     // Here you would typically update the patient's status in your state management
     // For now, we'll just close the modal and show a success message
     setIsBookAppointmentModalOpen(false);
     setSelectedPatientForAppointment(null);
-    alert('Appointment booked successfully!');
+    alert('Surgery details updated successfully!');
   };
 
   const handleCloseAppointmentModal = () => {
     setIsBookAppointmentModalOpen(false);
     setSelectedPatientForAppointment(null);
+    setScheduleForm({
+      date: '',
+      time: '',
+      type: 'surgery',
+      doctor: '',
+      notes: ''
+    });
   };
 
 
@@ -951,13 +1001,195 @@ const SurgicalPathway = () => {
         </div>
       )}
 
-      {/* Book Appointment Modal */}
-      <BookAppointmentModalWithPatient
-        isOpen={isBookAppointmentModalOpen}
-        onClose={handleCloseAppointmentModal}
-        onAppointmentBooked={handleAppointmentBooked}
-        selectedPatientData={selectedPatientForAppointment}
-      />
+      {/* Edit Surgery Details Modal */}
+      {isBookAppointmentModalOpen && selectedPatientForAppointment && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-[110] flex items-center justify-center p-4">
+          <div className="relative mx-auto w-full max-w-4xl">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden max-h-[90vh] flex flex-col">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-6 flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900">Edit Surgery Details</h3>
+                    <p className="text-sm text-gray-600 mt-1">Update surgery information for {selectedPatientForAppointment.patientName}</p>
+                  </div>
+                  <button
+                    onClick={handleCloseAppointmentModal}
+                    className="flex items-center px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Close
+                  </button>
+                </div>
+              </div>
+              
+              {/* Content */}
+              <div className="px-6 py-6 flex-1 overflow-y-auto">
+                <div className="space-y-6">
+                  {/* Patient Info Card */}
+                  <div className="bg-gradient-to-r from-green-50 to-gray-50 border border-gray-200 rounded-lg p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="relative">
+                        <div className="w-12 h-12 bg-gradient-to-br from-green-800 to-black rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">
+                            {selectedPatientForAppointment.patientName.split(' ').map(n => n[0]).join('')}
+                          </span>
+                        </div>
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-semibold text-gray-900">{selectedPatientForAppointment.patientName}</h4>
+                        <div className="flex items-center space-x-4 mt-1">
+                          <span className="text-sm text-gray-600">UPI: {selectedPatientForAppointment.upi}</span>
+                          <span className="text-sm text-gray-600">Age: {selectedPatientForAppointment.age} years</span>
+                          <span className="text-sm text-gray-600">PSA: {selectedPatientForAppointment.lastPSA} ng/mL</span>
+                          <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-md ${getRiskColor(selectedPatientForAppointment.riskCategory)}`}>
+                            {selectedPatientForAppointment.riskCategory}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Surgery Details Form */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Surgery Information */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-3">Surgery Type *</label>
+                        <select
+                          value={scheduleForm.type}
+                          onChange={(e) => setScheduleForm(prev => ({...prev, type: e.target.value}))}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                        >
+                          <option value="surgery">RALP (Robotic Assisted Laparoscopic Prostatectomy)</option>
+                          <option value="open_surgery">Open Radical Prostatectomy</option>
+                          <option value="laparoscopic">Laparoscopic Prostatectomy</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-3">Assigned Surgeon *</label>
+                        <select
+                          value={scheduleForm.doctor}
+                          onChange={(e) => setScheduleForm(prev => ({...prev, doctor: e.target.value}))}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                        >
+                          <option value="">Select surgeon...</option>
+                          {availableDoctors.map((doctor) => (
+                            <option key={doctor} value={doctor}>
+                              {doctor}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-3">Surgery Date *</label>
+                        <input
+                          type="date"
+                          value={scheduleForm.date}
+                          onChange={(e) => setScheduleForm(prev => ({...prev, date: e.target.value}))}
+                          min={new Date().toISOString().split('T')[0]}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-3">Notes</label>
+                        <textarea
+                          value={scheduleForm.notes}
+                          onChange={(e) => setScheduleForm(prev => ({...prev, notes: e.target.value}))}
+                          rows={4}
+                          placeholder="Add any notes or special instructions for this surgery..."
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-none"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Optional: Add any relevant notes, special considerations, or instructions</p>
+                      </div>
+                    </div>
+
+                    {/* Time Selection */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-3">Surgery Time *</label>
+                      <div className="grid grid-cols-3 gap-2 max-h-80 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        {timeSlots.map((time) => (
+                          <button
+                            key={time}
+                            type="button"
+                            onClick={() => setScheduleForm(prev => ({...prev, time: time}))}
+                            className={`px-3 py-2 text-sm rounded-md border transition-all duration-200 font-medium ${
+                              scheduleForm.time === time
+                                ? 'bg-green-500 text-white border-green-500 shadow-md transform scale-105'
+                                : 'bg-white text-gray-700 border-gray-300 hover:border-green-300 hover:bg-green-50 hover:shadow-sm'
+                            }`}
+                          >
+                            {time}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">Click on a time slot to select your preferred surgery time</p>
+                    </div>
+                  </div>
+
+                  {/* Selected Summary */}
+                  {scheduleForm.date && scheduleForm.time && scheduleForm.doctor && (
+                    <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-100">
+                      <div className="flex items-center mb-3">
+                        <div className="h-2 w-2 bg-green-500 rounded-full mr-2"></div>
+                        <h4 className="text-sm font-semibold text-green-900">Surgery Summary</h4>
+                      </div>
+                      <div className="text-sm text-green-800 space-y-2">
+                        <p><strong>Type:</strong> {scheduleForm.type === 'surgery' ? 'RALP' : scheduleForm.type}</p>
+                        <p><strong>Patient:</strong> {selectedPatientForAppointment.patientName}</p>
+                        <p><strong>Surgeon:</strong> {scheduleForm.doctor}</p>
+                        <p><strong>Date:</strong> {new Date(scheduleForm.date).toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}</p>
+                        <p><strong>Time:</strong> {scheduleForm.time}</p>
+                        {scheduleForm.notes && (
+                          <div className="mt-3 pt-2 border-t border-green-200">
+                            <p><strong>Notes:</strong> {scheduleForm.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Actions */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex-shrink-0">
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => {
+                      if (!scheduleForm.date || !scheduleForm.time || !scheduleForm.doctor) {
+                        alert('Please select date, time, and surgeon');
+                        return;
+                      }
+                      handleAppointmentBooked(scheduleForm);
+                    }}
+                    disabled={!scheduleForm.date || !scheduleForm.time || !scheduleForm.doctor}
+                    className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold py-3 px-6 rounded-lg hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    <Calendar className="h-4 w-4 mr-2 inline" />
+                    Update Surgery Details
+                  </button>
+                  <button
+                    onClick={handleCloseAppointmentModal}
+                    className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition-all duration-200"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Nurse Patient Details Modal */}
       <NursePatientDetailsModal
