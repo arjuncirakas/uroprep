@@ -90,6 +90,12 @@ const OPDManagement = () => {
       age: 68,
       gender: 'Male',
       phone: '+61 456 789 012',
+      latestPSA: 9.2,
+      psaHistory: [
+        { value: 7.5, date: '2025-03-16', velocity: null },
+        { value: 8.1, date: '2025-06-16', velocity: 0.20 },
+        { value: 9.2, date: '2025-10-16', velocity: 0.37 }
+      ],
       appointmentDate: '2025-10-16',
       appointmentTime: '10:00 AM',
       assignedUrologist: 'Dr. Sarah Wilson',
@@ -103,6 +109,12 @@ const OPDManagement = () => {
       age: 55,
       gender: 'Male',
       phone: '+61 423 456 789',
+      latestPSA: 6.5,
+      psaHistory: [
+        { value: 5.1, date: '2025-04-17', velocity: null },
+        { value: 5.8, date: '2025-07-17', velocity: 0.23 },
+        { value: 6.5, date: '2025-10-17', velocity: 0.23 }
+      ],
       appointmentDate: '2025-10-17',
       appointmentTime: '2:30 PM',
       assignedUrologist: 'Dr. Michael Chen',
@@ -136,6 +148,11 @@ const OPDManagement = () => {
       referralSource: 'GP',
       referringGP: 'Dr. Sarah Johnson',
       latestPSA: 8.5,
+      psaHistory: [
+        { value: 4.2, date: '2025-04-15', velocity: null },
+        { value: 6.1, date: '2025-07-15', velocity: 0.63 },
+        { value: 8.5, date: '2025-10-15', velocity: 0.80 }
+      ],
       appointmentDate: '2025-10-15',
       appointmentTime: '9:00 AM',
       dateOfEntry: '2025-10-03',
@@ -193,6 +210,11 @@ const OPDManagement = () => {
       referralSource: 'GP',
       referringGP: 'Dr. Michael Brown',
       latestPSA: 6.8,
+      psaHistory: [
+        { value: 5.2, date: '2025-03-16', velocity: null },
+        { value: 6.1, date: '2025-06-16', velocity: 0.30 },
+        { value: 6.8, date: '2025-10-16', velocity: 0.23 }
+      ],
       appointmentDate: '2025-10-16',
       appointmentTime: '10:30 AM',
       status: 'Scheduled Doctor Appointment',
@@ -312,6 +334,11 @@ const OPDManagement = () => {
       phone: '+61 467 890 234',
       referralSource: 'IPD',
       latestPSA: 4.2,
+      psaHistory: [
+        { value: 3.8, date: '2025-02-21', velocity: null },
+        { value: 4.0, date: '2025-05-21', velocity: 0.07 },
+        { value: 4.2, date: '2025-10-21', velocity: 0.08 }
+      ],
       appointmentDate: '2025-10-21',
       appointmentTime: '3:30 PM',
       status: 'Scheduled for Procedure',
@@ -1254,9 +1281,8 @@ const OPDManagement = () => {
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
-              {filteredNoShowPatients.length > 0 ? (
-                <table className="w-full table-fixed">
+            {filteredNoShowPatients.length > 0 ? (
+              <table className="w-full table-fixed">
                   <thead className="bg-red-50">
                     <tr>
                       <th className="text-left py-3 px-4 font-semibold text-red-700 text-xs uppercase tracking-wider w-2/5">Patient</th>
@@ -1289,7 +1315,7 @@ const OPDManagement = () => {
                           </div>
                         </td>
                         <td className="py-4 px-4">
-                          <div className="flex items-center space-x-2">
+                          <div className="flex flex-col space-y-2">
                             <button
                               onClick={() => handleViewPatient(patient)}
                               className="inline-flex items-center justify-center px-2 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
@@ -1297,14 +1323,14 @@ const OPDManagement = () => {
                               <Eye className="h-3 w-3 mr-1" />
                               <span>View/Edit</span>
                             </button>
-                      <button
+                            <button
                               onClick={() => handleReschedule(patient)}
                               className="inline-flex items-center justify-center px-2 py-2 text-xs font-medium text-white bg-gradient-to-r from-orange-600 to-orange-800 border border-orange-600 rounded-lg shadow-sm hover:from-orange-700 hover:to-orange-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200"
-                      >
+                            >
                               <Calendar className="h-3 w-3 mr-1" />
                               <span>Reschedule</span>
-                      </button>
-                    </div>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1326,7 +1352,6 @@ const OPDManagement = () => {
                   </p>
                             </div>
               )}
-                  </div>
                 </div>
               )}
                           </div>
