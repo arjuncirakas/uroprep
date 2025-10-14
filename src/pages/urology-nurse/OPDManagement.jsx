@@ -1029,9 +1029,9 @@ const OPDManagement = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className={`grid gap-6 ${activeFilter !== 'New Patient' ? 'grid-cols-1 lg:grid-cols-3' : 'grid-cols-1'}`}>
+      <div className={`${activeFilter !== 'New Patient' ? 'flex gap-6' : ''}`}>
       {/* OPD Queue Table */}
-        <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden ${activeFilter !== 'New Patient' ? 'lg:col-span-2' : ''}`}>
+        <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden ${activeFilter !== 'New Patient' ? 'flex-[60%]' : 'w-full'}`}>
         <div className="bg-gradient-to-r from-green-50 to-gray-50 border-b border-gray-200 px-6 py-4">
           <div>
             <p className="text-sm text-gray-600 mt-1">Patients waiting for urologist consultation</p>
@@ -1236,7 +1236,7 @@ const OPDManagement = () => {
 
         {/* No Show Patients Table - Only for Appointment tabs */}
         {activeFilter !== 'New Patient' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex-[40%]">
             <div className="bg-gradient-to-r from-red-50 to-red-100 border-b border-red-200 px-6 py-4">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
@@ -1256,12 +1256,12 @@ const OPDManagement = () => {
 
             <div className="overflow-x-auto">
               {filteredNoShowPatients.length > 0 ? (
-                <table className="w-full">
+                <table className="w-full table-fixed">
                   <thead className="bg-red-50">
                     <tr>
-                      <th className="text-left py-3 px-4 font-semibold text-red-700 text-xs uppercase tracking-wider">Patient</th>
-                      <th className="text-left py-3 px-4 font-semibold text-red-700 text-xs uppercase tracking-wider">Missed Date</th>
-                      <th className="text-left py-3 px-4 font-semibold text-red-700 text-xs uppercase tracking-wider">Actions</th>
+                      <th className="text-left py-3 px-4 font-semibold text-red-700 text-xs uppercase tracking-wider w-2/5">Patient</th>
+                      <th className="text-left py-3 px-4 font-semibold text-red-700 text-xs uppercase tracking-wider w-2/5">Missed Date</th>
+                      <th className="text-left py-3 px-4 font-semibold text-red-700 text-xs uppercase tracking-wider w-1/5">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-red-100">
