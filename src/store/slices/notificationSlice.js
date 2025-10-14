@@ -128,6 +128,40 @@ const notificationSlice = createSlice({
       state.notifications.unshift(notification);
       state.unreadCount += 1;
     },
+    addPSAMonitoringNotification: (state, action) => {
+      const { patientId, patientName, message, daysOverdue } = action.payload;
+      const notification = {
+        id: Date.now(),
+        type: 'psa_monitoring',
+        title: 'PSA Monitoring Required',
+        message,
+        patientId,
+        patientName,
+        daysOverdue,
+        timestamp: new Date().toISOString(),
+        read: false,
+        priority: daysOverdue > 30 ? 'high' : 'normal',
+      };
+      state.notifications.unshift(notification);
+      state.unreadCount += 1;
+    },
+    addPSAEntryNotification: (state, action) => {
+      const { patientId, patientName, message, pathway } = action.payload;
+      const notification = {
+        id: Date.now(),
+        type: 'psa_entry',
+        title: 'PSA Entry Required',
+        message,
+        patientId,
+        patientName,
+        pathway,
+        timestamp: new Date().toISOString(),
+        read: false,
+        priority: 'normal',
+      };
+      state.notifications.unshift(notification);
+      state.unreadCount += 1;
+    },
   },
 });
 
@@ -144,6 +178,8 @@ export const {
   addPatientTransitionNotification,
   addAppointmentNotification,
   addClinicalAlertNotification,
+  addPSAMonitoringNotification,
+  addPSAEntryNotification,
 } = notificationSlice.actions;
 
 export default notificationSlice.reducer;

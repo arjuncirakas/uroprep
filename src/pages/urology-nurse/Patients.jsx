@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { 
   Users, 
   Search, 
@@ -8,12 +9,13 @@ import {
   UserPlus,
   Calendar
 } from 'lucide-react';
-import { usePatientDetails } from '../../contexts/PatientDetailsContext';
 import AddPatientModal from '../../components/modals/AddPatientModal';
+import NursePatientDetailsModal from '../../components/modals/NursePatientDetailsModal';
 
 const Patients = () => {
   const navigate = useNavigate();
-  const { openPatientDetails } = usePatientDetails();
+  const [isNursePatientDetailsModalOpen, setIsNursePatientDetailsModalOpen] = useState(false);
+  const [selectedPatientForDetails, setSelectedPatientForDetails] = useState(null);
   
   // Mock logged-in nurse (in real app, this would come from auth state)
   const loggedInNurse = 'Nurse Sarah Wilson';
@@ -30,6 +32,10 @@ const Patients = () => {
   // Add Patient Modal state
   const [showAddPatientModal, setShowAddPatientModal] = useState(false);
 
+  // PSA tooltip states
+  const [hoveredPSA, setHoveredPSA] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+
   // Mock patient data
   const mockPatients = [
     {
@@ -43,10 +49,10 @@ const Patients = () => {
       status: 'Active',
       pathway: 'OPD Queue',
       type: 'OPD',
-      lastAppointment: '2024-01-15',
-      nextAppointment: '2024-01-22',
+      lastAppointment: '2025-10-10',
+      nextAppointment: '2025-10-20',
       lastPSA: 8.5,
-      lastPSADate: '2024-01-08',
+      lastPSADate: '2025-10-08',
       referringGP: 'Dr. Sarah Johnson',
       notes: 'Elevated PSA, awaiting urologist consultation',
       addedBy: 'Nurse Sarah Wilson'
@@ -62,10 +68,10 @@ const Patients = () => {
       status: 'Active',
       pathway: 'Active Surveillance',
       type: 'OPD',
-      lastAppointment: '2024-01-10',
-      nextAppointment: '2024-04-10',
+      lastAppointment: '2025-10-08',
+      nextAppointment: '2026-01-08',
       lastPSA: 5.2,
-      lastPSADate: '2024-01-05',
+      lastPSADate: '2025-10-05',
       referringGP: 'Dr. Robert Wilson',
       notes: 'Under active surveillance, stable PSA',
       addedBy: 'Nurse Michael Chen'
@@ -81,10 +87,10 @@ const Patients = () => {
       status: 'Active',
       pathway: 'Surgical Pathway',
       type: 'IPD',
-      lastAppointment: '2024-01-12',
-      nextAppointment: '2024-01-25',
+      lastAppointment: '2025-10-09',
+      nextAppointment: '2025-10-22',
       lastPSA: 4.8,
-      lastPSADate: '2024-01-03',
+      lastPSADate: '2025-10-03',
       referringGP: 'Dr. Emily Davis',
       notes: 'Scheduled for RALP surgery',
       addedBy: 'Nurse Sarah Wilson'
@@ -100,10 +106,10 @@ const Patients = () => {
       status: 'Discharged',
       pathway: 'Post-Op Follow-up',
       type: 'OPD',
-      lastAppointment: '2024-01-08',
-      nextAppointment: '2024-04-08',
+      lastAppointment: '2025-10-05',
+      nextAppointment: '2026-01-05',
       lastPSA: 0.02,
-      lastPSADate: '2024-01-10',
+      lastPSADate: '2025-10-07',
       referringGP: 'Dr. Jennifer Lee',
       notes: 'Post-RALP, excellent recovery, ready for GP care',
       addedBy: 'Nurse Michael Chen'
@@ -119,10 +125,10 @@ const Patients = () => {
       status: 'Active',
       pathway: 'OPD Queue',
       type: 'OPD',
-      lastAppointment: '2024-01-14',
-      nextAppointment: '2024-01-21',
+      lastAppointment: '2025-10-11',
+      nextAppointment: '2025-10-18',
       lastPSA: 6.8,
-      lastPSADate: '2024-01-12',
+      lastPSADate: '2025-10-09',
       referringGP: 'Dr. Mark Thompson',
       notes: 'Suspicious MRI findings, urgent biopsy required',
       addedBy: 'Nurse Sarah Wilson'
@@ -138,53 +144,14 @@ const Patients = () => {
       status: 'Active',
       pathway: 'Active Surveillance',
       type: 'OPD',
-      lastAppointment: '2024-01-11',
-      nextAppointment: '2024-04-11',
+      lastAppointment: '2025-10-08',
+      nextAppointment: '2026-01-08',
       lastPSA: 4.5,
-      lastPSADate: '2024-01-09',
+      lastPSADate: '2025-10-06',
       referringGP: 'Dr. Lisa Chen',
       notes: 'PSA velocity concern, review surveillance protocol',
       addedBy: 'Nurse Michael Chen'
     },
-    // Additional patients from PatientDetailsModal
-    {
-      id: 'URP2024010',
-      name: 'Thomas Miller',
-      upi: 'URP2024010',
-      age: 65,
-      gender: 'Male',
-      phone: '+61 414 567 890',
-      email: 'thomas.miller@email.com',
-      status: 'Discharged',
-      pathway: 'Post-Op Follow-up',
-      type: 'OPD',
-      lastAppointment: '2023-11-15',
-      nextAppointment: null,
-      lastPSA: 2.1,
-      lastPSADate: '2023-11-15',
-      referringGP: 'Dr. Sarah Wilson',
-      notes: 'PSA levels normalized, returned to GP care',
-      addedBy: 'Nurse Sarah Wilson'
-    },
-    {
-      id: 'URP2024011',
-      name: 'Jennifer Taylor',
-      upi: 'URP2024011',
-      age: 57,
-      gender: 'Male',
-      phone: '+61 415 678 901',
-      email: 'jennifer.taylor@email.com',
-      status: 'Discharged',
-      pathway: 'Post-Op Follow-up',
-      type: 'OPD',
-      lastAppointment: '2023-10-20',
-      nextAppointment: null,
-      lastPSA: 1.8,
-      lastPSADate: '2023-10-20',
-      referringGP: 'Dr. Sarah Wilson',
-      notes: 'Normal PSA levels, completed treatment',
-      addedBy: 'Nurse Michael Chen'
-    }
   ];
 
   // Available doctors
@@ -222,6 +189,86 @@ const Patients = () => {
     }
   };
 
+  // PSA reference values based on age and gender
+  const getPSABaselineInfo = (gender, age) => {
+    if (gender === 'Male') {
+      if (age >= 70) {
+        return {
+          normal: '0-6.5 ng/mL',
+          borderline: '6.5-15.0 ng/mL', 
+          elevated: '>15.0 ng/mL',
+          description: 'Male PSA Reference Ranges (70+ years):'
+        };
+      } else if (age >= 60) {
+        return {
+          normal: '0-4.5 ng/mL',
+          borderline: '4.5-10.0 ng/mL', 
+          elevated: '>10.0 ng/mL',
+          description: 'Male PSA Reference Ranges (60-69 years):'
+        };
+      } else if (age >= 50) {
+        return {
+          normal: '0-3.5 ng/mL',
+          borderline: '3.5-7.0 ng/mL', 
+          elevated: '>7.0 ng/mL',
+          description: 'Male PSA Reference Ranges (50-59 years):'
+        };
+      } else {
+        return {
+          normal: '0-2.5 ng/mL',
+          borderline: '2.5-4.0 ng/mL', 
+          elevated: '>4.0 ng/mL',
+          description: 'Male PSA Reference Ranges (<50 years):'
+        };
+      }
+    } else if (gender === 'Female') {
+      if (age >= 70) {
+        return {
+          normal: '0-1.2 ng/mL',
+          borderline: '1.2-2.0 ng/mL', 
+          elevated: '>2.0 ng/mL',
+          description: 'Female PSA Reference Ranges (70+ years):'
+        };
+      } else if (age >= 60) {
+        return {
+          normal: '0-0.8 ng/mL',
+          borderline: '0.8-1.5 ng/mL', 
+          elevated: '>1.5 ng/mL',
+          description: 'Female PSA Reference Ranges (60-69 years):'
+        };
+      } else if (age >= 50) {
+        return {
+          normal: '0-0.6 ng/mL',
+          borderline: '0.6-1.0 ng/mL', 
+          elevated: '>1.0 ng/mL',
+          description: 'Female PSA Reference Ranges (50-59 years):'
+        };
+      } else {
+        return {
+          normal: '0-0.5 ng/mL',
+          borderline: '0.5-0.8 ng/mL', 
+          elevated: '>0.8 ng/mL',
+          description: 'Female PSA Reference Ranges (<50 years):'
+        };
+      }
+    }
+    return null;
+  };
+
+  // Handle PSA hover for tooltip positioning
+  const handlePSAHover = (event, patient) => {
+    const rect = event.target.getBoundingClientRect();
+    setTooltipPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    });
+    setHoveredPSA(patient);
+  };
+
+  const handlePSALeave = () => {
+    setHoveredPSA(null);
+  };
+
 
 
   const filteredPatients = mockPatients.filter(patient => {
@@ -236,7 +283,16 @@ const Patients = () => {
   });
 
   const handleViewPatientDetails = (patientId) => {
-    openPatientDetails(patientId);
+    const patient = mockPatients.find(p => p.id === patientId);
+    if (patient) {
+      setSelectedPatientForDetails(patient);
+      setIsNursePatientDetailsModalOpen(true);
+    }
+  };
+
+  const handleCloseNursePatientDetailsModal = () => {
+    setIsNursePatientDetailsModalOpen(false);
+    setSelectedPatientForDetails(null);
   };
 
   // Appointment booking functions
@@ -375,7 +431,17 @@ const Patients = () => {
                       </span>
                     </td>
                     <td className="py-5 px-6">
-                      <p className="font-medium text-gray-900">{patient.lastPSA} ng/mL</p>
+                      <p 
+                        className={`font-medium cursor-help ${
+                          patient.lastPSA > 10 ? 'text-red-600' : 
+                          patient.lastPSA > 4 ? 'text-amber-600' : 
+                          'text-green-600'
+                        }`}
+                        onMouseEnter={(e) => handlePSAHover(e, patient)}
+                        onMouseLeave={handlePSALeave}
+                      >
+                        {patient.lastPSA} ng/mL
+                      </p>
                     </td>
                     <td className="py-5 px-6">
                       <p className="text-sm font-medium text-gray-900">{patient.nextAppointment}</p>
@@ -714,6 +780,64 @@ const Patients = () => {
         onClose={handleCloseAddPatientModal}
         onPatientAdded={handlePatientAdded}
       />
+
+      {/* Nurse Patient Details Modal */}
+      <NursePatientDetailsModal
+        isOpen={isNursePatientDetailsModalOpen}
+        onClose={handleCloseNursePatientDetailsModal}
+        patientId={selectedPatientForDetails?.id}
+        patientData={selectedPatientForDetails}
+        userRole="urology-nurse"
+        source="patients"
+      />
+
+      {/* PSA Tooltip Portal - Rendered outside table overflow */}
+      {hoveredPSA && createPortal(
+        <div 
+          className="fixed px-4 py-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg z-[9999] pointer-events-none"
+          style={{
+            left: `${tooltipPosition.x}px`,
+            top: `${tooltipPosition.y}px`,
+            transform: 'translateX(-50%) translateY(-100%)',
+            minWidth: '250px'
+          }}
+        >
+          <div className="text-center">
+            <div className="font-semibold mb-2 text-white">{getPSABaselineInfo(hoveredPSA.gender, hoveredPSA.age)?.description}</div>
+            <div className="space-y-1.5 text-left">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 mr-2">•</span>
+                <span className="font-medium">Normal:</span>
+                <span className="text-gray-300">{getPSABaselineInfo(hoveredPSA.gender, hoveredPSA.age)?.normal}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 mr-2">•</span>
+                <span className="font-medium">Borderline:</span>
+                <span className="text-gray-300">{getPSABaselineInfo(hoveredPSA.gender, hoveredPSA.age)?.borderline}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 mr-2">•</span>
+                <span className="font-medium">Elevated:</span>
+                <span className="text-gray-300">{getPSABaselineInfo(hoveredPSA.gender, hoveredPSA.age)?.elevated}</span>
+              </div>
+            </div>
+            <div className="mt-3 pt-2 border-t border-gray-700">
+              <div className="text-xs text-gray-400">
+                Patient: {hoveredPSA.name} ({hoveredPSA.age} years, {hoveredPSA.gender})
+              </div>
+              <div className="text-xs text-gray-400">
+                Current PSA: {hoveredPSA.lastPSA} ng/mL
+              </div>
+            </div>
+          </div>
+          {/* Tooltip arrow */}
+          <div 
+            className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"
+            style={{ marginTop: '-1px' }}
+          ></div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

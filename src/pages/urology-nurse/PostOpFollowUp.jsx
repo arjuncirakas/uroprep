@@ -30,30 +30,8 @@ import {
   CheckCircle
 } from 'lucide-react';
 import BookAppointmentModalWithPatient from '../../components/modals/BookAppointmentModalWithPatient';
+import NursePatientDetailsModal from '../../components/modals/NursePatientDetailsModal';
 import { usePatientDetails } from '../../contexts/PatientDetailsContext';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-import { Bar, Line } from 'react-chartjs-2';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-);
 
 const PostOpFollowUp = () => {
   const navigate = useNavigate();
@@ -73,6 +51,8 @@ const PostOpFollowUp = () => {
   });
   const [isBookAppointmentModalOpen, setIsBookAppointmentModalOpen] = useState(false);
   const [selectedPatientForAppointment, setSelectedPatientForAppointment] = useState(null);
+  const [isNursePatientDetailsModalOpen, setIsNursePatientDetailsModalOpen] = useState(false);
+  const [selectedPatientForDetails, setSelectedPatientForDetails] = useState(null);
   
   // Calendar view states
   const [activeFilter, setActiveFilter] = useState('Post-Op Patients');
@@ -80,19 +60,16 @@ const PostOpFollowUp = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
-  // PSA monitoring states
-  const [showPSAMonitoringModal, setShowPSAMonitoringModal] = useState(false);
-  const [selectedPatientForPSAMonitoring, setSelectedPatientForPSAMonitoring] = useState(null);
-  const [psaChartFilter, setPsaChartFilter] = useState('6months');
-  const [psaChartType, setPsaChartType] = useState('line');
-  const [hoveredPSA, setHoveredPSA] = useState(null);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   
   
   // Drag and drop states
   const [draggedAppointment, setDraggedAppointment] = useState(null);
   const [dragOverDate, setDragOverDate] = useState(null);
   const [rescheduleData, setRescheduleData] = useState(null);
+
+  // PSA tooltip states
+  const [hoveredPSA, setHoveredPSA] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   
   // Edit and notes states
   const [showNotesModal, setShowNotesModal] = useState(false);
@@ -185,6 +162,20 @@ const PostOpFollowUp = () => {
         { date: '2024-04-15', value: 0.01, notes: '3-month follow-up, PSA undetectable' },
         { date: '2024-07-15', value: 0.02, notes: '6-month follow-up, minimal PSA' },
         { date: '2024-10-15', value: 0.01, notes: '9-month follow-up, excellent control' }
+      ],
+      dischargeSummaries: [
+        {
+          id: 'DS001',
+          date: '2024-01-25',
+          procedure: 'RALP (Robotic Assisted Laparoscopic Prostatectomy)',
+          diagnosis: 'Prostate Cancer, Gleason Score 3+4, pT2c',
+          dischargeNotes: 'Patient recovered well from surgery. Catheter removed on day 5 post-op. No significant complications. Patient demonstrates good understanding of post-operative care instructions.',
+          followUpInstructions: 'Follow-up in 3 months for PSA check. Continue pelvic floor exercises. Monitor for urinary incontinence. Report any fever, bleeding, or severe pain immediately.',
+          psaPreOp: '6.8',
+          psaPostOp: '0.02',
+          createdBy: 'Jennifer Lee',
+          createdAt: '2024-01-25T10:30:00Z'
+        }
       ]
     },
     {
@@ -234,6 +225,20 @@ const PostOpFollowUp = () => {
         { date: '2023-11-20', value: 5.2, notes: 'Pre-operative baseline' },
         { date: '2024-01-12', value: 0.05, notes: 'Post-surgery PSA, good response' },
         { date: '2024-01-25', value: 0.05, notes: 'Stable post-operative level' }
+      ],
+      dischargeSummaries: [
+        {
+          id: 'DS002',
+          date: '2024-01-20',
+          procedure: 'RALP (Robotic Assisted Laparoscopic Prostatectomy)',
+          diagnosis: 'Prostate Cancer, Gleason Score 3+3, pT2a',
+          dischargeNotes: 'Excellent post-operative recovery. Patient is continent and mobile. All vital signs stable. Ready for discharge to GP care.',
+          followUpInstructions: 'GP to monitor PSA levels every 3 months for first year. Continue regular physical activity. Maintain healthy diet. Contact urology if PSA rises above 0.2 ng/mL.',
+          psaPreOp: '5.2',
+          psaPostOp: '0.05',
+          createdBy: 'Sarah Thompson',
+          createdAt: '2024-01-20T14:15:00Z'
+        }
       ]
     },
     {
@@ -734,7 +739,14 @@ const PostOpFollowUp = () => {
   };
 
   const handleViewPatientDetails = (patientId) => {
-    openPatientDetails(patientId);
+    const patient = mockPostOpPatients.find(p => p.id === patientId);
+    setSelectedPatientForDetails(patient);
+    setIsNursePatientDetailsModalOpen(true);
+  };
+
+  const handleCloseNursePatientDetailsModal = () => {
+    setIsNursePatientDetailsModalOpen(false);
+    setSelectedPatientForDetails(null);
   };
 
   const handleBookAppointment = (patient) => {
@@ -756,122 +768,8 @@ const PostOpFollowUp = () => {
     setSelectedPatientForAppointment(null);
   };
 
-  // PSA monitoring functions
-  const handlePSAMonitoring = (patient) => {
-    setSelectedPatientForPSAMonitoring(patient);
-    setShowPSAMonitoringModal(true);
-  };
-
-  const closePSAMonitoringModal = () => {
-    setShowPSAMonitoringModal(false);
-    setSelectedPatientForPSAMonitoring(null);
-  };
 
 
-  // PSA Chart configuration
-  const getPSAChartData = (patient, chartType) => {
-    if (!patient?.psaHistory) return { labels: [], datasets: [] };
-    
-    const history = patient.psaHistory;
-    const labels = history.map(psa => new Date(psa.date).toLocaleDateString('en-AU'));
-    const data = history.map(psa => psa.value);
-    
-    const colors = data.map(value => {
-      if (value > 10) return '#ef4444';
-      if (value > 4) return '#f59e0b';
-      return '#10b981';
-    });
-
-    if (chartType === 'line') {
-      return {
-        labels,
-        datasets: [{
-          label: 'PSA Levels (ng/mL)',
-          data,
-          borderColor: '#8b5cf6',
-          backgroundColor: 'rgba(139, 92, 246, 0.1)',
-          borderWidth: 3,
-          pointBackgroundColor: colors,
-          pointBorderColor: colors,
-          pointRadius: 6,
-          pointHoverRadius: 8,
-          tension: 0.4
-        }]
-      };
-    } else {
-      return {
-        labels,
-        datasets: [{
-          label: 'PSA Levels (ng/mL)',
-          data,
-          backgroundColor: colors,
-          borderColor: colors,
-          borderWidth: 1
-        }]
-      };
-    }
-  };
-
-  const getPSAChartConfig = (patient, chartType) => {
-    return getPSAChartData(patient, chartType);
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top',
-        labels: {
-          usePointStyle: true,
-          padding: 20
-        }
-      },
-      tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: 'white',
-        bodyColor: 'white',
-        borderColor: '#8b5cf6',
-        borderWidth: 1,
-        cornerRadius: 8,
-        displayColors: false,
-        callbacks: {
-          title: function(context) {
-            return `PSA Reading - ${context[0].label}`;
-          },
-          label: function(context) {
-            const value = context.parsed.y;
-            let status = 'Normal';
-            if (value > 10) status = 'High Risk';
-            else if (value > 4) status = 'Borderline';
-            return `${value} ng/mL (${status})`;
-          }
-        }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        grid: {
-          color: 'rgba(0, 0, 0, 0.05)'
-        },
-        ticks: {
-          callback: function(value) {
-            return value + ' ng/mL';
-          }
-        }
-      },
-      x: {
-        grid: {
-          display: false
-        }
-      }
-    },
-    interaction: {
-      intersect: false,
-      mode: 'index'
-    }
-  };
 
   // Calendar functions
   const getDaysInMonth = (date) => {
@@ -1648,15 +1546,6 @@ const PostOpFollowUp = () => {
                     <td className="py-5 px-6">
                       <div className="flex space-x-2">
                         <button 
-                          onClick={() => handlePSAMonitoring(patient)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 border border-purple-600 rounded-lg shadow-sm hover:from-purple-700 hover:to-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
-                        >
-                          <BarChart3 className="h-3 w-3 mr-1" />
-                          <span>PSA Monitoring</span>
-                        </button>
-                        
-                        
-                        <button 
                           onClick={() => handleBookAppointment(patient)}
                           className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
                         >
@@ -1997,289 +1886,6 @@ const PostOpFollowUp = () => {
         selectedPatientData={selectedPatientForAppointment}
       />
 
-      {/* PSA Monitoring Modal */}
-      {showPSAMonitoringModal && selectedPatientForPSAMonitoring && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white max-w-6xl w-full max-h-[90vh] flex flex-col border border-gray-200 rounded-xl shadow-2xl">
-            {/* Modal Header */}
-            <div className="bg-gradient-to-r from-purple-50 to-gray-50 border-b border-gray-200 px-6 py-4 flex-shrink-0 rounded-t-xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-purple-800 rounded-full flex items-center justify-center">
-                    <BarChart3 className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      PSA Monitoring - {selectedPatientForPSAMonitoring.patientName}
-                    </h3>
-                    <p className="text-sm text-gray-600">PSA Level Trends and Analysis</p>
-                  </div>
-                </div>
-                <button
-                  onClick={closePSAMonitoringModal}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Content - Scrollable */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50">
-              {/* Key Metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <Heart className="h-4 w-4 text-red-600" />
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Current PSA</span>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-2xl font-bold text-gray-900">{selectedPatientForPSAMonitoring.lastPSA}</p>
-                    <p className="text-sm text-gray-600">ng/mL</p>
-                    <div className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                      selectedPatientForPSAMonitoring.lastPSA > 10 ? 'bg-red-50 text-red-700 border border-red-200' :
-                      selectedPatientForPSAMonitoring.lastPSA > 4 ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
-                      'bg-green-50 text-green-700 border border-green-200'
-                    }`}>
-                      {selectedPatientForPSAMonitoring.lastPSA > 10 ? 'High Risk' :
-                       selectedPatientForPSAMonitoring.lastPSA > 4 ? 'Borderline' : 'Normal'}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <TrendingUp className="h-4 w-4 text-blue-600" />
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Surgery Date</span>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-lg font-bold text-gray-900">{selectedPatientForPSAMonitoring.surgeryDate}</p>
-                    <p className="text-sm text-gray-600">{selectedPatientForPSAMonitoring.surgeryType}</p>
-                    <div className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                      {selectedPatientForPSAMonitoring.surgeon}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <Activity className="h-4 w-4 text-green-600" />
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Risk Category</span>
-                  </div>
-                  <div className="space-y-1">
-                    <span className={`inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full ${getRiskColor(selectedPatientForPSAMonitoring.riskAssessment)}`}>
-                      {selectedPatientForPSAMonitoring.riskAssessment}
-                    </span>
-                    <p className="text-xs text-gray-600">Gleason: {selectedPatientForPSAMonitoring.histopathology?.gleasonScore}</p>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <Calendar className="h-4 w-4 text-purple-600" />
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Next Review</span>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-lg font-bold text-gray-900">{selectedPatientForPSAMonitoring.nextFollowUp}</p>
-                    <p className="text-sm text-gray-600">Follow-up</p>
-                    <div className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                      selectedPatientForPSAMonitoring.dischargeReady ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-                    }`}>
-                      {selectedPatientForPSAMonitoring.dischargeReady ? 'Ready for Discharge' : 'In Progress'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* PSA Reference Ranges */}
-              <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <AlertCircle className="h-5 w-5 mr-2 text-blue-600" />
-                  PSA Reference Ranges
-                </h4>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="font-semibold mb-2 text-blue-900">
-                    {getPSABaselineInfo(selectedPatientForPSAMonitoring.gender, selectedPatientForPSAMonitoring.age)?.description}
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-blue-800">Normal:</span>
-                      <span className="text-blue-700">{getPSABaselineInfo(selectedPatientForPSAMonitoring.gender, selectedPatientForPSAMonitoring.age)?.normal}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-blue-800">Borderline:</span>
-                      <span className="text-blue-700">{getPSABaselineInfo(selectedPatientForPSAMonitoring.gender, selectedPatientForPSAMonitoring.age)?.borderline}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-blue-800">Elevated:</span>
-                      <span className="text-blue-700">{getPSABaselineInfo(selectedPatientForPSAMonitoring.gender, selectedPatientForPSAMonitoring.age)?.elevated}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Chart Controls */}
-              <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-gray-900 flex items-center">
-                    <BarChart3 className="h-5 w-5 mr-2 text-purple-600" />
-                    PSA Trend Analysis
-                  </h4>
-                  <div className="flex items-center space-x-4">
-                    {/* Chart Type Toggle */}
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium text-gray-700">View:</span>
-                      <div className="flex bg-gray-100 rounded-lg p-1">
-                        <button
-                          onClick={() => setPsaChartType('line')}
-                          className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                            psaChartType === 'line' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                          }`}
-                        >
-                          Line
-                        </button>
-                        <button
-                          onClick={() => setPsaChartType('bar')}
-                          className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                            psaChartType === 'bar' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                          }`}
-                        >
-                          Bar
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Time Filter */}
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium text-gray-700">Period:</span>
-                      <select
-                        value={psaChartFilter}
-                        onChange={(e) => setPsaChartFilter(e.target.value)}
-                        className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                      >
-                        <option value="3months">3 Months</option>
-                        <option value="6months">6 Months</option>
-                        <option value="1year">1 Year</option>
-                        <option value="all">All Time</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Chart */}
-                <div className="h-80">
-                  {selectedPatientForPSAMonitoring.psaHistory && selectedPatientForPSAMonitoring.psaHistory.length > 0 ? (
-                    psaChartType === 'line' ? (
-                      <Line data={getPSAChartConfig(selectedPatientForPSAMonitoring, 'line')} options={chartOptions} />
-                    ) : (
-                      <Bar data={getPSAChartConfig(selectedPatientForPSAMonitoring, 'bar')} options={chartOptions} />
-                    )
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500">
-                      <div className="text-center">
-                        <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                        <p>No PSA history available</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* PSA History Table */}
-              {selectedPatientForPSAMonitoring.psaHistory && selectedPatientForPSAMonitoring.psaHistory.length > 0 && (
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <FileText className="h-5 w-5 mr-2 text-green-600" />
-                    PSA History
-                  </h4>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50">
-                      <tr>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">Date</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">PSA Value</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">Status</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">Change</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700 text-xs uppercase tracking-wider">Notes</th>
-                      </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {selectedPatientForPSAMonitoring.psaHistory.map((psa, index) => {
-                          const previousPSA = index > 0 ? selectedPatientForPSAMonitoring.psaHistory[index - 1].value : null;
-                          const change = previousPSA ? (psa.value - previousPSA).toFixed(1) : null;
-                          const changePercent = previousPSA ? (((psa.value - previousPSA) / previousPSA) * 100).toFixed(1) : null;
-
-                          return (
-                            <tr key={index} className="hover:bg-gray-50">
-                              <td className="py-3 px-4 text-sm text-gray-900">
-                                {new Date(psa.date).toLocaleDateString('en-AU')}
-                              </td>
-                              <td className="py-3 px-4">
-                                <div className="flex items-center space-x-2">
-                                  <div className={`w-2 h-2 rounded-full ${
-                                    psa.value > 10 ? 'bg-red-500' :
-                                    psa.value > 4 ? 'bg-amber-500' :
-                                    'bg-green-500'
-                                  }`}></div>
-                                  <span className={`text-sm font-semibold ${
-                                    psa.value > 10 ? 'text-red-600' :
-                                    psa.value > 4 ? 'text-amber-600' :
-                                    'text-green-600'
-                                  }`}>
-                                    {psa.value} ng/mL
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="py-3 px-4">
-                                <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-                                  psa.value > 10 ? 'bg-red-100 text-red-800' :
-                                  psa.value > 4 ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-green-100 text-green-800'
-                                }`}>
-                                  {psa.value > 10 ? 'High Risk' :
-                                   psa.value > 4 ? 'Borderline' : 'Normal'}
-                                </span>
-                              </td>
-                              <td className="py-3 px-4 text-sm">
-                                {change !== null ? (
-                                  <div className={`flex items-center space-x-1 ${
-                                    parseFloat(change) > 0 ? 'text-red-600' : 
-                                    parseFloat(change) < 0 ? 'text-green-600' : 'text-gray-600'
-                                  }`}>
-                                    <span>{parseFloat(change) > 0 ? '+' : ''}{change} ng/mL</span>
-                                    <span className="text-xs">({changePercent}%)</span>
-                                  </div>
-                                ) : (
-                                  <span className="text-gray-400">-</span>
-                                )}
-                              </td>
-                              <td className="py-3 px-4 text-sm text-gray-600">
-                                {psa.notes || <span className="text-gray-400 italic">No notes</span>}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 rounded-b-xl">
-              <div className="flex items-center justify-end">
-                <button
-                  onClick={closePSAMonitoringModal}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Reschedule Confirmation Modal */}
       {showRescheduleModal && rescheduleData && (
@@ -2453,6 +2059,18 @@ const PostOpFollowUp = () => {
         </div>
       )}
 
+
+
+      {/* Nurse Patient Details Modal */}
+      <NursePatientDetailsModal
+        isOpen={isNursePatientDetailsModalOpen}
+        onClose={handleCloseNursePatientDetailsModal}
+        patientId={selectedPatientForDetails?.id}
+        patientData={selectedPatientForDetails}
+        userRole="urology-nurse"
+        source="postOpFollowUp"
+        context="postOpFollowUp"
+      />
 
       {/* PSA Tooltip Portal - Rendered outside table overflow */}
       {hoveredPSA && createPortal(

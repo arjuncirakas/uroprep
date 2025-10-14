@@ -31,6 +31,7 @@ import {
   Stethoscope
 } from 'lucide-react';
 import BookAppointmentModalWithPatient from '../../components/modals/BookAppointmentModalWithPatient';
+import NursePatientDetailsModal from '../../components/modals/NursePatientDetailsModal';
 import { usePatientDetails } from '../../contexts/PatientDetailsContext';
 import {
   Chart as ChartJS,
@@ -101,6 +102,8 @@ const ActiveSurveillance = () => {
   const [selectedPatientForPSAMonitoring, setSelectedPatientForPSAMonitoring] = useState(null);
   const [psaChartFilter, setPsaChartFilter] = useState('6months');
   const [psaChartType, setPsaChartType] = useState('line');
+  const [isNursePatientDetailsModalOpen, setIsNursePatientDetailsModalOpen] = useState(false);
+  const [selectedPatientForDetails, setSelectedPatientForDetails] = useState(null);
 
   // Initialize local appointments state
   useEffect(() => {
@@ -165,12 +168,12 @@ const ActiveSurveillance = () => {
       email: 'michael.brown@email.com',
       status: 'Active',
       lastPSA: 5.2,
-      lastPSADate: '2024-01-05',
+      lastPSADate: '2025-10-05',
       psaVelocity: 0.3,
       surveillanceInterval: 3, // months
-      nextReview: '2024-04-05',
+      nextReview: '2026-01-05',
       appointmentScheduled: true,
-      scheduledDate: '2024-04-05',
+      scheduledDate: '2026-01-05',
       scheduledTime: '10:30',
       assignedDoctor: 'Dr. Michael Chen',
       lastMRI: '2023-10-15',
@@ -213,12 +216,12 @@ const ActiveSurveillance = () => {
       email: 'william.thompson@email.com',
       status: 'Active',
       lastPSA: 4.5,
-      lastPSADate: '2024-01-09',
+      lastPSADate: '2025-10-09',
       psaVelocity: 0.8,
       surveillanceInterval: 6, // months
-      nextReview: '2024-07-09',
+      nextReview: '2026-04-09',
       appointmentScheduled: true,
-      scheduledDate: '2024-07-09',
+      scheduledDate: '2026-04-09',
       scheduledTime: '14:15',
       assignedDoctor: 'Dr. Sarah Wilson',
       lastMRI: '2023-11-20',
@@ -262,12 +265,12 @@ const ActiveSurveillance = () => {
       email: 'david.wilson@email.com',
       status: 'Escalated',
       lastPSA: 4.8,
-      lastPSADate: '2024-01-03',
+      lastPSADate: '2025-10-03',
       psaVelocity: 1.2,
       surveillanceInterval: 9, // months
-      nextReview: '2024-10-03',
+      nextReview: '2026-07-03',
       appointmentScheduled: true,
-      scheduledDate: '2024-10-03',
+      scheduledDate: '2026-07-03',
       scheduledTime: '09:30',
       assignedDoctor: 'Dr. James Brown',
       lastMRI: '2023-12-15',
@@ -311,12 +314,12 @@ const ActiveSurveillance = () => {
       email: 'robert.davis@email.com',
       status: 'Active',
       lastPSA: 3.8,
-      lastPSADate: '2023-12-20',
+      lastPSADate: '2025-09-20',
       psaVelocity: 0.2,
       surveillanceInterval: 12, // months
-      nextReview: '2024-12-20',
+      nextReview: '2026-09-20',
       appointmentScheduled: true,
-      scheduledDate: '2024-12-20',
+      scheduledDate: '2026-09-20',
       scheduledTime: '11:00',
       assignedDoctor: 'Dr. Lisa Davis',
       lastMRI: '2023-09-10',
@@ -352,12 +355,12 @@ const ActiveSurveillance = () => {
       email: 'christopher.lee@email.com',
       status: 'Active',
       lastPSA: 4.1,
-      lastPSADate: '2024-01-15',
+      lastPSADate: '2025-10-15',
       psaVelocity: 0.2,
       surveillanceInterval: 3, // months
-      nextReview: '2024-04-15',
+      nextReview: '2026-01-15',
       appointmentScheduled: true,
-      scheduledDate: '2024-04-15',
+      scheduledDate: '2026-01-15',
       scheduledTime: '08:30',
       assignedDoctor: 'Dr. Michael Chen',
       lastMRI: '2023-11-20',
@@ -398,12 +401,12 @@ const ActiveSurveillance = () => {
       email: 'mark.taylor@email.com',
       status: 'Active',
       lastPSA: 5.8,
-      lastPSADate: '2024-01-20',
+      lastPSADate: '2025-10-20',
       psaVelocity: 0.6,
       surveillanceInterval: 6, // months
-      nextReview: '2024-07-20',
+      nextReview: '2026-04-20',
       appointmentScheduled: true,
-      scheduledDate: '2024-07-20',
+      scheduledDate: '2026-04-20',
       scheduledTime: '14:45',
       assignedDoctor: 'Dr. Sarah Wilson',
       lastMRI: '2023-12-10',
@@ -444,12 +447,12 @@ const ActiveSurveillance = () => {
       email: 'steven.white@email.com',
       status: 'Active',
       lastPSA: 6.2,
-      lastPSADate: '2024-01-25',
+      lastPSADate: '2025-10-25',
       psaVelocity: 1.0,
       surveillanceInterval: 9, // months
-      nextReview: '2024-10-25',
+      nextReview: '2026-07-25',
       appointmentScheduled: true,
-      scheduledDate: '2024-10-25',
+      scheduledDate: '2026-07-25',
       scheduledTime: '10:15',
       assignedDoctor: 'Dr. James Brown',
       lastMRI: '2023-11-30',
@@ -491,12 +494,12 @@ const ActiveSurveillance = () => {
       email: 'kevin.martinez@email.com',
       status: 'Active',
       lastPSA: 3.2,
-      lastPSADate: '2023-12-30',
+      lastPSADate: '2025-09-30',
       psaVelocity: 0.1,
       surveillanceInterval: 12, // months
-      nextReview: '2024-12-30',
+      nextReview: '2026-09-30',
       appointmentScheduled: true,
-      scheduledDate: '2024-12-30',
+      scheduledDate: '2026-09-30',
       scheduledTime: '09:45',
       assignedDoctor: 'Dr. Lisa Davis',
       lastMRI: '2023-08-15',
@@ -874,7 +877,14 @@ const ActiveSurveillance = () => {
 
 
   const handleViewPatientDetails = (patientId) => {
-    openPatientDetails(patientId, 'nurse', 'activeSurveillance');
+    const patient = mockSurveillancePatients.find(p => p.id === patientId);
+    setSelectedPatientForDetails(patient);
+    setIsNursePatientDetailsModalOpen(true);
+  };
+
+  const handleCloseNursePatientDetailsModal = () => {
+    setIsNursePatientDetailsModalOpen(false);
+    setSelectedPatientForDetails(null);
   };
 
   const handleBookAppointment = (patient) => {
@@ -1573,6 +1583,8 @@ const ActiveSurveillance = () => {
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Patient</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Latest PSA</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Next Appointment</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Urologist</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">View</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</th>
                 </tr>
@@ -1601,11 +1613,6 @@ const ActiveSurveillance = () => {
                           </div>
                           <p className="text-sm text-gray-500">UPI: {patient.upi}</p>
                           <p className="text-xs text-gray-400">Age: {patient.age} • {patient.gender}</p>
-                          {patient.appointmentScheduled && (
-                            <p className="text-xs text-blue-600 mt-1">
-                              Next: {patient.scheduledDate} at {patient.scheduledTime} with {patient.assignedDoctor}
-                            </p>
-                          )}
                         </div>
                       </div>
                     </td>
@@ -1630,6 +1637,23 @@ const ActiveSurveillance = () => {
                       </div>
                     </td>
                     <td className="py-5 px-6">
+                      <div>
+                        {patient.appointmentScheduled ? (
+                          <>
+                            <p className="font-medium text-gray-900">{patient.scheduledDate}</p>
+                            <p className="text-sm text-gray-500">{patient.scheduledTime}</p>
+                          </>
+                        ) : (
+                          <p className="text-gray-400 text-sm">Not Scheduled</p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-5 px-6">
+                      <div>
+                        <p className="text-sm text-gray-900">{patient.assignedDoctor || 'Not Assigned'}</p>
+                      </div>
+                    </td>
+                    <td className="py-5 px-6">
                       <button 
                         onClick={() => handleViewPatientDetails(patient.id)}
                         className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 border border-blue-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
@@ -1641,28 +1665,12 @@ const ActiveSurveillance = () => {
                     <td className="py-5 px-6">
                       <div className="flex space-x-2">
                         <button 
-                          onClick={() => handlePSAMonitoring(patient)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 border border-purple-600 rounded-lg shadow-sm hover:from-purple-700 hover:to-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
+                          onClick={() => handleBookAppointment(patient)}
+                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
                         >
-                          <BarChart3 className="h-3 w-3 mr-1" />
-                          <span>PSA Monitoring</span>
+                          <Clock className="h-3 w-3 mr-1" />
+                          <span>Edit Appointment</span>
                         </button>
-                        
-                        <button 
-                          onClick={() => handlePSAEntry(patient.id)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg shadow-sm hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          <span>Add PSA</span>
-                        </button>
-                        
-                          <button 
-                            onClick={() => handleBookAppointment(patient)}
-                            className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                          >
-                            <Clock className="h-3 w-3 mr-1" />
-                            <span>Edit Appointment</span>
-                          </button>
                       </div>
                     </td>
                   </tr>
@@ -2647,6 +2655,17 @@ const ActiveSurveillance = () => {
           </div>
         </div>
       )}
+
+      {/* Nurse Patient Details Modal */}
+      <NursePatientDetailsModal
+        isOpen={isNursePatientDetailsModalOpen}
+        onClose={handleCloseNursePatientDetailsModal}
+        patientId={selectedPatientForDetails?.id}
+        patientData={selectedPatientForDetails}
+        userRole="urology-nurse"
+        source="activeSurveillance"
+        context="activeSurveillance"
+      />
     </div>
   );
 };

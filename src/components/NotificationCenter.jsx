@@ -57,6 +57,8 @@ const NotificationCenter = ({ isOpen, onClose }) => {
         return <AlertTriangle className="w-5 h-5 text-red-600" />;
       case 'psa_entry':
         return <Info className="w-5 h-5 text-blue-600" />;
+      case 'psa_monitoring':
+        return <AlertCircle className="w-5 h-5 text-orange-600" />;
       case 'clinical_assessment':
         return <CheckCircle className="w-5 h-5 text-green-600" />;
       default:
@@ -80,6 +82,8 @@ const NotificationCenter = ({ isOpen, onClose }) => {
         return 'border-l-red-500 bg-red-50';
       case 'psa_entry':
         return 'border-l-blue-500 bg-blue-50';
+      case 'psa_monitoring':
+        return 'border-l-orange-500 bg-orange-50';
       case 'clinical_assessment':
         return 'border-l-green-500 bg-green-50';
       default:
@@ -89,13 +93,13 @@ const NotificationCenter = ({ isOpen, onClose }) => {
 
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp);
-    const now = new Date();
-    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
-    return date.toLocaleDateString();
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   if (!isOpen) return null;

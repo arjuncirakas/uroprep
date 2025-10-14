@@ -19,6 +19,7 @@ import {
   Clock
 } from 'lucide-react';
 import BookAppointmentModalWithPatient from '../../components/modals/BookAppointmentModalWithPatient';
+import NursePatientDetailsModal from '../../components/modals/NursePatientDetailsModal';
 import { usePatientDetails } from '../../contexts/PatientDetailsContext';
 
 const SurgicalPathway = () => {
@@ -39,6 +40,8 @@ const SurgicalPathway = () => {
   });
   const [isBookAppointmentModalOpen, setIsBookAppointmentModalOpen] = useState(false);
   const [selectedPatientForAppointment, setSelectedPatientForAppointment] = useState(null);
+  const [isNursePatientDetailsModalOpen, setIsNursePatientDetailsModalOpen] = useState(false);
+  const [selectedPatientForDetails, setSelectedPatientForDetails] = useState(null);
 
   // Mock surgical pathway data
   const mockSurgicalPatients = [
@@ -50,7 +53,7 @@ const SurgicalPathway = () => {
       gender: 'Male',
       phone: '+61 434 567 890',
       email: 'david.wilson@email.com',
-      surgeryDate: '2024-01-25',
+      surgeryDate: '2025-10-25',
       surgeryTime: '8:00 AM',
       surgeryType: 'RALP',
       assignedSurgeon: 'Dr. Michael Chen',
@@ -59,6 +62,12 @@ const SurgicalPathway = () => {
       preOpStatus: 'In Progress',
       postOpStatus: 'Pending',
       lastPSA: 4.8,
+      psaHistory: [
+        { date: '2023-06-15', value: 3.2 },
+        { date: '2023-09-15', value: 3.8 },
+        { date: '2023-12-15', value: 4.2 },
+        { date: '2024-03-15', value: 4.8 }
+      ],
       riskCategory: 'Normal',
       notes: 'Pre-operative assessment completed',
       preOpChecklist: {
@@ -85,7 +94,7 @@ const SurgicalPathway = () => {
       gender: 'Male',
       phone: '+61 456 789 012',
       email: 'james.anderson@email.com',
-      surgeryDate: '2024-01-28',
+      surgeryDate: '2025-10-28',
       surgeryTime: '10:30 AM',
       surgeryType: 'RALP',
       assignedSurgeon: 'Dr. Sarah Wilson',
@@ -94,6 +103,12 @@ const SurgicalPathway = () => {
       preOpStatus: 'Complete',
       postOpStatus: 'Pending',
       lastPSA: 6.8,
+      psaHistory: [
+        { date: '2023-05-20', value: 4.1 },
+        { date: '2023-08-20', value: 5.2 },
+        { date: '2023-11-20', value: 6.1 },
+        { date: '2024-02-20', value: 6.8 }
+      ],
       riskCategory: 'High Risk',
       notes: 'Ready for surgery, all pre-op requirements met',
       preOpChecklist: {
@@ -120,7 +135,7 @@ const SurgicalPathway = () => {
       gender: 'Male',
       phone: '+61 445 678 901',
       email: 'michael.thompson@email.com',
-      surgeryDate: '2024-01-30',
+      surgeryDate: '2025-10-30',
       surgeryTime: '2:00 PM',
       surgeryType: 'RALP',
       assignedSurgeon: 'Dr. Michael Chen',
@@ -129,6 +144,12 @@ const SurgicalPathway = () => {
       preOpStatus: 'In Progress',
       postOpStatus: 'Pending',
       lastPSA: 7.2,
+      psaHistory: [
+        { date: '2023-07-10', value: 5.8 },
+        { date: '2023-10-10', value: 6.4 },
+        { date: '2024-01-10', value: 6.9 },
+        { date: '2024-04-10', value: 7.2 }
+      ],
       riskCategory: 'High Risk',
       notes: 'Awaiting final imaging results',
       preOpChecklist: {
@@ -155,7 +176,7 @@ const SurgicalPathway = () => {
       gender: 'Male',
       phone: '+61 445 678 901',
       email: 'robert.davis@email.com',
-      surgeryDate: '2024-01-20',
+      surgeryDate: '2025-09-20',
       surgeryTime: '9:00 AM',
       surgeryType: 'RALP',
       assignedSurgeon: 'Dr. Sarah Wilson',
@@ -164,6 +185,12 @@ const SurgicalPathway = () => {
       preOpStatus: 'Complete',
       postOpStatus: 'In Progress',
       lastPSA: 0.02,
+      psaHistory: [
+        { date: '2023-08-15', value: 8.5 },
+        { date: '2023-11-15', value: 9.1 },
+        { date: '2024-02-15', value: 9.8 },
+        { date: '2024-05-15', value: 0.02 }
+      ],
       riskCategory: 'Normal',
       notes: 'Post-operative recovery progressing well',
       preOpChecklist: {
@@ -190,7 +217,7 @@ const SurgicalPathway = () => {
       gender: 'Male',
       phone: '+61 416 789 012',
       email: 'christopher.lee@email.com',
-      surgeryDate: '2024-02-05',
+      surgeryDate: '2025-11-05',
       surgeryTime: '11:00 AM',
       surgeryType: 'RALP',
       assignedSurgeon: 'Dr. Emma Wilson',
@@ -199,6 +226,12 @@ const SurgicalPathway = () => {
       preOpStatus: 'In Progress',
       postOpStatus: 'Pending',
       lastPSA: 8.1,
+      psaHistory: [
+        { date: '2023-09-05', value: 6.2 },
+        { date: '2023-12-05', value: 7.1 },
+        { date: '2024-03-05', value: 7.6 },
+        { date: '2024-06-05', value: 8.1 }
+      ],
       riskCategory: 'High Risk',
       notes: 'Pre-operative assessment in progress',
       preOpChecklist: {
@@ -225,7 +258,7 @@ const SurgicalPathway = () => {
       gender: 'Male',
       phone: '+61 427 890 123',
       email: 'mark.johnson@email.com',
-      surgeryDate: '2024-02-08',
+      surgeryDate: '2025-11-08',
       surgeryTime: '7:30 AM',
       surgeryType: 'RALP',
       assignedSurgeon: 'Dr. James Brown',
@@ -234,6 +267,12 @@ const SurgicalPathway = () => {
       preOpStatus: 'Complete',
       postOpStatus: 'Pending',
       lastPSA: 9.2,
+      psaHistory: [
+        { date: '2023-10-08', value: 7.5 },
+        { date: '2024-01-08', value: 8.3 },
+        { date: '2024-04-08', value: 8.8 },
+        { date: '2024-07-08', value: 9.2 }
+      ],
       riskCategory: 'High Risk',
       notes: 'All pre-operative requirements completed, ready for surgery',
       preOpChecklist: {
@@ -260,7 +299,7 @@ const SurgicalPathway = () => {
       gender: 'Male',
       phone: '+61 438 901 234',
       email: 'steven.garcia@email.com',
-      surgeryDate: '2024-01-18',
+      surgeryDate: '2025-09-18',
       surgeryTime: '1:00 PM',
       surgeryType: 'RALP',
       assignedSurgeon: 'Dr. Lisa Davis',
@@ -269,6 +308,12 @@ const SurgicalPathway = () => {
       preOpStatus: 'Complete',
       postOpStatus: 'Complete',
       lastPSA: 0.05,
+      psaHistory: [
+        { date: '2023-07-18', value: 6.8 },
+        { date: '2023-10-18', value: 7.4 },
+        { date: '2024-01-18', value: 8.1 },
+        { date: '2024-04-18', value: 0.05 }
+      ],
       riskCategory: 'Normal',
       notes: 'Surgery completed successfully, patient ready for discharge',
       preOpChecklist: {
@@ -295,7 +340,7 @@ const SurgicalPathway = () => {
       gender: 'Male',
       phone: '+61 449 012 345',
       email: 'anthony.martinez@email.com',
-      surgeryDate: '2024-02-12',
+      surgeryDate: '2025-11-12',
       surgeryTime: '10:00 AM',
       surgeryType: 'RALP',
       assignedSurgeon: 'Dr. Michael Chen',
@@ -304,6 +349,12 @@ const SurgicalPathway = () => {
       preOpStatus: 'In Progress',
       postOpStatus: 'Pending',
       lastPSA: 7.8,
+      psaHistory: [
+        { date: '2023-08-12', value: 5.9 },
+        { date: '2023-11-12', value: 6.6 },
+        { date: '2024-02-12', value: 7.2 },
+        { date: '2024-05-12', value: 7.8 }
+      ],
       riskCategory: 'High Risk',
       notes: 'Awaiting final pre-operative clearance',
       preOpChecklist: {
@@ -486,7 +537,14 @@ const SurgicalPathway = () => {
   };
 
   const handleViewPatientDetails = (patientId) => {
-    openPatientDetails(patientId);
+    const patient = mockSurgicalPatients.find(p => p.id === patientId);
+    setSelectedPatientForDetails(patient);
+    setIsNursePatientDetailsModalOpen(true);
+  };
+
+  const handleCloseNursePatientDetailsModal = () => {
+    setIsNursePatientDetailsModalOpen(false);
+    setSelectedPatientForDetails(null);
   };
 
   const handleBookAppointment = (patient) => {
@@ -899,6 +957,17 @@ const SurgicalPathway = () => {
         onClose={handleCloseAppointmentModal}
         onAppointmentBooked={handleAppointmentBooked}
         selectedPatientData={selectedPatientForAppointment}
+      />
+
+      {/* Nurse Patient Details Modal */}
+      <NursePatientDetailsModal
+        isOpen={isNursePatientDetailsModalOpen}
+        onClose={handleCloseNursePatientDetailsModal}
+        patientId={selectedPatientForDetails?.id}
+        patientData={selectedPatientForDetails}
+        userRole="urology-nurse"
+        source="surgicalPathway"
+        context="surgicalPathway"
       />
     </div>
   );

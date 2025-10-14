@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { 
   ArrowLeft,
   ArrowRight, 
@@ -52,6 +53,9 @@ import {
 } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
 import TestResultsModal from './TestResultsModal';
+import MDTNotesModal from './MDTNotesModal';
+import ScheduleMDTModal from './ScheduleMDTModal';
+import NursePatientDetailsModal from './NursePatientDetailsModal';
 
 ChartJS.register(
   CategoryScale,
@@ -65,10 +69,41 @@ ChartJS.register(
 );
 
 const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, context }) => {
+  const { user, role } = useSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Helper function to get current user display name and role
+  const getCurrentUserInfo = () => {
+    if (!user || !role) return { name: 'Unknown User', role: 'Unknown Role' };
+    
+    const roleMap = {
+      urologist: 'Urologist',
+      urology_nurse: 'Urology Nurse',
+      urology_registrar: 'Urology Registrar',
+      gp: 'General Practitioner',
+      admin: 'Administrator',
+      mdt_coordinator: 'MDT Coordinator',
+      superadmin: 'Super Administrator'
+    };
+    
+    // Generate display name from user data
+    const displayName = user.name ? 
+      (user.name.includes('Dr.') ? user.name : `Dr. ${user.name}`) : 
+      `Dr. ${user.email?.split('@')[0] || 'User'}`;
+    
+    return {
+      name: displayName,
+      role: roleMap[role] || role
+    };
+  };
+  
+  const currentUser = getCurrentUserInfo();
   const [isClinicalHistoryModalOpen, setIsClinicalHistoryModalOpen] = useState(false);
   const [isPSAModalOpen, setIsPSAModalOpen] = useState(false);
   const [isTestResultsModalOpen, setIsTestResultsModalOpen] = useState(false);
+  const [isMDTNotesModalOpen, setIsMDTNotesModalOpen] = useState(false);
+  const [isScheduleMDTModalOpen, setIsScheduleMDTModalOpen] = useState(false);
+  const [mdtNotes, setMdtNotes] = useState([]);
   const [psaChartFilter, setPsaChartFilter] = useState('6months');
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
@@ -111,6 +146,22 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
   
   // State for Post-op Transfer modal
   const [showPostOpTransferModal, setShowPostOpTransferModal] = useState(false);
+  
+  // State for Book Investigation modal
+  const [isBookInvestigationModalOpen, setIsBookInvestigationModalOpen] = useState(false);
+  const [selectedAppointmentDate, setSelectedAppointmentDate] = useState('');
+  const [selectedAppointmentTime, setSelectedAppointmentTime] = useState('');
+  const [selectedDoctor, setSelectedDoctor] = useState('');
+  const [appointmentNotes, setAppointmentNotes] = useState('');
+  const [showInvestigationSuccessModal, setShowInvestigationSuccessModal] = useState(false);
+  const [investigationSuccessMessage, setInvestigationSuccessMessage] = useState({
+    title: '',
+    description: '',
+    patientName: '',
+    doctorName: '',
+    date: '',
+    time: ''
+  });
   const [postOpTransferDetails, setPostOpTransferDetails] = useState({
     notes: ''
   });
@@ -190,91 +241,56 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
     }]
   });
 
-  // Mock patient data - in real app, fetch by ID
-  const mockPatient = {
-    id: 'URP2024001',
-    name: 'John Smith',
-    dob: '1965-03-15',
-    medicare: '1234567890',
-    phone: '0412 345 678',
-    address: '123 Main Street, Melbourne VIC 3000',
-    emergencyContact: 'Jane Smith (Wife)',
-    emergencyPhone: '0412 345 679',
-    currentStatus: 'Active Monitoring',
-    currentDatabase: 'DB2',
-    pathway: 'Active Monitoring',
-    lastPSA: { value: 6.2, date: '2024-01-10' },
-    nextAppointment: '2024-04-10',
-    referrals: [
-      { id: 1, date: '2023-06-15', reason: 'PSA 8.5', status: 'Completed', outcome: 'Active Monitoring' },
-      { id: 2, date: '2024-01-10', reason: 'Routine follow-up', status: 'Active', outcome: null }
-    ],
-    psaHistory: [
-      { value: 8.5, date: '2023-06-15', velocity: null },
-      { value: 7.8, date: '2023-09-20', velocity: -0.23 },
-      { value: 6.2, date: '2024-01-10', velocity: -0.53 }
-    ],
-    appointments: [
-      { id: 'APT001', date: '2024-01-15', type: 'PSA Follow-up', status: 'Scheduled', location: 'Urology Clinic', time: '9:00 AM' },
-      { id: 'APT002', date: '2024-04-15', type: 'Follow-up', status: 'Scheduled', location: 'Urology Clinic', time: '10:30 AM' },
-      { id: 'APT003', date: '2024-07-15', type: 'PSA Review', status: 'Scheduled', location: 'Urology Clinic', time: '2:00 PM' }
-    ],
-    clinicalHistory: {
-      presentingSymptoms: 'Elevated PSA, urinary frequency',
-      comorbidities: 'Hypertension, Type 2 Diabetes',
-      allergies: 'Penicillin',
-      currentMedications: ['Metformin 500mg BD', 'Lisinopril 10mg daily', 'Tamsulosin 0.4mg daily'],
-      familyHistory: 'Father - Prostate Cancer (age 72), Mother - Breast Cancer (age 68)',
-      socialHistory: 'Non-smoker, occasional alcohol, retired engineer'
-    },
-    imaging: [
-      { 
-        id: 'IMG001',
-        type: 'MRI Prostate', 
-        date: '2023-06-20', 
-        result: 'PIRADS 3 lesion in left peripheral zone',
-        document: 'mri_prostate_report_2023.pdf',
-        documentName: 'MRI Prostate Report - 20/06/2023'
+  // Mock patient data repository - in real app, fetch from backend
+  const allPatientsData = {
+    'URP2024001': {
+      id: 'URP2024001',
+      name: 'John Smith',
+      dob: '1959-03-15',
+      medicare: '1234567890',
+      phone: '+61 412 345 678',
+      email: 'john.smith@email.com',
+      address: '123 Main St, Melbourne VIC 3000',
+      emergencyContact: 'Jane Smith (Wife)',
+      emergencyPhone: '0412 345 679',
+      currentStatus: 'OPD Queue',
+      currentDatabase: 'DB1',
+      pathway: 'OPD Queue',
+      lastPSA: { value: 25.4, date: '2024-01-10' },
+      nextAppointment: '2024-01-22',
+      priority: 'High',
+      referralDate: '2024-01-10',
+      referringGP: 'Dr. Sarah Johnson',
+      clinicalNotes: 'Elevated PSA with family history',
+      assignedDoctor: 'Dr. Michael Chen',
+      referrals: [
+        { id: 1, date: '2024-01-10', reason: 'Elevated PSA with family history', status: 'Active', outcome: null }
+      ],
+      psaHistory: [
+        { value: 20.1, date: '2023-10-15', velocity: null },
+        { value: 22.8, date: '2023-12-10', velocity: 0.47 },
+        { value: 25.4, date: '2024-01-10', velocity: 0.43 }
+      ],
+      appointments: [
+        { id: 'APT001', date: '2024-01-15', type: 'Initial Consultation', status: 'Completed', location: 'Urology Clinic', time: '9:00 AM' },
+        { id: 'APT002', date: '2024-01-22', type: 'Follow-up', status: 'Scheduled', location: 'Urology Clinic', time: '10:30 AM' }
+      ],
+      clinicalHistory: {
+        presentingSymptoms: 'Elevated PSA with family history',
+        comorbidities: 'Hypertension',
+        allergies: 'None known',
+        currentMedications: ['Lisinopril 10mg daily'],
+        familyHistory: 'Father - Prostate Cancer',
+        socialHistory: 'Non-smoker, occasional alcohol'
       },
-      { 
-        id: 'IMG002',
-        type: 'CT Abdomen/Pelvis', 
-        date: '2023-06-25', 
-        result: 'No evidence of metastatic disease',
-        document: 'ct_abdomen_report_2023.pdf',
-        documentName: 'CT Abdomen/Pelvis Report - 25/06/2023'
-      }
-    ],
-    procedures: [
-      { 
-        id: 'PROC001',
-        type: 'Prostate Biopsy', 
-        date: '2023-07-10', 
-        result: 'Gleason 6 (3+3), 2/12 cores positive',
-        document: 'biopsy_report_2023.pdf',
-        documentName: 'Prostate Biopsy Report - 10/07/2023'
-      },
-      { 
-        id: 'PROC002',
-        type: 'Repeat Biopsy', 
-        date: '2024-01-15', 
-        result: 'Gleason 6 (3+3), 1/12 cores positive',
-        document: 'repeat_biopsy_report_2024.pdf',
-        documentName: 'Repeat Biopsy Report - 15/01/2024'
-      }
-    ],
-    dischargeSummaries: [
-      {
+      imaging: [],
+      procedures: [],
+      dischargeSummaries: [{
         id: 'DS001',
         dischargeDate: '2024-01-15',
         admissionDate: '2024-01-10',
         procedure: 'RALP (Robotic Assisted Laparoscopic Prostatectomy)',
         diagnosis: 'Prostate Cancer - Gleason 7 (3+4)',
-        status: 'Discharged',
-        followUpRequired: true,
-        nextAppointment: '2024-04-15',
-        followUpInstructions: '3-month PSA, 6-month follow-up appointment',
-        medications: ['Tamsulosin 0.4mg daily', 'Paracetamol PRN'],
         complications: 'None',
         summary: 'Patient underwent successful RALP. No complications. Catheter removed on day 5. Patient mobilizing well.',
         psaPreOp: 8.5,
@@ -285,9 +301,8 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
         dischargeDestination: 'Home',
         readmissionRisk: 'Low',
         acknowledged: true
-      }
-    ],
-    monitoringData: {
+      }],
+      monitoringData: {
       protocol: 'Active Monitoring - Low Risk',
       startDate: '2023-06-15',
       nextPSA: '2024-04-15',
@@ -313,7 +328,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
         type: 'consultation',
         title: 'Follow-up Consultation',
         details: 'Patient presented for routine follow-up. Discussed PSA results and monitoring protocol.',
-        practitioner: 'Dr. Sarah Wilson',
+        practitioner: currentUser.name,
         findings: 'PSA stable at 6.2 ng/mL. Patient reports good compliance with medications.',
         recommendations: 'Continue active monitoring. Next PSA in 3 months.',
         medications: ['Tamsulosin 0.4mg daily', 'Metformin 500mg BD']
@@ -402,8 +417,8 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
         timestamp: '2024-01-15T14:30:00',
         date: '2024-01-15',
         time: '14:30',
-        author: 'Dr. Sarah Wilson',
-        authorRole: 'Urologist',
+        author: currentUser.name,
+        authorRole: currentUser.role,
         type: 'general',
         priority: 'normal',
         note: 'Patient presented for routine follow-up. PSA stable at 6.2 ng/mL. No new symptoms reported. Patient continues to comply well with active monitoring protocol. Discussed next steps and reassured patient about current management plan.',
@@ -491,8 +506,8 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
         timestamp: '2024-01-13T11:30:00',
         date: '2024-01-13',
         time: '11:30',
-        author: 'Dr. Sarah Wilson',
-        authorRole: 'Urologist',
+        author: currentUser.name,
+        authorRole: currentUser.role,
         type: 'general',
         priority: 'normal',
         note: 'Patient reported mild urinary frequency over the past week. No dysuria or hematuria. Physical examination unremarkable. Urinalysis ordered to rule out UTI. Patient advised to monitor symptoms and report any changes.',
@@ -517,7 +532,464 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
         medicine: null
       }
     ]
+    },
+    'URP002': {
+      id: 'URP002',
+      name: 'Mary Johnson',
+      dob: '1966-07-22',
+      medicare: '2234567891',
+      phone: '+61 423 456 789',
+      email: 'mary.johnson@email.com',
+      address: '456 Oak Ave, Sydney NSW 2000',
+      emergencyContact: 'Tom Johnson (Husband)',
+      emergencyPhone: '0423 456 780',
+      currentStatus: 'OPD Queue',
+      currentDatabase: 'DB1',
+      pathway: 'OPD Queue',
+      lastPSA: { value: 18.7, date: '2024-01-12' },
+      nextAppointment: '2024-01-23',
+      priority: 'High',
+      referralDate: '2024-01-12',
+      referringGP: 'Dr. Michael Chen',
+      clinicalNotes: 'Rapidly rising PSA',
+      assignedDoctor: 'Dr. Sarah Wilson',
+      referrals: [
+        { id: 1, date: '2024-01-12', reason: 'Rapidly rising PSA', status: 'Active', outcome: null }
+      ],
+      psaHistory: [
+        { value: 12.3, date: '2023-10-12', velocity: null },
+        { value: 15.8, date: '2023-12-12', velocity: 0.58 },
+        { value: 18.7, date: '2024-01-12', velocity: 0.48 }
+      ],
+      appointments: [],
+      clinicalHistory: { presentingSymptoms: 'Rapidly rising PSA', comorbidities: 'None', allergies: 'None', currentMedications: [], familyHistory: 'None known', socialHistory: 'Non-smoker' },
+      imaging: [],
+      procedures: [],
+      dischargeSummaries: [],
+      monitoringData: null,
+      clinicalHistoryTimeline: [],
+      mdtNotes: [],
+      clinicalNotes: []
+    },
+    'URP003': {
+      id: 'URP003',
+      name: 'Robert Brown',
+      dob: '1952-11-08',
+      medicare: '3234567892',
+      phone: '+61 434 567 890',
+      email: 'robert.brown@email.com',
+      address: '789 Pine Rd, Brisbane QLD 4000',
+      emergencyContact: 'Emma Brown (Daughter)',
+      emergencyPhone: '0434 567 891',
+      currentStatus: 'Active Surveillance',
+      currentDatabase: 'DB2',
+      pathway: 'Active Surveillance',
+      lastPSA: { value: 4.2, date: '2023-12-15' },
+      nextAppointment: '2024-06-15',
+      priority: 'Normal',
+      referralDate: '2023-06-15',
+      referringGP: 'Dr. David Wilson',
+      clinicalNotes: 'Low-risk prostate cancer on surveillance',
+      assignedDoctor: 'Dr. Sarah Wilson',
+      gleasonScore: '3+3=6',
+      stage: 'T1c',
+      referrals: [
+        { id: 1, date: '2023-06-15', reason: 'Low-risk prostate cancer', status: 'Completed', outcome: 'Active Surveillance' }
+      ],
+      psaHistory: [
+        { value: 4.0, date: '2023-06-15', velocity: null },
+        { value: 4.1, date: '2023-09-15', velocity: 0.02 },
+        { value: 4.2, date: '2023-12-15', velocity: 0.02 }
+      ],
+      appointments: [],
+      clinicalHistory: { presentingSymptoms: 'Elevated PSA', comorbidities: 'None', allergies: 'None', currentMedications: [], familyHistory: 'None', socialHistory: 'Non-smoker' },
+      imaging: [],
+      procedures: [],
+      dischargeSummaries: [],
+      monitoringData: { protocol: 'Active Surveillance - Low Risk', startDate: '2023-06-15', nextPSA: '2024-06-15', nextMRI: '2024-12-15', nextBiopsy: '2025-06-15', compliance: 'Good', progressionRisk: 'Low' },
+      clinicalHistoryTimeline: [],
+      mdtNotes: [],
+      clinicalNotes: []
+    },
+    'URP2024004': {
+      id: 'URP2024004',
+      name: 'David Wilson',
+      dob: '1956-05-12',
+      medicare: '4234567893',
+      phone: '+61 445 678 901',
+      email: 'david.wilson@email.com',
+      address: '321 Elm St, Perth WA 6000',
+      emergencyContact: 'Lisa Wilson (Wife)',
+      emergencyPhone: '0445 678 902',
+      currentStatus: 'Active Surveillance',
+      currentDatabase: 'DB2',
+      pathway: 'Active Surveillance',
+      lastPSA: { value: 3.8, date: '2023-11-20' },
+      nextAppointment: '2024-05-20',
+      priority: 'Normal',
+      referralDate: '2023-08-20',
+      referringGP: 'Dr. Jennifer Lee',
+      clinicalNotes: 'Stable PSA on surveillance',
+      assignedDoctor: 'Dr. Michael Chen',
+      gleasonScore: '3+3=6',
+      stage: 'T1c',
+      referrals: [],
+      psaHistory: [
+        { value: 3.6, date: '2023-08-20', velocity: null },
+        { value: 3.7, date: '2023-09-20', velocity: 0.03 },
+        { value: 3.8, date: '2023-11-20', velocity: 0.02 }
+      ],
+      appointments: [],
+      clinicalHistory: { presentingSymptoms: 'Elevated PSA', comorbidities: 'None', allergies: 'None', currentMedications: [], familyHistory: 'None', socialHistory: 'Non-smoker' },
+      imaging: [],
+      procedures: [],
+      dischargeSummaries: [],
+      monitoringData: { protocol: 'Active Surveillance - Low Risk', startDate: '2023-08-20', nextPSA: '2024-05-20', nextMRI: '2024-08-20', nextBiopsy: '2025-08-20', compliance: 'Good', progressionRisk: 'Low' },
+      clinicalHistoryTimeline: [],
+      mdtNotes: [],
+      clinicalNotes: []
+    },
+    'URP005': {
+      id: 'URP005',
+      name: 'Sarah Davis',
+      dob: '1953-09-30',
+      medicare: '5234567894',
+      phone: '+61 456 789 012',
+      email: 'sarah.davis@email.com',
+      address: '654 Maple Dr, Adelaide SA 5000',
+      emergencyContact: 'James Davis (Husband)',
+      emergencyPhone: '0456 789 013',
+      currentStatus: 'Surgery Scheduled',
+      currentDatabase: 'DB3',
+      pathway: 'Surgical Pathway',
+      lastPSA: { value: 15.2, date: '2024-01-10' },
+      nextAppointment: '2024-02-15',
+      priority: 'High',
+      referralDate: '2023-10-15',
+      referringGP: 'Dr. Michael Chen',
+      clinicalNotes: 'High-risk prostate cancer',
+      assignedDoctor: 'Dr. Sarah Wilson',
+      gleasonScore: '4+3=7',
+      stage: 'T2b',
+      surgeryDate: '2024-02-15',
+      surgeryType: 'RALP',
+      referrals: [],
+      psaHistory: [
+        { value: 12.1, date: '2023-10-15', velocity: null },
+        { value: 13.8, date: '2023-12-15', velocity: 0.28 },
+        { value: 15.2, date: '2024-01-10', velocity: 0.47 }
+      ],
+      appointments: [],
+      clinicalHistory: { presentingSymptoms: 'Elevated PSA', comorbidities: 'Hypertension', allergies: 'None', currentMedications: ['Lisinopril'], familyHistory: 'None', socialHistory: 'Non-smoker' },
+      imaging: [],
+      procedures: [],
+      dischargeSummaries: [],
+      monitoringData: null,
+      clinicalHistoryTimeline: [],
+      mdtNotes: [],
+      clinicalNotes: []
+    },
+    'URP006': {
+      id: 'URP006',
+      name: 'Michael Thompson',
+      dob: '1955-12-03',
+      medicare: '6234567895',
+      phone: '+61 467 890 123',
+      email: 'michael.thompson@email.com',
+      address: '987 Cedar Ln, Hobart TAS 7000',
+      emergencyContact: 'Susan Thompson (Wife)',
+      emergencyPhone: '0467 890 124',
+      currentStatus: 'Surgery Scheduled',
+      currentDatabase: 'DB3',
+      pathway: 'Surgical Pathway',
+      lastPSA: { value: 12.8, date: '2024-01-12' },
+      nextAppointment: '2024-02-20',
+      priority: 'High',
+      referralDate: '2023-11-20',
+      referringGP: 'Dr. Sarah Johnson',
+      clinicalNotes: 'Intermediate-risk prostate cancer',
+      assignedDoctor: 'Dr. Michael Chen',
+      gleasonScore: '3+4=7',
+      stage: 'T2a',
+      surgeryDate: '2024-02-20',
+      surgeryType: 'RALP',
+      referrals: [],
+      psaHistory: [
+        { value: 10.2, date: '2023-11-20', velocity: null },
+        { value: 11.5, date: '2023-12-20', velocity: 0.43 },
+        { value: 12.8, date: '2024-01-12', velocity: 0.54 }
+      ],
+      appointments: [],
+      clinicalHistory: { presentingSymptoms: 'Elevated PSA', comorbidities: 'None', allergies: 'None', currentMedications: [], familyHistory: 'Father had prostate cancer', socialHistory: 'Non-smoker' },
+      imaging: [],
+      procedures: [],
+      dischargeSummaries: [],
+      monitoringData: null,
+      clinicalHistoryTimeline: [],
+      mdtNotes: [],
+      clinicalNotes: []
+    },
+    'URP007': {
+      id: 'URP007',
+      name: 'Jennifer Wilson',
+      dob: '1960-04-18',
+      medicare: '7234567896',
+      phone: '+61 478 901 234',
+      email: 'jennifer.wilson@email.com',
+      address: '147 Birch St, Darwin NT 0800',
+      emergencyContact: 'Robert Wilson (Husband)',
+      emergencyPhone: '0478 901 235',
+      currentStatus: 'Post-Op Follow-Up',
+      currentDatabase: 'DB4',
+      pathway: 'Post-Op Follow-Up',
+      lastPSA: { value: 0.8, date: '2024-01-08' },
+      nextAppointment: '2024-04-08',
+      priority: 'Normal',
+      referralDate: '2023-05-10',
+      referringGP: 'Dr. David Wilson',
+      clinicalNotes: 'Post-operative surveillance',
+      assignedDoctor: 'Dr. Sarah Wilson',
+      gleasonScore: '3+4=7',
+      stage: 'T2c',
+      surgeryDate: '2023-08-15',
+      surgeryType: 'RALP',
+      histopathology: 'Negative margins, organ-confined',
+      referrals: [],
+      psaHistory: [
+        { value: 14.2, date: '2023-05-10', velocity: null },
+        { value: 0.2, date: '2023-11-08', velocity: null },
+        { value: 0.8, date: '2024-01-08', velocity: 0.10 }
+      ],
+      appointments: [],
+      clinicalHistory: { presentingSymptoms: 'Post-operative follow-up', comorbidities: 'None', allergies: 'None', currentMedications: [], familyHistory: 'None', socialHistory: 'Non-smoker' },
+      imaging: [],
+      procedures: [],
+      dischargeSummaries: [],
+      monitoringData: null,
+      clinicalHistoryTimeline: [],
+      mdtNotes: [],
+      clinicalNotes: []
+    },
+    'URP008': {
+      id: 'URP008',
+      name: 'William Anderson',
+      dob: '1958-01-25',
+      medicare: '8234567897',
+      phone: '+61 489 012 345',
+      email: 'william.anderson@email.com',
+      address: '258 Pine St, Canberra ACT 2600',
+      emergencyContact: 'Mary Anderson (Wife)',
+      emergencyPhone: '0489 012 346',
+      currentStatus: 'Post-Op Follow-Up',
+      currentDatabase: 'DB4',
+      pathway: 'Post-Op Follow-Up',
+      lastPSA: { value: 1.2, date: '2023-12-15' },
+      nextAppointment: '2024-03-15',
+      priority: 'Normal',
+      referralDate: '2023-03-15',
+      referringGP: 'Dr. Jennifer Lee',
+      clinicalNotes: 'Post-operative monitoring',
+      assignedDoctor: 'Dr. Michael Chen',
+      gleasonScore: '4+3=7',
+      stage: 'T3a',
+      surgeryDate: '2023-06-20',
+      surgeryType: 'Open Prostatectomy',
+      histopathology: 'Positive margins, extracapsular extension',
+      referrals: [],
+      psaHistory: [
+        { value: 18.4, date: '2023-03-15', velocity: null },
+        { value: 0.5, date: '2023-09-15', velocity: null },
+        { value: 1.2, date: '2023-12-15', velocity: 0.23 }
+      ],
+      appointments: [],
+      clinicalHistory: { presentingSymptoms: 'Post-operative monitoring', comorbidities: 'Diabetes', allergies: 'None', currentMedications: ['Metformin'], familyHistory: 'None', socialHistory: 'Non-smoker' },
+      imaging: [],
+      procedures: [],
+      dischargeSummaries: [],
+      monitoringData: null,
+      clinicalHistoryTimeline: [],
+      mdtNotes: [],
+      clinicalNotes: []
+    },
+    'URP009': {
+      id: 'URP009',
+      name: 'Christopher Lee',
+      dob: '1952-08-12',
+      medicare: '9234567898',
+      phone: '+61 490 123 456',
+      email: 'christopher.lee@email.com',
+      address: '369 Oak Ave, Gold Coast QLD 4217',
+      emergencyContact: 'Sarah Lee (Wife)',
+      emergencyPhone: '0490 123 457',
+      currentStatus: 'Inpatient',
+      currentDatabase: 'DB3',
+      pathway: 'Surgical Pathway',
+      lastPSA: { value: 6.8, date: '2024-01-15' },
+      nextAppointment: '2024-01-25',
+      priority: 'High',
+      referralDate: '2024-01-12',
+      referringGP: 'Dr. Michael Chen',
+      clinicalNotes: 'Intermediate-risk prostate cancer requiring inpatient care',
+      assignedDoctor: 'Dr. Sarah Wilson',
+      gleasonScore: '3+4=7',
+      stage: 'T2b',
+      surgeryDate: '2024-01-25',
+      surgeryType: 'RALP',
+      referrals: [],
+      psaHistory: [
+        { value: 5.2, date: '2023-12-12', velocity: null },
+        { value: 6.0, date: '2024-01-05', velocity: 0.32 },
+        { value: 6.8, date: '2024-01-15', velocity: 0.27 }
+      ],
+      appointments: [],
+      clinicalHistory: { presentingSymptoms: 'Elevated PSA', comorbidities: 'None', allergies: 'None', currentMedications: [], familyHistory: 'None', socialHistory: 'Non-smoker' },
+      imaging: [],
+      procedures: [],
+      dischargeSummaries: [],
+      monitoringData: null,
+      clinicalHistoryTimeline: [],
+      mdtNotes: [],
+      clinicalNotes: []
+    },
+    'URP010': {
+      id: 'URP010',
+      name: 'Thomas Brown',
+      dob: '1956-11-30',
+      medicare: '0234567899',
+      phone: '+61 501 234 567',
+      email: 'thomas.brown@email.com',
+      address: '741 Elm St, Newcastle NSW 2300',
+      emergencyContact: 'Helen Brown (Wife)',
+      emergencyPhone: '0501 234 568',
+      currentStatus: 'Inpatient',
+      currentDatabase: 'DB3',
+      pathway: 'Surgical Pathway',
+      lastPSA: { value: 18.3, date: '2024-01-18' },
+      nextAppointment: '2024-01-28',
+      priority: 'High',
+      referralDate: '2024-01-15',
+      referringGP: 'Dr. David Wilson',
+      clinicalNotes: 'High-risk prostate cancer with complications',
+      assignedDoctor: 'Dr. Michael Chen',
+      gleasonScore: '4+4=8',
+      stage: 'T3b',
+      surgeryDate: '2024-01-28',
+      surgeryType: 'Open Prostatectomy',
+      referrals: [],
+      psaHistory: [
+        { value: 14.2, date: '2023-12-15', velocity: null },
+        { value: 16.5, date: '2024-01-05', velocity: 1.04 },
+        { value: 18.3, date: '2024-01-18', velocity: 0.50 }
+      ],
+      appointments: [],
+      clinicalHistory: { presentingSymptoms: 'Elevated PSA with complications', comorbidities: 'Hypertension, Diabetes', allergies: 'Penicillin', currentMedications: ['Lisinopril', 'Metformin'], familyHistory: 'None', socialHistory: 'Former smoker' },
+      imaging: [],
+      procedures: [],
+      dischargeSummaries: [],
+      monitoringData: null,
+      clinicalHistoryTimeline: [],
+      mdtNotes: [],
+      clinicalNotes: []
+    },
+    'URP2024010': {
+      id: 'URP2024010',
+      name: 'Thomas Miller',
+      dob: '1959-04-22',
+      medicare: '1334567800',
+      phone: '+61 414 567 890',
+      email: 'thomas.miller@email.com',
+      address: '789 Pine Street, Melbourne VIC 3002',
+      emergencyContact: 'Anna Miller (Wife)',
+      emergencyPhone: '0414 567 891',
+      currentStatus: 'Discharged',
+      currentDatabase: 'DB4',
+      pathway: 'Post-Op Follow-Up',
+      lastPSA: { value: 2.1, date: '2023-11-15' },
+      nextAppointment: null,
+      priority: 'Normal',
+      referralDate: '2023-11-15',
+      referringGP: 'Dr. Sarah Wilson',
+      clinicalNotes: 'PSA levels normalized',
+      assignedDoctor: 'Dr. Sarah Wilson',
+      referrals: [],
+      psaHistory: [
+        { value: 8.5, date: '2023-05-15', velocity: null },
+        { value: 3.2, date: '2023-08-15', velocity: null },
+        { value: 2.1, date: '2023-11-15', velocity: -0.37 }
+      ],
+      appointments: [],
+      clinicalHistory: { presentingSymptoms: 'PSA normalized', comorbidities: 'None', allergies: 'None', currentMedications: [], familyHistory: 'None', socialHistory: 'Non-smoker' },
+      imaging: [],
+      procedures: [],
+      dischargeSummaries: [],
+      monitoringData: null,
+      clinicalHistoryTimeline: [],
+      mdtNotes: [],
+      clinicalNotes: []
+    },
+    'URP2024011': {
+      id: 'URP2024011',
+      name: 'Jennifer Taylor',
+      dob: '1967-09-18',
+      medicare: '2334567801',
+      phone: '+61 415 678 901',
+      email: 'jennifer.taylor@email.com',
+      address: '321 Elm Drive, Melbourne VIC 3003',
+      emergencyContact: 'Mark Taylor (Husband)',
+      emergencyPhone: '0415 678 902',
+      currentStatus: 'Discharged',
+      currentDatabase: 'DB4',
+      pathway: 'Post-Op Follow-Up',
+      lastPSA: { value: 1.8, date: '2023-10-20' },
+      nextAppointment: null,
+      priority: 'Normal',
+      referralDate: '2023-10-20',
+      referringGP: 'Dr. Sarah Wilson',
+      clinicalNotes: 'Normal PSA levels',
+      assignedDoctor: 'Dr. Michael Chen',
+      referrals: [],
+      psaHistory: [
+        { value: 6.5, date: '2023-04-20', velocity: null },
+        { value: 2.8, date: '2023-07-20', velocity: null },
+        { value: 1.8, date: '2023-10-20', velocity: -0.33 }
+      ],
+      appointments: [],
+      clinicalHistory: { presentingSymptoms: 'Normal PSA levels', comorbidities: 'None', allergies: 'None', currentMedications: [], familyHistory: 'None', socialHistory: 'Non-smoker' },
+      imaging: [],
+      procedures: [],
+      dischargeSummaries: [],
+      monitoringData: null,
+      clinicalHistoryTimeline: [],
+      mdtNotes: [],
+      clinicalNotes: []
+    }
   };
+
+  // Get the patient based on patientId prop, fallback to URP2024001 if not found
+  const mockPatient = allPatientsData[patientId] || allPatientsData['URP2024001'];
+
+  // Available doctors for investigation appointments
+  const doctors = [
+    { id: 'dr_smith', name: 'Dr. John Smith', specialization: 'Urologist', experience: '15 years' },
+    { id: 'dr_johnson', name: 'Dr. Sarah Johnson', specialization: 'Urologist', experience: '12 years' },
+    { id: 'dr_wilson', name: 'Dr. Michael Wilson', specialization: 'Urologist', experience: '18 years' },
+    { id: 'dr_brown', name: 'Dr. Emily Brown', specialization: 'Urologist', experience: '10 years' },
+    { id: 'dr_davis', name: 'Dr. Robert Davis', specialization: 'Urologist', experience: '20 years' }
+  ];
+
+  // Generate available time slots
+  const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 9; hour <= 17; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        slots.push(timeString);
+      }
+    }
+    return slots;
+  };
+
+  const timeSlots = generateTimeSlots();
 
   // Initialize discharge summaries and clinical notes state after mockPatient is defined
   const [dischargeSummaries, setDischargeSummaries] = useState(mockPatient.dischargeSummaries);
@@ -543,6 +1015,74 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-AU');
+  };
+
+  // MDT Notes handlers
+  const handleAddMDTNote = () => {
+    setIsMDTNotesModalOpen(true);
+  };
+
+  const handleCloseMDTNotesModal = () => {
+    setIsMDTNotesModalOpen(false);
+  };
+
+  const handleSaveMDTNote = (newMDTNote) => {
+    setMdtNotes(prev => [newMDTNote, ...prev]);
+  };
+
+  // Schedule MDT handlers
+  const handleScheduleMDT = () => {
+    setIsScheduleMDTModalOpen(true);
+  };
+
+  const handleCloseScheduleMDTModal = () => {
+    setIsScheduleMDTModalOpen(false);
+  };
+
+  const handleMDTScheduled = (mdtData) => {
+    console.log('MDT scheduled:', mdtData);
+    // Here you could update your local state or dispatch to Redux store
+  };
+
+  // Book Investigation handlers
+  const handleBookInvestigation = () => {
+    setIsBookInvestigationModalOpen(true);
+  };
+
+  const handleCloseBookInvestigationModal = () => {
+    setIsBookInvestigationModalOpen(false);
+    setSelectedAppointmentDate('');
+    setSelectedAppointmentTime('');
+    setSelectedDoctor('');
+    setAppointmentNotes('');
+  };
+
+  const handleConfirmInvestigationBooking = () => {
+    if (!selectedAppointmentDate || !selectedAppointmentTime || !selectedDoctor) {
+      alert('Please select date, time, and doctor');
+      return;
+    }
+    const doctorName = doctors.find(d => d.id === selectedDoctor)?.name;
+    const formattedDate = new Date(selectedAppointmentDate).toLocaleDateString('en-GB', { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+    
+    console.log('Investigation booked for patient:', mockPatient.id, 'on', selectedAppointmentDate, 'at', selectedAppointmentTime, 'with', doctorName);
+    
+    // Show success modal
+    setInvestigationSuccessMessage({
+      title: 'Investigation Appointment Booked!',
+      description: `Investigation appointment for ${mockPatient.name} has been successfully scheduled with ${doctorName} on ${formattedDate} at ${selectedAppointmentTime}.`,
+      patientName: mockPatient.name,
+      doctorName: doctorName,
+      date: formattedDate,
+      time: selectedAppointmentTime
+    });
+    
+    handleCloseBookInvestigationModal();
+    setShowInvestigationSuccessModal(true);
   };
 
   const calculatePSAVelocity = (psaHistory) => {
@@ -1260,10 +1800,10 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
 
   // If MDT Notes tab is hidden and user is on that tab, switch to Overview
   useEffect(() => {
-    if (source === 'activeSurveillance' && activeTab === 'mdt-notes') {
+    if ((source === 'activeSurveillance' || userRole !== 'urologist') && activeTab === 'mdt-notes') {
       setActiveTab('overview');
     }
-  }, [source, activeTab]);
+  }, [source, activeTab, userRole]);
 
   // If Discharge Summaries tab is hidden and user is on that tab, switch to Overview
   useEffect(() => {
@@ -1276,9 +1816,23 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: User, count: 1, active: activeTab === 'overview' },
-    ...(source !== 'activeSurveillance' ? [{ id: 'mdt-notes', name: 'MDT Notes', icon: Users, count: 2, active: activeTab === 'mdt-notes' }] : []),
+    ...(source !== 'activeSurveillance' && userRole === 'urologist' ? [{ id: 'mdt-notes', name: 'MDT Notes', icon: Users, count: 2, active: activeTab === 'mdt-notes' }] : []),
     ...(context !== 'newPatients' ? [{ id: 'discharge', name: 'Discharge Summaries', icon: FileText, count: 1, active: activeTab === 'discharge' }] : [])
   ];
+
+  // If user is a nurse, render the specialized nurse modal
+  if (userRole === 'urology-nurse') {
+    return (
+      <NursePatientDetailsModal
+        isOpen={isOpen}
+        onClose={onClose}
+        patientId={patientId}
+        userRole={userRole}
+        source={source}
+        context={context}
+      />
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4 sm:p-6">
@@ -1364,7 +1918,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
         </div>
 
         {/* Modal Content */}
-        <div className="flex-1 overflow-hidden" style={{ height: userRole === 'urology-nurse' ? 'calc(100vh - 140px)' : 'calc(100vh - 180px)', minHeight: '250px' }}>
+        <div className="flex-1 overflow-hidden" style={{ height: 'calc(95vh - 180px)', minHeight: '250px' }}>
           {/* Overview Tab */}
           {activeTab === 'overview' && (
             <div className="h-full flex">
@@ -1396,56 +1950,65 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                           <option value="high">High Priority</option>
                           <option value="urgent">Urgent</option>
                         </select>
-                        <button
-                          onClick={() => {
-                            if (clinicalNotesForm.note.trim()) {
-                              const now = new Date();
-                              const newNote = {
-                                id: `CN${Date.now()}`,
-                                timestamp: now.toISOString(),
-                                date: now.toISOString().split('T')[0],
-                                time: now.toTimeString().slice(0, 5),
-                                author: userRole === 'urologist' ? 'Dr. Sarah Wilson' : 'Jennifer Lee',
-                                authorRole: userRole === 'urologist' ? 'Urologist' : 'Urology Nurse',
-                                type: 'general',
-                                priority: clinicalNotesForm.priority,
-                                note: clinicalNotesForm.note,
-                                vitals: null,
-                                medicine: null
-                              };
-                              
-                              setClinicalNotes(prev => [newNote, ...prev]);
-                              setSuccessMessage('Clinical note added successfully!');
-                              setIsSuccessModalOpen(true);
-                              
-                              setClinicalNotesForm({ 
-                                note: '', 
-                                priority: 'normal',
-                                medicines: [{
-                                  id: Date.now(),
-                                  medicineName: '',
-                                  dosage: '',
-                                  frequency: '',
-                                  taken: false,
-                                  sideEffects: '',
-                                  compliance: 'good'
-                                }]
-                              });
-                            }
-                          }}
-                          className="flex items-center px-3 py-1.5 text-sm bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={!clinicalNotesForm.note.trim()}
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          Add Note
-                        </button>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={handleBookInvestigation}
+                            className="flex items-center px-3 py-1.5 text-sm bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-sm hover:shadow-md"
+                          >
+                            <Calendar className="h-3 w-3 mr-1" />
+                            Book Investigation
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (clinicalNotesForm.note.trim()) {
+                                const now = new Date();
+                                const newNote = {
+                                  id: `CN${Date.now()}`,
+                                  timestamp: now.toISOString(),
+                                  date: now.toISOString().split('T')[0],
+                                  time: now.toTimeString().slice(0, 5),
+                                  author: currentUser.name,
+                                  authorRole: currentUser.role,
+                                  type: 'general',
+                                  priority: clinicalNotesForm.priority,
+                                  note: clinicalNotesForm.note,
+                                  vitals: null,
+                                  medicine: null
+                                };
+                                
+                                setClinicalNotes(prev => [newNote, ...prev]);
+                                setSuccessMessage('Clinical note added successfully!');
+                                setIsSuccessModalOpen(true);
+                                
+                                setClinicalNotesForm({ 
+                                  note: '', 
+                                  priority: 'normal',
+                                  medicines: [{
+                                    id: Date.now(),
+                                    medicineName: '',
+                                    dosage: '',
+                                    frequency: '',
+                                    taken: false,
+                                    sideEffects: '',
+                                    compliance: 'good'
+                                  }]
+                                });
+                              }
+                            }}
+                            className="flex items-center px-3 py-1.5 text-sm bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={!clinicalNotesForm.note.trim()}
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Add Note
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 )}
 
                 {/* Timeline - Scrollable */}
-                <div className="flex-1 overflow-y-auto p-6" style={{ maxHeight: userRole === 'urology-nurse' ? 'calc(100vh - 280px)' : 'calc(100vh - 350px)' }}>
+                <div className="flex-1 overflow-y-auto p-6" style={{ maxHeight: 'calc(95vh - 350px)' }}>
                   <h4 className="font-medium text-gray-700 text-sm mb-4 flex items-center">
                     <Clock className="h-4 w-4 mr-2" />
                     Notes Timeline
@@ -1530,13 +2093,13 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
               </div>
 
               {/* Right Component - PSA & Test Results */}
-              <div className={`w-1/2 h-full flex flex-col bg-gray-50 ${userRole === 'urologist' ? 'overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100' : ''}`} style={{ 
-                maxHeight: userRole === 'urology-nurse' ? 'calc(100vh - 280px)' : 'calc(100vh - 350px)',
-                padding: userRole === 'urology-nurse' ? '16px' : '24px'
+              <div className="w-1/2 h-full flex flex-col bg-gray-50 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" style={{ 
+                maxHeight: 'calc(95vh - 350px)',
+                padding: '24px'
               }}>
                 {/* PSA Details - Compact */}
-                <div className="bg-white border border-gray-200 rounded-lg shadow-sm flex-shrink-0" style={{ marginBottom: userRole === 'urology-nurse' ? '12px' : '16px' }}>
-                  <div className="p-4" style={{ padding: userRole === 'urology-nurse' ? '12px' : '16px' }}>
+                <div className="bg-white border border-gray-200 rounded-lg shadow-sm flex-shrink-0" style={{ marginBottom: '16px' }}>
+                  <div className="p-4" style={{ padding: '16px' }}>
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold text-gray-900 text-base flex items-center">
                         <Activity className="h-4 w-4 mr-2 text-green-600" />
@@ -1582,9 +2145,9 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                   </div>
 
                   {/* Test Results List - Scrollable */}
-                  <div className={`flex-1 overflow-y-auto px-4 ${userRole === 'urology-nurse' ? 'scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100' : ''}`} style={{ 
-                    paddingBottom: userRole === 'urology-nurse' ? '8px' : '16px',
-                    minHeight: userRole === 'urology-nurse' ? '200px' : '250px'
+                  <div className="flex-1 overflow-y-auto px-4" style={{ 
+                    paddingBottom: '16px',
+                    minHeight: '250px'
                   }}>
                     <div className="space-y-3">
                       {/* MRI Results */}
@@ -1665,10 +2228,8 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                         <p className="text-xs text-gray-500">Date: 2024-01-20 • Ordered by: Dr. Michael Chen</p>
                       </div>
 
-                      {/* Additional Test Results - Only for Nurse Panel */}
-                      {userRole === 'urology-nurse' && (
-                        <>
-                          <div className="border border-gray-200 rounded-lg p-3">
+                      {/* Additional Test Results */}
+                      <div className="border border-gray-200 rounded-lg p-3">
                             <div className="flex items-center space-x-2 mb-2">
                               <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                               <h4 className="text-sm font-semibold text-gray-900">CT Scan (Abdomen/Pelvis)</h4>
@@ -1727,17 +2288,15 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                             <p className="text-xs text-gray-600 mb-1">Prostate feels firm, no new nodules</p>
                             <p className="text-xs text-gray-500">Date: 2024-01-15 • Performed by: Dr. Sarah Wilson</p>
                           </div>
-                        </>
-                      )}
                     </div>
                   </div>
 
                   {/* View All Button - Fixed at bottom */}
-                  <div className="flex-shrink-0 p-4 pt-2 border-t border-gray-100" style={{ paddingTop: userRole === 'urology-nurse' ? '8px' : '12px' }}>
+                  <div className="flex-shrink-0 p-4 pt-2 border-t border-gray-100" style={{ paddingTop: '12px' }}>
                       <button
                         onClick={() => setIsTestResultsModalOpen(true)}
                         className="w-full flex items-center justify-center px-3 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
-                        style={{ paddingTop: userRole === 'urology-nurse' ? '6px' : '8px', paddingBottom: userRole === 'urology-nurse' ? '6px' : '8px' }}
+                        style={{ paddingTop: '8px', paddingBottom: '8px' }}
                       >
                       <Eye className="h-4 w-4 mr-2" />
                       View All Test Results & Documents
@@ -1752,16 +2311,27 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
 
           {activeTab === 'mdt-notes' && (
             <div className="h-full overflow-y-auto p-6 space-y-8" style={{ maxHeight: 'calc(100vh - 350px)' }}>
-              <div>
-                <h3 className="font-semibold text-gray-900 text-lg">MDT Notes Timeline</h3>
-                <p className="text-sm text-gray-600 mt-1">Multidisciplinary team discussions, decisions, and outcomes</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-lg">MDT Notes Timeline</h3>
+                  <p className="text-sm text-gray-600 mt-1">Multidisciplinary team discussions, decisions, and outcomes</p>
+                </div>
+                {userRole === 'urologist' && (
+                  <button
+                    onClick={handleAddMDTNote}
+                    className="flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-black text-white rounded-lg hover:from-green-700 hover:to-gray-800 transition-all duration-200 text-sm font-medium"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add MDT Note
+                  </button>
+                )}
               </div>
 
               {/* MDT Notes Timeline */}
               <div className="relative">
                 <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-green-200 to-blue-200"></div>
                 <div className="space-y-8">
-                  {mockPatient.mdtNotes.map((mdtNote, index) => {
+                  {(mdtNotes.length > 0 ? mdtNotes : mockPatient.mdtNotes).map((mdtNote, index) => {
                     const getPriorityColor = (priority) => {
                       switch (priority) {
                         case 'High': return 'bg-red-100 text-red-800 border-red-200';
@@ -1901,7 +2471,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                       <Users className="h-6 w-6 text-white" />
                     </div>
                     <p className="text-3xl font-bold text-green-600">
-                      {mockPatient.mdtNotes.length}
+                      {(mdtNotes.length > 0 ? mdtNotes : mockPatient.mdtNotes).length}
                     </p>
                     <p className="text-sm font-medium text-gray-700">Total MDT Reviews</p>
                     <p className="text-xs text-gray-500 mt-1">Team discussions</p>
@@ -1911,7 +2481,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                       <CheckCircle className="h-6 w-6 text-white" />
                     </div>
                     <p className="text-3xl font-bold text-blue-600">
-                      {mockPatient.mdtNotes.filter(note => note.status === 'Review Complete').length}
+                      {(mdtNotes.length > 0 ? mdtNotes : mockPatient.mdtNotes).filter(note => note.status === 'Review Complete').length}
                     </p>
                     <p className="text-sm font-medium text-gray-700">Completed Reviews</p>
                     <p className="text-xs text-gray-500 mt-1">Decisions made</p>
@@ -1921,7 +2491,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                       <Target className="h-6 w-6 text-white" />
                     </div>
                     <p className="text-3xl font-bold text-red-600">
-                      {mockPatient.mdtNotes.filter(note => note.outcome === 'Proceed to Surgery').length}
+                      {(mdtNotes.length > 0 ? mdtNotes : mockPatient.mdtNotes).filter(note => note.outcome === 'Proceed to Surgery').length}
                     </p>
                     <p className="text-sm font-medium text-gray-700">Surgical Decisions</p>
                     <p className="text-xs text-gray-500 mt-1">Surgery recommended</p>
@@ -1931,7 +2501,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                       <Activity className="h-6 w-6 text-white" />
                     </div>
                     <p className="text-3xl font-bold text-purple-600">
-                      {mockPatient.mdtNotes.filter(note => note.outcome === 'Active Monitoring').length}
+                      {(mdtNotes.length > 0 ? mdtNotes : mockPatient.mdtNotes).filter(note => note.outcome === 'Active Monitoring').length}
                     </p>
                     <p className="text-sm font-medium text-gray-700">Monitoring Cases</p>
                     <p className="text-xs text-gray-500 mt-1">Continued monitoring</p>
@@ -2144,9 +2714,24 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
         {/* Decision Buttons - Only for Urologists */}
         {userRole === 'urologist' && (
           <div className="border-t border-gray-200 bg-white flex-shrink-0 py-6 px-4">
-            <div className="flex items-center justify-center gap-6">
-              <h3 className="text-lg font-semibold text-gray-800">Transfer to:</h3>
-              <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="flex items-center justify-center relative">
+              {/* Schedule MDT Button - Left Extreme - Only show for non-post-op patients */}
+              {mockPatient.currentDatabase !== 'DB4' && mockPatient.currentStatus !== 'Discharged' && (
+                <button
+                  onClick={handleScheduleMDT}
+                  className="absolute left-0 group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-2xl hover:border-green-400 hover:from-green-100 hover:to-green-200 transition-all duration-300 shadow-sm hover:shadow-md"
+                >
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-r from-green-600 to-black rounded-full flex items-center justify-center mb-1 sm:mb-2 md:mb-3 group-hover:from-green-700 group-hover:to-gray-800 transition-all duration-300">
+                    <Calendar className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
+                  </div>
+                  <span className="text-xs sm:text-sm font-semibold text-green-800 text-center leading-tight">Schedule<br />MDT</span>
+                </button>
+              )}
+
+              {/* Transfer to Buttons - Always Centered */}
+              <div className="flex items-center gap-6">
+                <h3 className="text-lg font-semibold text-gray-800">Transfer to:</h3>
+                <div className="flex items-center space-x-2 sm:space-x-4">
                 {/* Special buttons for New Patients context */}
                 {context === 'newPatients' && (
                   <>
@@ -2360,7 +2945,11 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                     </button>
                   </>
                 )}
+                </div>
               </div>
+              
+              {/* Spacer div to balance the layout and keep Transfer buttons centered */}
+              <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32"></div>
             </div>
           </div>
         )}
@@ -2441,7 +3030,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                   name="practitioner"
                   value={clinicalHistoryForm.practitioner}
                   onChange={handleClinicalHistoryFormChange}
-                  placeholder="e.g., Dr. Sarah Wilson, Lab Technician"
+                  placeholder={`e.g., ${currentUser.name}, Lab Technician`}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -5335,7 +5924,7 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
                     <div className="flex justify-between">
                       <div>
                         <div className="font-medium">Discharging Physician:</div>
-                        <div>Dr. Sarah Wilson, Urologist</div>
+                        <div>{currentUser.name}, {currentUser.role}</div>
                       </div>
                       <div>
                         <div className="font-medium">Date:</div>
@@ -5642,6 +6231,258 @@ const PatientDetailsModal = ({ isOpen, onClose, patientId, userRole, source, con
         patientData={mockPatient}
       />
 
+      <MDTNotesModal
+        isOpen={isMDTNotesModalOpen}
+        onClose={handleCloseMDTNotesModal}
+        patient={mockPatient}
+        onSave={handleSaveMDTNote}
+        mdtNotes={mdtNotes}
+      />
+
+      <ScheduleMDTModal
+        isOpen={isScheduleMDTModalOpen}
+        onClose={handleCloseScheduleMDTModal}
+        onScheduled={handleMDTScheduled}
+        selectedPatientData={mockPatient ? {
+          id: mockPatient.id,
+          name: mockPatient.name,
+          age: mockPatient.age || 60,
+          phone: mockPatient.phone,
+          email: mockPatient.email || 'john.smith@email.com'
+        } : null}
+      />
+
+      {/* Book Investigation Modal */}
+      {isBookInvestigationModalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+          <div className="relative mx-auto w-full max-w-3xl">
+            <div className="bg-white rounded-2xl shadow-2xl border border-blue-100 overflow-hidden max-h-[85vh] flex flex-col">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-5 flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                      <Calendar className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">Book Investigation</h3>
+                      <p className="text-blue-100 text-sm">
+                        {mockPatient.name}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleCloseBookInvestigationModal}
+                    className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-lg flex items-center justify-center transition-colors"
+                  >
+                    <X className="h-4 w-4 text-white" />
+                  </button>
+                </div>
+              </div>
+              
+              {/* Content */}
+              <div className="px-6 py-5 flex-1 overflow-y-auto">
+                <div className="space-y-5">
+                  {/* Patient Info Card */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm">
+                        <span className="text-white font-semibold text-sm">
+                          {mockPatient.name.split(' ').map(n => n[0]).join('')}
+                        </span>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{mockPatient.name}</h4>
+                        <div className="flex items-center space-x-3 mt-1">
+                          <span className="text-xs text-gray-600">UPI: {mockPatient.id}</span>
+                          <span className="text-xs text-gray-600">Age: {calculateAge(mockPatient.dob)} years</span>
+                          <span className="text-xs text-blue-600 font-medium">PSA: {mockPatient.lastPSA.value} ng/mL</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Appointment Details */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    {/* Doctor, Date and Notes Selection */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-800 mb-2">Select Doctor *</label>
+                        <select
+                          value={selectedDoctor}
+                          onChange={(e) => setSelectedDoctor(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
+                        >
+                          <option value="">Choose a doctor...</option>
+                          {doctors.map((doctor) => (
+                            <option key={doctor.id} value={doctor.id}>
+                              {doctor.name} - {doctor.specialization} ({doctor.experience})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-800 mb-2">Select Date *</label>
+                        <input
+                          type="date"
+                          value={selectedAppointmentDate}
+                          onChange={(e) => setSelectedAppointmentDate(e.target.value)}
+                          min={new Date().toISOString().split('T')[0]}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-800 mb-2">Notes</label>
+                        <textarea
+                          value={appointmentNotes}
+                          onChange={(e) => setAppointmentNotes(e.target.value)}
+                          rows={3}
+                          placeholder="Add any notes or special instructions for this investigation..."
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm resize-none transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Time Selection */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-800 mb-2">Select Time</label>
+                      <div className="grid grid-cols-3 gap-2 max-h-72 overflow-y-auto border border-gray-200 rounded-xl p-4 bg-gray-50 shadow-inner">
+                        {timeSlots.map((time) => (
+                          <button
+                            key={time}
+                            onClick={() => setSelectedAppointmentTime(time)}
+                            className={`px-3 py-2 text-sm rounded-lg border transition-all duration-200 font-medium shadow-sm ${
+                              selectedAppointmentTime === time
+                                ? 'bg-blue-500 text-white border-blue-500 shadow-md transform scale-105'
+                                : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md'
+                            }`}
+                          >
+                            {time}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">Click on a time slot to select</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Actions */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex-shrink-0">
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleConfirmInvestigationBooking}
+                    disabled={!selectedAppointmentDate || !selectedAppointmentTime || !selectedDoctor}
+                    className="flex-1 bg-blue-600 text-white font-semibold py-3 px-4 rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                  >
+                    Book Investigation
+                  </button>
+                  <button
+                    onClick={handleCloseBookInvestigationModal}
+                    className="flex-1 bg-white text-gray-700 font-semibold py-3 px-4 rounded-xl border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Investigation Success Modal */}
+      {showInvestigationSuccessModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-[60] flex items-center justify-center p-4">
+          <div className="relative mx-auto w-full max-w-md">
+            <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden animate-in fade-in zoom-in duration-300">
+              {/* Success Icon */}
+              <div className="px-6 py-8 text-center bg-gradient-to-br from-blue-50 to-blue-100">
+                <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600">
+                  <CheckCircle className="h-10 w-10 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold mb-2 text-blue-900">
+                  {investigationSuccessMessage.title}
+                </h3>
+                <p className="text-sm text-blue-700">
+                  Appointment successfully scheduled
+                </p>
+              </div>
+
+              {/* Details */}
+              <div className="px-6 py-6">
+                <div className="space-y-4">
+                  {/* Patient Info */}
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-blue-100">
+                        <User className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">Patient</p>
+                        <p className="text-sm font-semibold text-gray-900">{investigationSuccessMessage.patientName}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Doctor Info */}
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-blue-100">
+                        <User className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">Doctor</p>
+                        <p className="text-sm font-semibold text-gray-900">{investigationSuccessMessage.doctorName}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Date & Time Info */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-blue-100">
+                          <Calendar className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">Date</p>
+                          <p className="text-sm font-semibold text-gray-900">{investigationSuccessMessage.date}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-blue-100">
+                          <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">Time</p>
+                          <p className="text-sm font-semibold text-gray-900">{investigationSuccessMessage.time}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <button
+                  onClick={() => setShowInvestigationSuccessModal(false)}
+                  className="w-full font-semibold py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 shadow-lg hover:shadow-xl bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
